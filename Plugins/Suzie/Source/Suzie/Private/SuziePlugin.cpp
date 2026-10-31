@@ -3,6 +3,7 @@
 #include "SuzieSchemaOverride.h"
 #include "SuzieCustomSerializers.h"
 #include "Misc/FileHelper.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Engine/Blueprint.h"
@@ -882,6 +883,22 @@ static bool IsPropertyTypeBlueprintSupported(const FProperty* Property)
     return false;
 }
 
+// Helper: checks if a property is listed in [Suzie] ForceBlueprintWritable in the editor ini as "OwnerStruct.PropertyName"
+// (owner name without its U/A/F prefix, e.g. "ResourceStockpileSlot.count").
+// BlueprintReadOnly is only enforced by the blueprint compiler, so cooked blueprints can still write these at runtime.
+static bool IsPropertyForcedBlueprintWritable(FFieldVariant Owner, const FProperty* Property)
+{
+    static const TSet<FString> ForcedWritable = []
+    {
+        TArray<FString> Entries;
+        GConfig->GetArray(TEXT("Suzie"), TEXT("ForceBlueprintWritable"), Entries, GEditorIni);
+        return TSet<FString>(Entries);
+    }();
+
+    const UStruct* OwnerStruct = Owner.Get<UStruct>();
+    return OwnerStruct && ForcedWritable.Contains(OwnerStruct->GetName() + TEXT(".") + Property->GetName());
+}
+
 // Note that new objects can be created from other threads, but we only touch this map when creating dynamic classes,
 // so we do not need an explicit mutex to guard the access to it during class initialization
 static TMap<UClass*, FDynamicClassConstructionData> DynamicClassConstructionData;
@@ -1639,6 +1656,13 @@ FProperty* FSuziePluginModule::BuildProperty(FDynamicClassGenerationContext& Con
         else if (NewProperty->HasAnyPropertyFlags(CPF_Edit))
         {
             NewProperty->PropertyFlags |= CPF_BlueprintVisible;
+        }
+
+        if (IsPropertyForcedBlueprintWritable(Owner, NewProperty))
+        {
+            NewProperty->PropertyFlags |= CPF_BlueprintVisible;
+            NewProperty->PropertyFlags &= ~(CPF_BlueprintReadOnly | CPF_EditConst);
+            UE_LOG(LogSuzie, Display, TEXT("Forced blueprint writable: %s"), *NewProperty->GetFullName());
         }
     }
 
