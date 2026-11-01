@@ -14,9 +14,12 @@
 #include "Brushes/SlateImageBrush.h"
 #include "HAL/PlatformProcess.h"
 #include "Interfaces/IPluginManager.h"
+#include "Misc/CoreDelegates.h"
+#include "ToolsetRegistry/UToolsetRegistry.h"
 
 #include "NewModDialog.h"
 #include "ModActions.h"
+#include "WWBlueprintToolset.h"
 #include "WWModToolsSettings.h"
 
 class FWWModToolsModule : public IModuleInterface
@@ -37,10 +40,17 @@ public:
 			&FWWModToolsModule::ExtendPathContextMenu);
 		PathExtenderHandle = Extender.GetHandle();
 		CBModule.GetAllPathViewContextMenuExtenders().Add(MoveTemp(Extender));
+
+		// Blueprint editing tools for the Unreal MCP server
+		FCoreDelegates::OnAllModuleLoadingPhasesComplete.AddRaw(this, &FWWModToolsModule::RegisterToolsets);
+		FCoreDelegates::OnPreExit.AddRaw(this, &FWWModToolsModule::UnregisterToolsets);
 	}
 
 	virtual void ShutdownModule() override
 	{
+		FCoreDelegates::OnAllModuleLoadingPhasesComplete.RemoveAll(this);
+		FCoreDelegates::OnPreExit.RemoveAll(this);
+
 		UToolMenus::UnregisterOwner(this);
 
 		if (FContentBrowserModule* CB =
@@ -57,6 +67,16 @@ public:
 	}
 
 private:
+	void RegisterToolsets()
+	{
+		UToolsetRegistry::RegisterToolsetClass(UWWBlueprintToolset::StaticClass());
+	}
+
+	void UnregisterToolsets()
+	{
+		UToolsetRegistry::UnregisterToolsetClass(UWWBlueprintToolset::StaticClass());
+	}
+
 	void RegisterMenus()
 	{
 		FToolMenuOwnerScoped OwnerScoped(this);

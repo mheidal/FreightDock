@@ -9,5 +9,8 @@
 	"CanContainContent": false,
 	"Modules": [
 		{ "Name": "WWModTools", "Type": "Editor", "LoadingPhase": "PostEngineInit" }
+	],
+	"Plugins": [
+		{ "Name": "ToolsetRegistry", "Enabled": true }
 	]
 }

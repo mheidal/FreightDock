@@ -28,6 +28,8 @@ public class WWModTools : ModuleRules
 			"UMG",
 			"Settings",
 			"Json",
+			"ToolsetRegistry",
+			"BlueprintGraph",
 		});
 	}
 }
