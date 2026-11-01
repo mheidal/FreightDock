@@ -1,7 +1,7 @@
 {
 	"Name": "FreightDock",
-	"Description": "todo",
-	"Version": "0.1",
+	"Description": "A Whiskerwood mod implementing ship-based bulk intra-archipelago logistics.",
+	"Version": "1.0",
 	"CreatedBy": "notnot",
 	"EngineVersion": "5.8"
 }
