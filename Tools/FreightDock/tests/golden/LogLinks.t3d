@@ -230,7 +230,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_FormatText Name="FmtLinks"
    NodePosX=2050
    NodePosY=250
    NodeGuid=00000000000000000000000000000053
-   CustomProperties Pin (PinId=00000000000000000000000000000054,PinName="Format",PinType.PinCategory="text",DefaultTextValue=INVTEXT("Dock {i} [{owner}] partnerId: {p} | load from: {src} | unload to: {dst}"),)
+   CustomProperties Pin (PinId=00000000000000000000000000000054,PinName="Format",PinType.PinCategory="text",DefaultTextValue=INVTEXT("Dock {i} [{owner}] partnerId: {p} | pick up from: {src} | deliver to: {dst}"),)
    CustomProperties Pin (PinId=00000000000000000000000000000055,PinName="Result",Direction="EGPD_Output",PinType.PinCategory="text",LinkedTo=(FmtLinks_Str 00000000000000000000000000000056,),)
    CustomProperties Pin (PinId=00000000000000000000000000000057,PinName="i",PinType.PinCategory="text",LinkedTo=(FmtLinks_iTxt 00000000000000000000000000000058,),)
    CustomProperties Pin (PinId=0000000000000000000000000000002F,PinName="owner",PinType.PinCategory="string",LinkedTo=(OwnerName 0000000000000000000000000000002E,),)

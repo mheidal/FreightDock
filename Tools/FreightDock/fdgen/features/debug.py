@@ -256,7 +256,7 @@ def log_links():
 
     get_local(g, "GetSrc", F, "Src", STR, 1800, 300)
     get_local(g, "GetDst", F, "Dst", STR, 1800, 400)
-    s = fmt_to_string(g, "FmtLinks", "Dock {i} [{owner}] partnerId: {p} | load from: {src} | unload to: {dst}",
+    s = fmt_to_string(g, "FmtLinks", "Dock {i} [{owner}] partnerId: {p} | pick up from: {src} | deliver to: {dst}",
                       [("i", INT), ("owner", STR), ("p", INT), ("src", STR), ("dst", STR)], 2050, 250)
     for arg, src in (("i", ("ForDocks", "Array Index")), ("owner", ("OwnerName", "ReturnValue")),
                      ("p", ("PartnerId", "activeTradePartnerId")), ("src", ("GetSrc", "Src")),
@@ -282,7 +282,7 @@ CELLS_KEY = "F7"
 
 
 def debug_cells():
-    """DebugCells (every tick, from PairKeyTick): CELLS_KEY toggles an overlay of the water map around the camera's
+    """DebugCells (every tick while debugging; not called in release - add it to PairKeyTick): CELLS_KEY toggles an overlay of the water map around the camera's
     focal point - land cells (LandNext) in LandCellColor, other Blocked cells (buildings) in BlockedCellColor,
     near-shore (Penalty) cells in PenaltyCellColor - as flat squares (SM_RouteStrip instances), CellsRadius cells each
     way, redrawn once a second.

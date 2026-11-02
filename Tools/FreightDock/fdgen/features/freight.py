@@ -17,7 +17,7 @@ from fdgen.features.docks import dock_id_call
 
 
 def deficits_for():
-    """Sum of unmet requests over the dock's 'unload to' warehouses."""
+    """Sum of unmet requests over the dock's "Deliver to" warehouses (StockpileLinker.m_destStockpileIds)."""
     g = Graph()
     F = "DeficitsFor"
     get_local(g, "GetCountsToClear", F, "Counts", MAP_NAME_INT, 0, -200)
