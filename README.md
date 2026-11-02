@@ -18,6 +18,8 @@ Whiskers assigned to a freight dock gain a new modifier, "Stevedore", granting +
 
 The hotkey to pair two docks defaults to `F5`. The timeout before a ship departs early is 120 seconds. Both are configurable in the game's Mods settings.
 
+The Freight Dock is unlocked by the same technology as the Trade Dock.
+
 ## Known limitations
 Both sides need to have a ship for deliveries to function, even if you only want one-way logistics. (The game doesn't allow you to assign workers to docks without ships.) Goods can be dropped off at a dock if that dock doesn't have a ship/workers assigned, but they will not be unloaded.
 
