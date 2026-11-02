@@ -56,3 +56,5 @@ Several mods were consulted to learn the structure of Whiskerwood mods; no data 
 
 The thumbnail is an edit of the image "US Cargo Ship off McMurdo Station, Antarctica", sourced via Wikipedia.
 By Vincent Clifton - Navy NewsStand Photo ID: 070204-N-0469C-004Navy NewsStand Home, Public Domain, https://commons.wikimedia.org/w/index.php?curid=3575871
+
+The mod can be downloaded via [the Steam Workshop for Whiskerwood](https://steamcommunity.com/sharedfiles/filedetails/?id=3832191059). Its source code is public [on Github.](https://github.com/mheidal/FreightDock)
