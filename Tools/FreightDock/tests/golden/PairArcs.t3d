@@ -1,0 +1,111 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPC"
+   VariableReference=(MemberScope="PairArcs",MemberName="PC")
+   NodeComment="GetPC"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="PC",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.PlayerController_Play'",LinkedTo=(SQueue 00000000000000000000000000000003,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetRouteValid"
+   VariableReference=(MemberName="RouteValid",bSelfContext=True)
+   NodeComment="GetRouteValid"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=500
+   NodeGuid=00000000000000000000000000000004
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="RouteValid",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrSel 00000000000000000000000000000006,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetRouteStart"
+   VariableReference=(MemberName="RouteStart",bSelfContext=True)
+   NodeComment="GetRouteStart"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=600
+   NodeGuid=00000000000000000000000000000007
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="RouteStart",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(SMake 00000000000000000000000000000009,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetRouteEnd"
+   VariableReference=(MemberName="RouteEnd",bSelfContext=True)
+   NodeComment="GetRouteEnd"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=700
+   NodeGuid=0000000000000000000000000000000A
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="RouteEnd",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(SMake 0000000000000000000000000000000C,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrSel"
+   NodeComment="BrSel"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000000D
+   CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(GetRouteValid 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(SQueue 00000000000000000000000000000010,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="SColor"
+   VariableReference=(MemberName="PairArcColor",bSelfContext=True)
+   NodeComment="SColor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=200
+   NodeGuid=00000000000000000000000000000012
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="PairArcColor",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Color'",LinkedTo=(SMake 00000000000000000000000000000014,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="SWidth"
+   VariableReference=(MemberName="ArcWidth",bSelfContext=True)
+   NodeComment="SWidth"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000015
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="ArcWidth",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="float",LinkedTo=(SMake 00000000000000000000000000000017,SMake 00000000000000000000000000000018,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="SHeight"
+   VariableReference=(MemberName="PairArcHeight",bSelfContext=True)
+   NodeComment="SHeight"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000019
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="PairArcHeight",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="float",LinkedTo=(SMake 0000000000000000000000000000001B,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_MakeStruct Name="SMake"
+   StructType="/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ArcPlan'"
+   NodeComment="SMake"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=200
+   NodeGuid=0000000000000000000000000000001C
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="worldStart",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(GetRouteStart 00000000000000000000000000000008,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="worldEnd",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(GetRouteEnd 0000000000000000000000000000000B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="Color",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Color'",LinkedTo=(SColor 00000000000000000000000000000013,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="linewidthTop",PinType.PinCategory="real",PinType.PinSubCategory="float",LinkedTo=(SWidth 00000000000000000000000000000016,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="linewidthEnd",PinType.PinCategory="real",PinType.PinSubCategory="float",LinkedTo=(SWidth 00000000000000000000000000000016,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="arcHeightRatioOfLength",PinType.PinCategory="real",PinType.PinSubCategory="float",LinkedTo=(SHeight 0000000000000000000000000000001A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="ArcPlan",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ArcPlan'",LinkedTo=(SQueue 0000000000000000000000000000001E,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="SQueue"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/ProjectArco.PlayerController_Play'",MemberName="QueueSynchronizedArcPlanForFrame")
+   NodeComment="SQueue"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=-100
+   NodeGuid=0000000000000000000000000000001F
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrSel 0000000000000000000000000000000F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.PlayerController_Play'",LinkedTo=(GetPC 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="plan",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ArcPlan'",LinkedTo=(SMake 0000000000000000000000000000001D,),)
+End Object

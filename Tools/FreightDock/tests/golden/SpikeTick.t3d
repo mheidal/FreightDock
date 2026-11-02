@@ -1,0 +1,70 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetFrames"
+   VariableReference=(MemberName="SpikeFrames",bSelfContext=True)
+   NodeComment="GetFrames"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="SpikeFrames",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Plus1 00000000000000000000000000000003,Due 00000000000000000000000000000004,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="Count"
+   VariableReference=(MemberName="SpikeFrames",bSelfContext=True)
+   NodeComment="Count"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000005
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrDue 00000000000000000000000000000008,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="SpikeFrames",PinType.PinCategory="int",LinkedTo=(Plus1 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="int",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Plus1"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_IntInt")
+   NodeComment="Plus1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=550
+   NodeGuid=0000000000000000000000000000000C
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="A",PinType.PinCategory="int",LinkedTo=(GetFrames 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="B",PinType.PinCategory="int",DefaultValue="1",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Count 00000000000000000000000000000009,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrDue"
+   NodeComment="BrDue"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000000E
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Count 00000000000000000000000000000007,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Due 00000000000000000000000000000010,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Spike 00000000000000000000000000000012,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Due"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="EqualEqual_IntInt")
+   NodeComment="Due"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000014
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="A",PinType.PinCategory="int",LinkedTo=(GetFrames 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="B",PinType.PinCategory="int",DefaultValue="120",)
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrDue 0000000000000000000000000000000F,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Spike"
+   FunctionReference=(MemberName="SpikeStorage",bSelfContext=True)
+   NodeComment="Spike"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000016
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrDue 00000000000000000000000000000011,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object

@@ -1,0 +1,56 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrIdle"
+   NodeComment="BrIdle"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(IsIdle 00000000000000000000000000000004,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Due 00000000000000000000000000000006,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Frame 00000000000000000000000000000008,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="IsIdleGet"
+   VariableReference=(MemberName="ScanPhase",bSelfContext=True)
+   NodeComment="IsIdleGet"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000009
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="ScanPhase",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(IsIdle 0000000000000000000000000000000B,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="IsIdle"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="EqualEqual_IntInt")
+   NodeComment="IsIdle"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000000C
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="A",PinType.PinCategory="int",LinkedTo=(IsIdleGet 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="B",PinType.PinCategory="int",DefaultValue="0",)
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrIdle 00000000000000000000000000000003,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Due"
+   FunctionReference=(MemberName="RescanTick",bSelfContext=True)
+   NodeComment="Due"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=-150
+   NodeGuid=0000000000000000000000000000000E
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrIdle 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Frame"
+   FunctionReference=(MemberName="ScanFrame",bSelfContext=True)
+   NodeComment="Frame"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=150
+   NodeGuid=00000000000000000000000000000010
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrIdle 00000000000000000000000000000007,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object

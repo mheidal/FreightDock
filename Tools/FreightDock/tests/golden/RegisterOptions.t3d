@@ -1,0 +1,81 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetModAPI"
+   VariableReference=(MemberName="ModAPI",bSelfContext=True)
+   NodeComment="GetModAPI"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="ModAPI",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(PairKey 00000000000000000000000000000003,DepartAfter 00000000000000000000000000000004,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_MakeArray Name="Keys"
+   NumInputs=11
+   NodeComment="Keys"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=550
+   NodeGuid=00000000000000000000000000000005
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="[0]",PinType.PinCategory="string",DefaultValue="F1",)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="[1]",PinType.PinCategory="string",DefaultValue="F2",)
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="[2]",PinType.PinCategory="string",DefaultValue="F3",)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="[3]",PinType.PinCategory="string",DefaultValue="F4",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="[4]",PinType.PinCategory="string",DefaultValue="F5",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="[5]",PinType.PinCategory="string",DefaultValue="F6",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="[6]",PinType.PinCategory="string",DefaultValue="F7",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="[7]",PinType.PinCategory="string",DefaultValue="F8",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="[8]",PinType.PinCategory="string",DefaultValue="F9",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="[9]",PinType.PinCategory="string",DefaultValue="F10",)
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="[10]",PinType.PinCategory="string",DefaultValue="0",)
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="Array",Direction="EGPD_Output",PinType.PinCategory="string",PinType.ContainerType=Array,LinkedTo=(PairKey 00000000000000000000000000000012,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PairKey"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="RegisterModOptions")
+   NodeComment="PairKey"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000013
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DepartAfter 00000000000000000000000000000016,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="optionId",PinType.PinCategory="string",DefaultValue="freightdock.pairKey",)
+   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="optionDisplayName",PinType.PinCategory="string",DefaultValue="Freight Dock: pairing key",)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="Values",PinType.PinCategory="string",PinType.ContainerType=Array,LinkedTo=(Keys 00000000000000000000000000000011,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="DefaultValue",PinType.PinCategory="string",DefaultValue="F5",)
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="optionDescription",PinType.PinCategory="string",DefaultValue="Pairs the selected freight dock with the next one you select.",)
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_MakeArray Name="Waits"
+   NumInputs=4
+   NodeComment="Waits"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=550
+   NodeGuid=0000000000000000000000000000001C
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="[0]",PinType.PinCategory="string",DefaultValue="120 s",)
+   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="[1]",PinType.PinCategory="string",DefaultValue="180 s",)
+   CustomProperties Pin (PinId=0000000000000000000000000000001F,PinName="[2]",PinType.PinCategory="string",DefaultValue="240 s",)
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="[3]",PinType.PinCategory="string",DefaultValue="Never",)
+   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="Array",Direction="EGPD_Output",PinType.PinCategory="string",PinType.ContainerType=Array,LinkedTo=(DepartAfter 00000000000000000000000000000022,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DepartAfter"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="RegisterModOptions")
+   NodeComment="DepartAfter"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000023
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="execute",PinType.PinCategory="exec",LinkedTo=(PairKey 00000000000000000000000000000015,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000025,PinName="optionId",PinType.PinCategory="string",DefaultValue="freightdock.departAfter",)
+   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="optionDisplayName",PinType.PinCategory="string",DefaultValue="Freight Dock: depart partly loaded after",)
+   CustomProperties Pin (PinId=00000000000000000000000000000022,PinName="Values",PinType.PinCategory="string",PinType.ContainerType=Array,LinkedTo=(Waits 00000000000000000000000000000021,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000027,PinName="DefaultValue",PinType.PinCategory="string",DefaultValue="120 s",)
+   CustomProperties Pin (PinId=00000000000000000000000000000028,PinName="optionDescription",PinType.PinCategory="string",DefaultValue="How long a freight ship waits, from its first cargo loaded, before it sails with what it has. Never: it waits until full or nothing more is wanted.",)
+   CustomProperties Pin (PinId=00000000000000000000000000000029,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object

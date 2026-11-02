@@ -1,0 +1,44 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetDock"
+   VariableReference=(MemberScope="IsFreightDock",MemberName="Dock")
+   NodeComment="GetDock"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="Dock",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Owner 00000000000000000000000000000003,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Owner"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",MemberName="GetOwner")
+   NodeComment="Owner"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000004
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetDock 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",LinkedTo=(OwnerClass 00000000000000000000000000000006,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OwnerClass"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.GameplayStatics'",MemberName="GetObjectClass")
+   NodeComment="OwnerClass"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000007
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/CoreUObject.Object'",LinkedTo=(Owner 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/CoreUObject.Object'",LinkedTo=(IsChild 00000000000000000000000000000009,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="IsChild"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="ClassIsChildOf")
+   NodeComment="IsChild"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000000A
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="TestClass",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/CoreUObject.Object'",LinkedTo=(OwnerClass 00000000000000000000000000000008,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="ParentClass",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/CoreUObject.Object'",DefaultObject="/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/navaldock_freight.navaldock_freight_C'",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object

@@ -1,0 +1,1608 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetModAPI"
+   VariableReference=(MemberName="ModAPI",bSelfContext=True)
+   NodeComment="GetModAPI"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="ModAPI",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(CheckTrade 00000000000000000000000000000003,AddDefRow 00000000000000000000000000000004,DefSet_Description 00000000000000000000000000000005,DefSet_GridActor 00000000000000000000000000000006,DefGet_Icon 00000000000000000000000000000007,DefSet_Icon 00000000000000000000000000000008,DefGet_Quality 00000000000000000000000000000009,DefSet_Quality 0000000000000000000000000000000A,DefGet_SupportedImprovements 0000000000000000000000000000000B,DefSet_SupportedImprovements 0000000000000000000000000000000C,DefGet_TooltipTags 0000000000000000000000000000000D,DefSet_TooltipTags 0000000000000000000000000000000E,DefGet_Variants 0000000000000000000000000000000F,DefSet_Variants 00000000000000000000000000000010,DefGet_asHouseTier 00000000000000000000000000000011,DefSet_asHouseTier 00000000000000000000000000000012,DefGet_asIndustryDef 00000000000000000000000000000013,DefSet_asIndustryDef 00000000000000000000000000000014,DefGet_catalyst 00000000000000000000000000000015,DefSet_catalyst 00000000000000000000000000000016,DefGet_constructionTime 00000000000000000000000000000017,DefSet_constructionTime 00000000000000000000000000000018,DefGet_cost1 00000000000000000000000000000019,DefSet_cost1 0000000000000000000000000000001A,DefGet_cost2 0000000000000000000000000000001B,DefSet_cost2 0000000000000000000000000000001C,DefGet_cost3 0000000000000000000000000000001D,DefSet_cost3 0000000000000000000000000000001E,DefGet_cost4 0000000000000000000000000000001F,DefSet_cost4 00000000000000000000000000000020,DefGet_ct1 00000000000000000000000000000021,DefSet_ct1 00000000000000000000000000000022,DefGet_ct2 00000000000000000000000000000023,DefSet_ct2 00000000000000000000000000000024,DefGet_ct3 00000000000000000000000000000025,DefSet_ct3 00000000000000000000000000000026,DefGet_ct4 00000000000000000000000000000027,DefSet_ct4 00000000000000000000000000000028,DefGet_customBuildCue 00000000000000000000000000000029,DefSet_customBuildCue 0000000000000000000000000000002A,DefGet_decorType 0000000000000000000000000000002B,DefSet_decorType 0000000000000000000000000000002C,DefGet_detailCue 0000000000000000000000000000002D,DefSet_detailCue 0000000000000000000000000000002E,DefGet_guildSpecialty 0000000000000000000000000000002F,DefSet_guildSpecialty 00000000000000000000000000000030,DefGet_hardLabor 00000000000000000000000000000031,DefSet_hardLabor 00000000000000000000000000000032,DefGet_industrialLabor 00000000000000000000000000000033,DefSet_industrialLabor 00000000000000000000000000000034,DefGet_isDraggableWall 00000000000000000000000000000035,DefSet_isDraggableWall 00000000000000000000000000000036,DefGet_limitOne 00000000000000000000000000000037,DefSet_limitOne 00000000000000000000000000000038,DefGet_maxAgents_contextual 00000000000000000000000000000039,DefSet_maxAgents_contextual 0000000000000000000000000000003A,DefGet_maxHealth 0000000000000000000000000000003B,DefSet_maxHealth 0000000000000000000000000000003C,DefGet_minMaintenanceInterval 0000000000000000000000000000003D,DefSet_minMaintenanceInterval 0000000000000000000000000000003E,DefGet_norefund 0000000000000000000000000000003F,DefSet_norefund 00000000000000000000000000000040,DefGet_randomlyRotate 00000000000000000000000000000041,DefSet_randomlyRotate 00000000000000000000000000000042,DefGet_refundRule 00000000000000000000000000000043,DefSet_refundRule 00000000000000000000000000000044,DefGet_requiresConstruction 00000000000000000000000000000045,DefSet_requiresConstruction 00000000000000000000000000000046,DefSet_stringKey 00000000000000000000000000000047,DefGet_structureType 00000000000000000000000000000048,DefSet_structureType 00000000000000000000000000000049,DefGet_supportedIndustryRecipes 0000000000000000000000000000004A,DefSet_supportedIndustryRecipes 0000000000000000000000000000004B,DefGet_toolbarGroup 0000000000000000000000000000004C,DefSet_toolbarGroup 0000000000000000000000000000004D,DefSet_toolbarGroupSort 0000000000000000000000000000004E,DefGet_unlockPrerequisite 0000000000000000000000000000004F,DefSet_unlockPrerequisite 00000000000000000000000000000050,DefGet_useCustomIcon 00000000000000000000000000000051,DefSet_useCustomIcon 00000000000000000000000000000052,DefGet_workerColor 00000000000000000000000000000053,DefSet_workerColor 00000000000000000000000000000054,AddIconRow 00000000000000000000000000000055,IconGet_Icon 00000000000000000000000000000056,IconSet_Icon 00000000000000000000000000000057,Strings_dev 00000000000000000000000000000058,Strings_en 00000000000000000000000000000059,CheckActor 0000000000000000000000000000005A,CheckIcon 0000000000000000000000000000005B,LogDone 0000000000000000000000000000005C,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CheckTrade"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="CheckTrade"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000005D
+   CustomProperties Pin (PinId=0000000000000000000000000000005E,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=0000000000000000000000000000005F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(AddDefRow 00000000000000000000000000000060,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000061,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000062,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000063,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="GridActor",)
+   CustomProperties Pin (PinId=00000000000000000000000000000064,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat1 00000000000000000000000000000065,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="AddDefRow"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="AddDataTableRow")
+   NodeComment="AddDefRow"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000066
+   CustomProperties Pin (PinId=00000000000000000000000000000060,PinName="execute",PinType.PinCategory="exec",LinkedTo=(CheckTrade 0000000000000000000000000000005F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000067,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_Description 00000000000000000000000000000068,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000069,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000006A,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000006B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(RowStr 0000000000000000000000000000006C,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_Description"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_Description"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000006D
+   CustomProperties Pin (PinId=00000000000000000000000000000068,PinName="execute",PinType.PinCategory="exec",LinkedTo=(AddDefRow 00000000000000000000000000000067,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000006E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_GridActor 0000000000000000000000000000006F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000070,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000071,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000072,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Description",)
+   CustomProperties Pin (PinId=00000000000000000000000000000073,PinName="valueStringified",PinType.PinCategory="string",DefaultValue="freightdock.building.freightDock.desc",)
+   CustomProperties Pin (PinId=00000000000000000000000000000074,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_GridActor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_GridActor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000075
+   CustomProperties Pin (PinId=0000000000000000000000000000006F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_Description 0000000000000000000000000000006E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000076,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_Icon 00000000000000000000000000000077,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000078,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000079,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000007A,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="GridActor",)
+   CustomProperties Pin (PinId=0000000000000000000000000000007B,PinName="valueStringified",PinType.PinCategory="string",DefaultValue="/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/navaldock_freight.navaldock_freight_C'",)
+   CustomProperties Pin (PinId=0000000000000000000000000000007C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_Icon"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_Icon"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000007D
+   CustomProperties Pin (PinId=00000000000000000000000000000077,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_GridActor 00000000000000000000000000000076,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000007E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_Icon 0000000000000000000000000000007F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000080,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000081,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000082,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Icon",)
+   CustomProperties Pin (PinId=00000000000000000000000000000083,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_Icon 00000000000000000000000000000084,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_Icon"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_Icon"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000085
+   CustomProperties Pin (PinId=0000000000000000000000000000007F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_Icon 0000000000000000000000000000007E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000086,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_Quality 00000000000000000000000000000087,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000088,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000089,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000008A,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Icon",)
+   CustomProperties Pin (PinId=00000000000000000000000000000084,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_Icon 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000008B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_Quality"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_Quality"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000008C
+   CustomProperties Pin (PinId=00000000000000000000000000000087,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_Icon 00000000000000000000000000000086,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000008D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_Quality 0000000000000000000000000000008E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000008F,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000090,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000091,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Quality",)
+   CustomProperties Pin (PinId=00000000000000000000000000000092,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_Quality 00000000000000000000000000000093,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_Quality"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_Quality"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000094
+   CustomProperties Pin (PinId=0000000000000000000000000000008E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_Quality 0000000000000000000000000000008D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000095,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_SupportedImprovements 00000000000000000000000000000096,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000097,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000098,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000099,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Quality",)
+   CustomProperties Pin (PinId=00000000000000000000000000000093,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_Quality 00000000000000000000000000000092,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000009A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_SupportedImprovements"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_SupportedImprovements"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=2000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000009B
+   CustomProperties Pin (PinId=00000000000000000000000000000096,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_Quality 00000000000000000000000000000095,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000009C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_SupportedImprovements 0000000000000000000000000000009D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000009E,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000009F,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A0,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="SupportedImprovements",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A1,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_SupportedImprovements 000000000000000000000000000000A2,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_SupportedImprovements"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_SupportedImprovements"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=2250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000A3
+   CustomProperties Pin (PinId=0000000000000000000000000000009D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_SupportedImprovements 0000000000000000000000000000009C,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000A4,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_TooltipTags 000000000000000000000000000000A5,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000A6,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A7,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A8,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="SupportedImprovements",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A2,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_SupportedImprovements 000000000000000000000000000000A1,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000A9,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_TooltipTags"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_TooltipTags"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=2500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000AA
+   CustomProperties Pin (PinId=000000000000000000000000000000A5,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_SupportedImprovements 000000000000000000000000000000A4,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000AB,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_TooltipTags 000000000000000000000000000000AC,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000AD,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000AE,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000AF,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="TooltipTags",)
+   CustomProperties Pin (PinId=000000000000000000000000000000B0,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_TooltipTags 000000000000000000000000000000B1,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_TooltipTags"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_TooltipTags"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=2750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000B2
+   CustomProperties Pin (PinId=000000000000000000000000000000AC,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_TooltipTags 000000000000000000000000000000AB,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B3,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_Variants 000000000000000000000000000000B4,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B5,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000B6,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000B7,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="TooltipTags",)
+   CustomProperties Pin (PinId=000000000000000000000000000000B1,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_TooltipTags 000000000000000000000000000000B0,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B8,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_Variants"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_Variants"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=3000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000B9
+   CustomProperties Pin (PinId=000000000000000000000000000000B4,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_TooltipTags 000000000000000000000000000000B3,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000BA,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_Variants 000000000000000000000000000000BB,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000BC,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000BD,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000BE,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Variants",)
+   CustomProperties Pin (PinId=000000000000000000000000000000BF,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_Variants 000000000000000000000000000000C0,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_Variants"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_Variants"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=3250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000C1
+   CustomProperties Pin (PinId=000000000000000000000000000000BB,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_Variants 000000000000000000000000000000BA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000C2,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_asHouseTier 000000000000000000000000000000C3,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000C4,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000C5,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000C6,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Variants",)
+   CustomProperties Pin (PinId=000000000000000000000000000000C0,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_Variants 000000000000000000000000000000BF,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000C7,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_asHouseTier"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_asHouseTier"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=3500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000C8
+   CustomProperties Pin (PinId=000000000000000000000000000000C3,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_Variants 000000000000000000000000000000C2,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000C9,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_asHouseTier 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000CB,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000CC,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000CD,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="asHouseTier",)
+   CustomProperties Pin (PinId=000000000000000000000000000000CE,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_asHouseTier 000000000000000000000000000000CF,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_asHouseTier"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_asHouseTier"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=3750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000D0
+   CustomProperties Pin (PinId=000000000000000000000000000000CA,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_asHouseTier 000000000000000000000000000000C9,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D1,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_asIndustryDef 000000000000000000000000000000D2,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D3,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000D4,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000D5,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="asHouseTier",)
+   CustomProperties Pin (PinId=000000000000000000000000000000CF,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_asHouseTier 000000000000000000000000000000CE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D6,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_asIndustryDef"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_asIndustryDef"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=4000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000D7
+   CustomProperties Pin (PinId=000000000000000000000000000000D2,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_asHouseTier 000000000000000000000000000000D1,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D8,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_asIndustryDef 000000000000000000000000000000D9,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000DA,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000DB,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000DC,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="asIndustryDef",)
+   CustomProperties Pin (PinId=000000000000000000000000000000DD,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_asIndustryDef 000000000000000000000000000000DE,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_asIndustryDef"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_asIndustryDef"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=4250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000DF
+   CustomProperties Pin (PinId=000000000000000000000000000000D9,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_asIndustryDef 000000000000000000000000000000D8,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E0,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_catalyst 000000000000000000000000000000E1,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E2,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000E3,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000E4,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="asIndustryDef",)
+   CustomProperties Pin (PinId=000000000000000000000000000000DE,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_asIndustryDef 000000000000000000000000000000DD,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E5,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_catalyst"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_catalyst"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=4500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000E6
+   CustomProperties Pin (PinId=000000000000000000000000000000E1,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_asIndustryDef 000000000000000000000000000000E0,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E7,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_catalyst 000000000000000000000000000000E8,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E9,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000EA,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000EB,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="catalyst",)
+   CustomProperties Pin (PinId=000000000000000000000000000000EC,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_catalyst 000000000000000000000000000000ED,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_catalyst"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_catalyst"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=4750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000EE
+   CustomProperties Pin (PinId=000000000000000000000000000000E8,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_catalyst 000000000000000000000000000000E7,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000EF,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_constructionTime 000000000000000000000000000000F0,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000F1,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000F2,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000F3,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="catalyst",)
+   CustomProperties Pin (PinId=000000000000000000000000000000ED,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_catalyst 000000000000000000000000000000EC,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000F4,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_constructionTime"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_constructionTime"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=5000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000F5
+   CustomProperties Pin (PinId=000000000000000000000000000000F0,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_catalyst 000000000000000000000000000000EF,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000F6,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_constructionTime 000000000000000000000000000000F7,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000F8,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000000F9,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000000FA,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="constructionTime",)
+   CustomProperties Pin (PinId=000000000000000000000000000000FB,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_constructionTime 000000000000000000000000000000FC,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_constructionTime"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_constructionTime"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=5250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000000FD
+   CustomProperties Pin (PinId=000000000000000000000000000000F7,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_constructionTime 000000000000000000000000000000F6,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000FE,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_cost1 000000000000000000000000000000FF,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000100,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000101,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000102,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="constructionTime",)
+   CustomProperties Pin (PinId=000000000000000000000000000000FC,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_constructionTime 000000000000000000000000000000FB,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000103,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_cost1"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_cost1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=5500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000104
+   CustomProperties Pin (PinId=000000000000000000000000000000FF,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_constructionTime 000000000000000000000000000000FE,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000105,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_cost1 00000000000000000000000000000106,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000107,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000108,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000109,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost1",)
+   CustomProperties Pin (PinId=0000000000000000000000000000010A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_cost1 0000000000000000000000000000010B,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_cost1"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_cost1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=5750
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000010C
+   CustomProperties Pin (PinId=00000000000000000000000000000106,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_cost1 00000000000000000000000000000105,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000010D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_cost2 0000000000000000000000000000010E,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000010F,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000110,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000111,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost1",)
+   CustomProperties Pin (PinId=0000000000000000000000000000010B,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_cost1 0000000000000000000000000000010A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000112,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_cost2"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_cost2"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=6000
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000113
+   CustomProperties Pin (PinId=0000000000000000000000000000010E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_cost1 0000000000000000000000000000010D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000114,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_cost2 00000000000000000000000000000115,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000116,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000117,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000118,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost2",)
+   CustomProperties Pin (PinId=00000000000000000000000000000119,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_cost2 0000000000000000000000000000011A,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_cost2"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_cost2"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=6250
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000011B
+   CustomProperties Pin (PinId=00000000000000000000000000000115,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_cost2 00000000000000000000000000000114,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000011C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_cost3 0000000000000000000000000000011D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000011E,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000011F,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000120,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost2",)
+   CustomProperties Pin (PinId=0000000000000000000000000000011A,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_cost2 00000000000000000000000000000119,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000121,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_cost3"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_cost3"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=6500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000122
+   CustomProperties Pin (PinId=0000000000000000000000000000011D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_cost2 0000000000000000000000000000011C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000123,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_cost3 00000000000000000000000000000124,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000125,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000126,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000127,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost3",)
+   CustomProperties Pin (PinId=00000000000000000000000000000128,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_cost3 00000000000000000000000000000129,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_cost3"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_cost3"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=6750
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000012A
+   CustomProperties Pin (PinId=00000000000000000000000000000124,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_cost3 00000000000000000000000000000123,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000012B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_cost4 0000000000000000000000000000012C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000012D,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000012E,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000012F,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost3",)
+   CustomProperties Pin (PinId=00000000000000000000000000000129,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_cost3 00000000000000000000000000000128,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000130,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_cost4"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_cost4"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=7000
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000131
+   CustomProperties Pin (PinId=0000000000000000000000000000012C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_cost3 0000000000000000000000000000012B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000132,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_cost4 00000000000000000000000000000133,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000134,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000135,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000136,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost4",)
+   CustomProperties Pin (PinId=00000000000000000000000000000137,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_cost4 00000000000000000000000000000138,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_cost4"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_cost4"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=7250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000139
+   CustomProperties Pin (PinId=00000000000000000000000000000133,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_cost4 00000000000000000000000000000132,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000013A,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_ct1 0000000000000000000000000000013B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000013C,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000013D,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000013E,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="cost4",)
+   CustomProperties Pin (PinId=00000000000000000000000000000138,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_cost4 00000000000000000000000000000137,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000013F,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_ct1"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_ct1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=7500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000140
+   CustomProperties Pin (PinId=0000000000000000000000000000013B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_cost4 0000000000000000000000000000013A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000141,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_ct1 00000000000000000000000000000142,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000143,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000144,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000145,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct1",)
+   CustomProperties Pin (PinId=00000000000000000000000000000146,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_ct1 00000000000000000000000000000147,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_ct1"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_ct1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=7750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000148
+   CustomProperties Pin (PinId=00000000000000000000000000000142,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_ct1 00000000000000000000000000000141,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000149,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_ct2 0000000000000000000000000000014A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000022,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000014B,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000014C,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000014D,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct1",)
+   CustomProperties Pin (PinId=00000000000000000000000000000147,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_ct1 00000000000000000000000000000146,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000014E,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_ct2"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_ct2"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=8000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000014F
+   CustomProperties Pin (PinId=0000000000000000000000000000014A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_ct1 00000000000000000000000000000149,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000150,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_ct2 00000000000000000000000000000151,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000023,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000152,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000153,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000154,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct2",)
+   CustomProperties Pin (PinId=00000000000000000000000000000155,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_ct2 00000000000000000000000000000156,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_ct2"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_ct2"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=8250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000157
+   CustomProperties Pin (PinId=00000000000000000000000000000151,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_ct2 00000000000000000000000000000150,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000158,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_ct3 00000000000000000000000000000159,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000015A,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000015B,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000015C,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct2",)
+   CustomProperties Pin (PinId=00000000000000000000000000000156,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_ct2 00000000000000000000000000000155,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000015D,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_ct3"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_ct3"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=8500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000015E
+   CustomProperties Pin (PinId=00000000000000000000000000000159,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_ct2 00000000000000000000000000000158,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000015F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_ct3 00000000000000000000000000000160,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000025,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000161,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000162,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000163,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct3",)
+   CustomProperties Pin (PinId=00000000000000000000000000000164,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_ct3 00000000000000000000000000000165,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_ct3"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_ct3"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=8750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000166
+   CustomProperties Pin (PinId=00000000000000000000000000000160,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_ct3 0000000000000000000000000000015F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000167,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_ct4 00000000000000000000000000000168,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000169,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000016A,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000016B,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct3",)
+   CustomProperties Pin (PinId=00000000000000000000000000000165,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_ct3 00000000000000000000000000000164,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000016C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_ct4"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_ct4"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=9000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000016D
+   CustomProperties Pin (PinId=00000000000000000000000000000168,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_ct3 00000000000000000000000000000167,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000016E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_ct4 0000000000000000000000000000016F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000027,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000170,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000171,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000172,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct4",)
+   CustomProperties Pin (PinId=00000000000000000000000000000173,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_ct4 00000000000000000000000000000174,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_ct4"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_ct4"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=9250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000175
+   CustomProperties Pin (PinId=0000000000000000000000000000016F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_ct4 0000000000000000000000000000016E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000176,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_customBuildCue 00000000000000000000000000000177,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000028,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000178,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000179,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000017A,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="ct4",)
+   CustomProperties Pin (PinId=00000000000000000000000000000174,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_ct4 00000000000000000000000000000173,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000017B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_customBuildCue"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_customBuildCue"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=9500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000017C
+   CustomProperties Pin (PinId=00000000000000000000000000000177,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_ct4 00000000000000000000000000000176,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000017D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_customBuildCue 0000000000000000000000000000017E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000029,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000017F,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000180,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000181,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="customBuildCue",)
+   CustomProperties Pin (PinId=00000000000000000000000000000182,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_customBuildCue 00000000000000000000000000000183,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_customBuildCue"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_customBuildCue"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=9750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000184
+   CustomProperties Pin (PinId=0000000000000000000000000000017E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_customBuildCue 0000000000000000000000000000017D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000185,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_decorType 00000000000000000000000000000186,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000187,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000188,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000189,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="customBuildCue",)
+   CustomProperties Pin (PinId=00000000000000000000000000000183,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_customBuildCue 00000000000000000000000000000182,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000018A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_decorType"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_decorType"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=10000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000018B
+   CustomProperties Pin (PinId=00000000000000000000000000000186,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_customBuildCue 00000000000000000000000000000185,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000018C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_decorType 0000000000000000000000000000018D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000018E,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000018F,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000190,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="decorType",)
+   CustomProperties Pin (PinId=00000000000000000000000000000191,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_decorType 00000000000000000000000000000192,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_decorType"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_decorType"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=10250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000193
+   CustomProperties Pin (PinId=0000000000000000000000000000018D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_decorType 0000000000000000000000000000018C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000194,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_detailCue 00000000000000000000000000000195,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000196,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000197,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000198,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="decorType",)
+   CustomProperties Pin (PinId=00000000000000000000000000000192,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_decorType 00000000000000000000000000000191,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000199,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_detailCue"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_detailCue"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=10500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000019A
+   CustomProperties Pin (PinId=00000000000000000000000000000195,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_decorType 00000000000000000000000000000194,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000019B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_detailCue 0000000000000000000000000000019C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000019D,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000019E,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000019F,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="detailCue",)
+   CustomProperties Pin (PinId=000000000000000000000000000001A0,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_detailCue 000000000000000000000000000001A1,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_detailCue"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_detailCue"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=10750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001A2
+   CustomProperties Pin (PinId=0000000000000000000000000000019C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_detailCue 0000000000000000000000000000019B,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001A3,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_guildSpecialty 000000000000000000000000000001A4,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001A5,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001A6,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001A7,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="detailCue",)
+   CustomProperties Pin (PinId=000000000000000000000000000001A1,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_detailCue 000000000000000000000000000001A0,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001A8,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_guildSpecialty"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_guildSpecialty"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=11000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001A9
+   CustomProperties Pin (PinId=000000000000000000000000000001A4,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_detailCue 000000000000000000000000000001A3,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001AA,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_guildSpecialty 000000000000000000000000000001AB,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001AC,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001AD,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001AE,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="guildSpecialty",)
+   CustomProperties Pin (PinId=000000000000000000000000000001AF,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_guildSpecialty 000000000000000000000000000001B0,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_guildSpecialty"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_guildSpecialty"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=11250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001B1
+   CustomProperties Pin (PinId=000000000000000000000000000001AB,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_guildSpecialty 000000000000000000000000000001AA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001B2,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_hardLabor 000000000000000000000000000001B3,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000030,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001B4,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001B5,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001B6,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="guildSpecialty",)
+   CustomProperties Pin (PinId=000000000000000000000000000001B0,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_guildSpecialty 000000000000000000000000000001AF,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001B7,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_hardLabor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_hardLabor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=11500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001B8
+   CustomProperties Pin (PinId=000000000000000000000000000001B3,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_guildSpecialty 000000000000000000000000000001B2,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001B9,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_hardLabor 000000000000000000000000000001BA,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000031,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001BB,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001BC,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001BD,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="hardLabor",)
+   CustomProperties Pin (PinId=000000000000000000000000000001BE,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_hardLabor 000000000000000000000000000001BF,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_hardLabor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_hardLabor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=11750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001C0
+   CustomProperties Pin (PinId=000000000000000000000000000001BA,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_hardLabor 000000000000000000000000000001B9,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001C1,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_industrialLabor 000000000000000000000000000001C2,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000032,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001C3,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001C4,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001C5,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="hardLabor",)
+   CustomProperties Pin (PinId=000000000000000000000000000001BF,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_hardLabor 000000000000000000000000000001BE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001C6,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_industrialLabor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_industrialLabor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=12000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001C7
+   CustomProperties Pin (PinId=000000000000000000000000000001C2,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_hardLabor 000000000000000000000000000001C1,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001C8,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_industrialLabor 000000000000000000000000000001C9,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000033,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001CA,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001CB,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001CC,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="industrialLabor",)
+   CustomProperties Pin (PinId=000000000000000000000000000001CD,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_industrialLabor 000000000000000000000000000001CE,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_industrialLabor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_industrialLabor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=12250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001CF
+   CustomProperties Pin (PinId=000000000000000000000000000001C9,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_industrialLabor 000000000000000000000000000001C8,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001D0,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_isDraggableWall 000000000000000000000000000001D1,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000034,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001D2,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001D3,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001D4,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="industrialLabor",)
+   CustomProperties Pin (PinId=000000000000000000000000000001CE,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_industrialLabor 000000000000000000000000000001CD,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001D5,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_isDraggableWall"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_isDraggableWall"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=12500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001D6
+   CustomProperties Pin (PinId=000000000000000000000000000001D1,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_industrialLabor 000000000000000000000000000001D0,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001D7,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_isDraggableWall 000000000000000000000000000001D8,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000035,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001D9,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001DA,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001DB,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="isDraggableWall",)
+   CustomProperties Pin (PinId=000000000000000000000000000001DC,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_isDraggableWall 000000000000000000000000000001DD,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_isDraggableWall"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_isDraggableWall"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=12750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001DE
+   CustomProperties Pin (PinId=000000000000000000000000000001D8,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_isDraggableWall 000000000000000000000000000001D7,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001DF,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_limitOne 000000000000000000000000000001E0,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000036,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001E1,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001E2,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001E3,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="isDraggableWall",)
+   CustomProperties Pin (PinId=000000000000000000000000000001DD,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_isDraggableWall 000000000000000000000000000001DC,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001E4,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_limitOne"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_limitOne"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=13000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001E5
+   CustomProperties Pin (PinId=000000000000000000000000000001E0,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_isDraggableWall 000000000000000000000000000001DF,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001E6,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_limitOne 000000000000000000000000000001E7,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000037,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001E8,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001E9,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001EA,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="limitOne",)
+   CustomProperties Pin (PinId=000000000000000000000000000001EB,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_limitOne 000000000000000000000000000001EC,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_limitOne"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_limitOne"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=13250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001ED
+   CustomProperties Pin (PinId=000000000000000000000000000001E7,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_limitOne 000000000000000000000000000001E6,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001EE,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_maxAgents_contextual 000000000000000000000000000001EF,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000038,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001F0,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001F1,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001F2,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="limitOne",)
+   CustomProperties Pin (PinId=000000000000000000000000000001EC,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_limitOne 000000000000000000000000000001EB,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001F3,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_maxAgents_contextual"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_maxAgents_contextual"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=13500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001F4
+   CustomProperties Pin (PinId=000000000000000000000000000001EF,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_limitOne 000000000000000000000000000001EE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001F5,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_maxAgents_contextual 000000000000000000000000000001F6,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000039,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001F7,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000001F8,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000001F9,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="maxAgents_contextual",)
+   CustomProperties Pin (PinId=000000000000000000000000000001FA,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_maxAgents_contextual 000000000000000000000000000001FB,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_maxAgents_contextual"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_maxAgents_contextual"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=13750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000001FC
+   CustomProperties Pin (PinId=000000000000000000000000000001F6,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_maxAgents_contextual 000000000000000000000000000001F5,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001FD,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_maxHealth 000000000000000000000000000001FE,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000001FF,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000200,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000201,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="maxAgents_contextual",)
+   CustomProperties Pin (PinId=000000000000000000000000000001FB,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_maxAgents_contextual 000000000000000000000000000001FA,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000202,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_maxHealth"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_maxHealth"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=14000
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000203
+   CustomProperties Pin (PinId=000000000000000000000000000001FE,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_maxAgents_contextual 000000000000000000000000000001FD,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000204,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_maxHealth 00000000000000000000000000000205,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000206,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000207,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000208,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="maxHealth",)
+   CustomProperties Pin (PinId=00000000000000000000000000000209,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_maxHealth 0000000000000000000000000000020A,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_maxHealth"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_maxHealth"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=14250
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000020B
+   CustomProperties Pin (PinId=00000000000000000000000000000205,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_maxHealth 00000000000000000000000000000204,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000020C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_minMaintenanceInterval 0000000000000000000000000000020D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000020E,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000020F,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000210,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="maxHealth",)
+   CustomProperties Pin (PinId=0000000000000000000000000000020A,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_maxHealth 00000000000000000000000000000209,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000211,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_minMaintenanceInterval"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_minMaintenanceInterval"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=14500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000212
+   CustomProperties Pin (PinId=0000000000000000000000000000020D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_maxHealth 0000000000000000000000000000020C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000213,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_minMaintenanceInterval 00000000000000000000000000000214,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000215,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000216,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000217,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="minMaintenanceInterval",)
+   CustomProperties Pin (PinId=00000000000000000000000000000218,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_minMaintenanceInterval 00000000000000000000000000000219,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_minMaintenanceInterval"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_minMaintenanceInterval"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=14750
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000021A
+   CustomProperties Pin (PinId=00000000000000000000000000000214,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_minMaintenanceInterval 00000000000000000000000000000213,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000021B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_norefund 0000000000000000000000000000021C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000021D,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000021E,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000021F,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="minMaintenanceInterval",)
+   CustomProperties Pin (PinId=00000000000000000000000000000219,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_minMaintenanceInterval 00000000000000000000000000000218,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000220,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_norefund"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_norefund"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=15000
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000221
+   CustomProperties Pin (PinId=0000000000000000000000000000021C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_minMaintenanceInterval 0000000000000000000000000000021B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000222,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_norefund 00000000000000000000000000000223,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000224,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000225,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000226,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="norefund",)
+   CustomProperties Pin (PinId=00000000000000000000000000000227,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_norefund 00000000000000000000000000000228,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_norefund"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_norefund"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=15250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000229
+   CustomProperties Pin (PinId=00000000000000000000000000000223,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_norefund 00000000000000000000000000000222,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000022A,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_randomlyRotate 0000000000000000000000000000022B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000040,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000022C,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000022D,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000022E,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="norefund",)
+   CustomProperties Pin (PinId=00000000000000000000000000000228,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_norefund 00000000000000000000000000000227,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000022F,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_randomlyRotate"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_randomlyRotate"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=15500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000230
+   CustomProperties Pin (PinId=0000000000000000000000000000022B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_norefund 0000000000000000000000000000022A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000231,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_randomlyRotate 00000000000000000000000000000232,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000041,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000233,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000234,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000235,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="randomlyRotate",)
+   CustomProperties Pin (PinId=00000000000000000000000000000236,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_randomlyRotate 00000000000000000000000000000237,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_randomlyRotate"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_randomlyRotate"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=15750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000238
+   CustomProperties Pin (PinId=00000000000000000000000000000232,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_randomlyRotate 00000000000000000000000000000231,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000239,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_refundRule 0000000000000000000000000000023A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000042,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000023B,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000023C,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000023D,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="randomlyRotate",)
+   CustomProperties Pin (PinId=00000000000000000000000000000237,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_randomlyRotate 00000000000000000000000000000236,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000023E,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_refundRule"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_refundRule"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=16000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000023F
+   CustomProperties Pin (PinId=0000000000000000000000000000023A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_randomlyRotate 00000000000000000000000000000239,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000240,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_refundRule 00000000000000000000000000000241,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000043,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000242,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000243,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000244,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="refundRule",)
+   CustomProperties Pin (PinId=00000000000000000000000000000245,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_refundRule 00000000000000000000000000000246,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_refundRule"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_refundRule"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=16250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000247
+   CustomProperties Pin (PinId=00000000000000000000000000000241,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_refundRule 00000000000000000000000000000240,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000248,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_requiresConstruction 00000000000000000000000000000249,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000044,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000024A,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000024B,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000024C,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="refundRule",)
+   CustomProperties Pin (PinId=00000000000000000000000000000246,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_refundRule 00000000000000000000000000000245,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000024D,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_requiresConstruction"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_requiresConstruction"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=16500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000024E
+   CustomProperties Pin (PinId=00000000000000000000000000000249,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_refundRule 00000000000000000000000000000248,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000024F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_requiresConstruction 00000000000000000000000000000250,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000045,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000251,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000252,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000253,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="requiresConstruction",)
+   CustomProperties Pin (PinId=00000000000000000000000000000254,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_requiresConstruction 00000000000000000000000000000255,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_requiresConstruction"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_requiresConstruction"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=16750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000256
+   CustomProperties Pin (PinId=00000000000000000000000000000250,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_requiresConstruction 0000000000000000000000000000024F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000257,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_stringKey 00000000000000000000000000000258,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000046,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000259,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000025A,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000025B,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="requiresConstruction",)
+   CustomProperties Pin (PinId=00000000000000000000000000000255,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_requiresConstruction 00000000000000000000000000000254,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000025C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_stringKey"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_stringKey"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=17000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000025D
+   CustomProperties Pin (PinId=00000000000000000000000000000258,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_requiresConstruction 00000000000000000000000000000257,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000025E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_structureType 0000000000000000000000000000025F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000047,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000260,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000261,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000262,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="stringKey",)
+   CustomProperties Pin (PinId=00000000000000000000000000000263,PinName="valueStringified",PinType.PinCategory="string",DefaultValue="freightdock.building.freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000264,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_structureType"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_structureType"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=17250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000265
+   CustomProperties Pin (PinId=0000000000000000000000000000025F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_stringKey 0000000000000000000000000000025E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000266,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_structureType 00000000000000000000000000000267,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000048,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000268,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000269,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000026A,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="structureType",)
+   CustomProperties Pin (PinId=0000000000000000000000000000026B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_structureType 0000000000000000000000000000026C,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_structureType"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_structureType"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=17500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000026D
+   CustomProperties Pin (PinId=00000000000000000000000000000267,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_structureType 00000000000000000000000000000266,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000026E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_supportedIndustryRecipes 0000000000000000000000000000026F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000049,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000270,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000271,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000272,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="structureType",)
+   CustomProperties Pin (PinId=0000000000000000000000000000026C,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_structureType 0000000000000000000000000000026B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000273,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_supportedIndustryRecipes"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_supportedIndustryRecipes"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=17750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000274
+   CustomProperties Pin (PinId=0000000000000000000000000000026F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_structureType 0000000000000000000000000000026E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000275,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_supportedIndustryRecipes 00000000000000000000000000000276,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000277,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000278,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000279,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="supportedIndustryRecipes",)
+   CustomProperties Pin (PinId=0000000000000000000000000000027A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_supportedIndustryRecipes 0000000000000000000000000000027B,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_supportedIndustryRecipes"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_supportedIndustryRecipes"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=18000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000027C
+   CustomProperties Pin (PinId=00000000000000000000000000000276,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_supportedIndustryRecipes 00000000000000000000000000000275,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000027D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_toolbarGroup 0000000000000000000000000000027E,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000027F,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000280,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000281,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="supportedIndustryRecipes",)
+   CustomProperties Pin (PinId=0000000000000000000000000000027B,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_supportedIndustryRecipes 0000000000000000000000000000027A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000282,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_toolbarGroup"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_toolbarGroup"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=18250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000283
+   CustomProperties Pin (PinId=0000000000000000000000000000027E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_supportedIndustryRecipes 0000000000000000000000000000027D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000284,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_toolbarGroup 00000000000000000000000000000285,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000286,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000287,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000288,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="toolbarGroup",)
+   CustomProperties Pin (PinId=00000000000000000000000000000289,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_toolbarGroup 0000000000000000000000000000028A,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_toolbarGroup"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_toolbarGroup"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=18500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000028B
+   CustomProperties Pin (PinId=00000000000000000000000000000285,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_toolbarGroup 00000000000000000000000000000284,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000028C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_toolbarGroupSort 0000000000000000000000000000028D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000028E,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000028F,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000290,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="toolbarGroup",)
+   CustomProperties Pin (PinId=0000000000000000000000000000028A,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_toolbarGroup 00000000000000000000000000000289,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000291,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_toolbarGroupSort"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_toolbarGroupSort"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=18750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000292
+   CustomProperties Pin (PinId=0000000000000000000000000000028D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_toolbarGroup 0000000000000000000000000000028C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000293,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_unlockPrerequisite 00000000000000000000000000000294,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000295,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=00000000000000000000000000000296,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=00000000000000000000000000000297,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="toolbarGroupSort",)
+   CustomProperties Pin (PinId=00000000000000000000000000000298,PinName="valueStringified",PinType.PinCategory="string",DefaultValue="36",)
+   CustomProperties Pin (PinId=00000000000000000000000000000299,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_unlockPrerequisite"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_unlockPrerequisite"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=19000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000029A
+   CustomProperties Pin (PinId=00000000000000000000000000000294,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_toolbarGroupSort 00000000000000000000000000000293,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000029B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_unlockPrerequisite 0000000000000000000000000000029C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000029D,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=0000000000000000000000000000029E,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=0000000000000000000000000000029F,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="unlockPrerequisite",)
+   CustomProperties Pin (PinId=000000000000000000000000000002A0,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_unlockPrerequisite 000000000000000000000000000002A1,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_unlockPrerequisite"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_unlockPrerequisite"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=19250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002A2
+   CustomProperties Pin (PinId=0000000000000000000000000000029C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_unlockPrerequisite 0000000000000000000000000000029B,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002A3,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_useCustomIcon 000000000000000000000000000002A4,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000050,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002A5,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000002A6,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002A7,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="unlockPrerequisite",)
+   CustomProperties Pin (PinId=000000000000000000000000000002A1,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_unlockPrerequisite 000000000000000000000000000002A0,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002A8,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_useCustomIcon"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_useCustomIcon"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=19500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002A9
+   CustomProperties Pin (PinId=000000000000000000000000000002A4,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_unlockPrerequisite 000000000000000000000000000002A3,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002AA,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_useCustomIcon 000000000000000000000000000002AB,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000051,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002AC,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000002AD,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002AE,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="useCustomIcon",)
+   CustomProperties Pin (PinId=000000000000000000000000000002AF,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_useCustomIcon 000000000000000000000000000002B0,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_useCustomIcon"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_useCustomIcon"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=19750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002B1
+   CustomProperties Pin (PinId=000000000000000000000000000002AB,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_useCustomIcon 000000000000000000000000000002AA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002B2,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefGet_workerColor 000000000000000000000000000002B3,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000052,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002B4,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000002B5,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002B6,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="useCustomIcon",)
+   CustomProperties Pin (PinId=000000000000000000000000000002B0,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_useCustomIcon 000000000000000000000000000002AF,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002B7,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefGet_workerColor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="DefGet_workerColor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=20000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002B8
+   CustomProperties Pin (PinId=000000000000000000000000000002B3,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_useCustomIcon 000000000000000000000000000002B2,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002B9,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DefSet_workerColor 000000000000000000000000000002BA,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000053,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002BB,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000002BC,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002BD,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="workerColor",)
+   CustomProperties Pin (PinId=000000000000000000000000000002BE,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(DefSet_workerColor 000000000000000000000000000002BF,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DefSet_workerColor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="DefSet_workerColor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=20250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002C0
+   CustomProperties Pin (PinId=000000000000000000000000000002BA,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefGet_workerColor 000000000000000000000000000002B9,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002C1,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(AddIconRow 000000000000000000000000000002C2,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000054,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002C3,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000002C4,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002C5,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="workerColor",)
+   CustomProperties Pin (PinId=000000000000000000000000000002BF,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(DefGet_workerColor 000000000000000000000000000002BE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002C6,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="AddIconRow"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="AddDataTableRow")
+   NodeComment="AddIconRow"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=20500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002C7
+   CustomProperties Pin (PinId=000000000000000000000000000002C2,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DefSet_workerColor 000000000000000000000000000002C1,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002C8,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(IconGet_Icon 000000000000000000000000000002C9,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000055,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002CA,PinName="datatableName",PinType.PinCategory="name",DefaultValue="BuildingIcons",)
+   CustomProperties Pin (PinId=000000000000000000000000000002CB,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002CC,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="IconGet_Icon"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="IconGet_Icon"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=20750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002CD
+   CustomProperties Pin (PinId=000000000000000000000000000002C9,PinName="execute",PinType.PinCategory="exec",LinkedTo=(AddIconRow 000000000000000000000000000002C8,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002CE,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(IconSet_Icon 000000000000000000000000000002CF,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000056,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002D0,PinName="datatableName",PinType.PinCategory="name",DefaultValue="BuildingIcons",)
+   CustomProperties Pin (PinId=000000000000000000000000000002D1,PinName="rowId",PinType.PinCategory="name",DefaultValue="navaltradeDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002D2,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Icon",)
+   CustomProperties Pin (PinId=000000000000000000000000000002D3,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(IconSet_Icon 000000000000000000000000000002D4,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="IconSet_Icon"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="WriteDataTableValue")
+   NodeComment="IconSet_Icon"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=21000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002D5
+   CustomProperties Pin (PinId=000000000000000000000000000002CF,PinName="execute",PinType.PinCategory="exec",LinkedTo=(IconGet_Icon 000000000000000000000000000002CE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002D6,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Strings_dev 000000000000000000000000000002D7,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000057,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002D8,PinName="datatableName",PinType.PinCategory="name",DefaultValue="BuildingIcons",)
+   CustomProperties Pin (PinId=000000000000000000000000000002D9,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002DA,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Icon",)
+   CustomProperties Pin (PinId=000000000000000000000000000002D4,PinName="valueStringified",PinType.PinCategory="string",LinkedTo=(IconGet_Icon 000000000000000000000000000002D3,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002DB,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_MakeMap Name="Strings"
+   NumInputs=2
+   NodeComment="Strings"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=21250
+   NodePosY=400
+   NodeGuid=000000000000000000000000000002DC
+   CustomProperties Pin (PinId=000000000000000000000000000002DD,PinName="Key 0",PinType.PinCategory="name",DefaultValue="freightdock.building.freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002DE,PinName="Value 0",PinType.PinCategory="string",DefaultValue="Freight Dock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002DF,PinName="Key 1",PinType.PinCategory="name",DefaultValue="freightdock.building.freightDock.desc",)
+   CustomProperties Pin (PinId=000000000000000000000000000002E0,PinName="Value 1",PinType.PinCategory="string",DefaultValue="Crew a ship that carries goods your paired freight dock's island needs, then returns",)
+   CustomProperties Pin (PinId=000000000000000000000000000002E1,PinName="Map",Direction="EGPD_Output",PinType.PinCategory="name",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="string"),LinkedTo=(Strings_dev 000000000000000000000000000002E2,Strings_en 000000000000000000000000000002E3,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Strings_dev"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="AddNewStrings")
+   NodeComment="Strings_dev"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=21250
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002E4
+   CustomProperties Pin (PinId=000000000000000000000000000002D7,PinName="execute",PinType.PinCategory="exec",LinkedTo=(IconSet_Icon 000000000000000000000000000002D6,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002E5,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Strings_en 000000000000000000000000000002E6,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000058,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002E7,PinName="langId",PinType.PinCategory="name",DefaultValue="dev",)
+   CustomProperties Pin (PinId=000000000000000000000000000002E2,PinName="idStringPairs",PinType.PinCategory="name",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="string"),LinkedTo=(Strings 000000000000000000000000000002E1,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002E8,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Strings_en"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="AddNewStrings")
+   NodeComment="Strings_en"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=21500
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002E9
+   CustomProperties Pin (PinId=000000000000000000000000000002E6,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Strings_dev 000000000000000000000000000002E5,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002EA,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(CheckActor 000000000000000000000000000002EB,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000059,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002EC,PinName="langId",PinType.PinCategory="name",DefaultValue="en",)
+   CustomProperties Pin (PinId=000000000000000000000000000002E3,PinName="idStringPairs",PinType.PinCategory="name",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="string"),LinkedTo=(Strings 000000000000000000000000000002E1,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002ED,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CheckActor"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="CheckActor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=21750
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002EE
+   CustomProperties Pin (PinId=000000000000000000000000000002EB,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Strings_en 000000000000000000000000000002EA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002EF,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(CheckIcon 000000000000000000000000000002F0,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000005A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002F1,PinName="datatableName",PinType.PinCategory="name",DefaultValue="GridActors",)
+   CustomProperties Pin (PinId=000000000000000000000000000002F2,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002F3,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="GridActor",)
+   CustomProperties Pin (PinId=000000000000000000000000000002F4,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat5 000000000000000000000000000002F5,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CheckIcon"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="ReadDataTableValue")
+   NodeComment="CheckIcon"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=22000
+   NodePosY=0
+   NodeGuid=000000000000000000000000000002F6
+   CustomProperties Pin (PinId=000000000000000000000000000002F0,PinName="execute",PinType.PinCategory="exec",LinkedTo=(CheckActor 000000000000000000000000000002EF,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002F7,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LogDone 000000000000000000000000000002F8,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000005B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002F9,PinName="datatableName",PinType.PinCategory="name",DefaultValue="BuildingIcons",)
+   CustomProperties Pin (PinId=000000000000000000000000000002FA,PinName="rowId",PinType.PinCategory="name",DefaultValue="freightDock",)
+   CustomProperties Pin (PinId=000000000000000000000000000002FB,PinName="ColumnName",PinType.PinCategory="name",DefaultValue="Icon",)
+   CustomProperties Pin (PinId=000000000000000000000000000002FC,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat7 000000000000000000000000000002FD,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="RowStr"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Conv_BoolToString")
+   NodeComment="RowStr"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=22000
+   NodePosY=700
+   NodeGuid=000000000000000000000000000002FE
+   CustomProperties Pin (PinId=0000000000000000000000000000006C,PinName="InBool",PinType.PinCategory="bool",LinkedTo=(AddDefRow 0000000000000000000000000000006B,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002FF,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat3 00000000000000000000000000000300,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat0"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat0"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=22250
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000301
+   CustomProperties Pin (PinId=00000000000000000000000000000302,PinName="A",PinType.PinCategory="string",)
+   CustomProperties Pin (PinId=00000000000000000000000000000303,PinName="B",PinType.PinCategory="string",DefaultValue="Freight dock registered: trade GridActor=",)
+   CustomProperties Pin (PinId=00000000000000000000000000000304,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat1 00000000000000000000000000000305,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat1"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=22500
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000306
+   CustomProperties Pin (PinId=00000000000000000000000000000305,PinName="A",PinType.PinCategory="string",LinkedTo=(Cat0 00000000000000000000000000000304,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000065,PinName="B",PinType.PinCategory="string",LinkedTo=(CheckTrade 00000000000000000000000000000064,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000307,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat2 00000000000000000000000000000308,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat2"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat2"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=22750
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000309
+   CustomProperties Pin (PinId=00000000000000000000000000000308,PinName="A",PinType.PinCategory="string",LinkedTo=(Cat1 00000000000000000000000000000307,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000030A,PinName="B",PinType.PinCategory="string",DefaultValue=", added row ",)
+   CustomProperties Pin (PinId=0000000000000000000000000000030B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat3 0000000000000000000000000000030C,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat3"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat3"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=23000
+   NodePosY=700
+   NodeGuid=0000000000000000000000000000030D
+   CustomProperties Pin (PinId=0000000000000000000000000000030C,PinName="A",PinType.PinCategory="string",LinkedTo=(Cat2 0000000000000000000000000000030B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000300,PinName="B",PinType.PinCategory="string",LinkedTo=(RowStr 000000000000000000000000000002FF,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000030E,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat4 0000000000000000000000000000030F,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat4"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat4"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=23250
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000310
+   CustomProperties Pin (PinId=0000000000000000000000000000030F,PinName="A",PinType.PinCategory="string",LinkedTo=(Cat3 0000000000000000000000000000030E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000311,PinName="B",PinType.PinCategory="string",DefaultValue=", GridActor=",)
+   CustomProperties Pin (PinId=00000000000000000000000000000312,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat5 00000000000000000000000000000313,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat5"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat5"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=23500
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000314
+   CustomProperties Pin (PinId=00000000000000000000000000000313,PinName="A",PinType.PinCategory="string",LinkedTo=(Cat4 00000000000000000000000000000312,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002F5,PinName="B",PinType.PinCategory="string",LinkedTo=(CheckActor 000000000000000000000000000002F4,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000315,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat6 00000000000000000000000000000316,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat6"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat6"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=23750
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000317
+   CustomProperties Pin (PinId=00000000000000000000000000000316,PinName="A",PinType.PinCategory="string",LinkedTo=(Cat5 00000000000000000000000000000315,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000318,PinName="B",PinType.PinCategory="string",DefaultValue=", Icon=",)
+   CustomProperties Pin (PinId=00000000000000000000000000000319,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat7 0000000000000000000000000000031A,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat7"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
+   NodeComment="Cat7"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=24000
+   NodePosY=700
+   NodeGuid=0000000000000000000000000000031B
+   CustomProperties Pin (PinId=0000000000000000000000000000031A,PinName="A",PinType.PinCategory="string",LinkedTo=(Cat6 00000000000000000000000000000319,),)
+   CustomProperties Pin (PinId=000000000000000000000000000002FD,PinName="B",PinType.PinCategory="string",LinkedTo=(CheckIcon 000000000000000000000000000002FC,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000031C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogDone 0000000000000000000000000000031D,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogDone"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="LogMessage")
+   NodeComment="LogDone"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=22500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000031E
+   CustomProperties Pin (PinId=000000000000000000000000000002F8,PinName="execute",PinType.PinCategory="exec",LinkedTo=(CheckIcon 000000000000000000000000000002F7,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000031F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=0000000000000000000000000000005C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000031D,PinName="Msg",PinType.PinCategory="string",LinkedTo=(Cat7 0000000000000000000000000000031C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000320,PinName="doPrependDate",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+End Object

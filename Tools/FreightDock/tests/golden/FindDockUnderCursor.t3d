@@ -1,0 +1,143 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="GetTools"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.GameplayStatics'",MemberName="GetAllActorsOfClass")
+   NodeComment="GetTools"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ForTools 00000000000000000000000000000004,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="ActorClass",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",DefaultObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="OutActors",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",PinType.ContainerType=Array,LinkedTo=(ForTools 00000000000000000000000000000007,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_MacroInstance Name="ForTools"
+   MacroGraphReference=(MacroGraph="/Script/Engine.EdGraph'/Engine/EditorBlueprintResources/StandardMacros.StandardMacros:ForEachLoop'",GraphBlueprint="/Script/Engine.Blueprint'/Engine/EditorBlueprintResources/StandardMacros.StandardMacros'",GraphGuid=00000000000000000000000000000008)
+   NodeComment="ForTools"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=300
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000009
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="Exec",PinType.PinCategory="exec",LinkedTo=(GetTools 00000000000000000000000000000003,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="Array",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",PinType.ContainerType=Array,LinkedTo=(GetTools 00000000000000000000000000000006,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="LoopBody",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(SetSel 0000000000000000000000000000000B,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="Array Element",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",LinkedTo=(SetSel 0000000000000000000000000000000D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="Array Index",Direction="EGPD_Output",PinType.PinCategory="int",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="Completed",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(SetLoc 00000000000000000000000000000010,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="SetSel"
+   VariableReference=(MemberScope="FindDockUnderCursor",MemberName="Sel")
+   NodeComment="SetSel"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=600
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000011
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ForTools 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="Sel",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",LinkedTo=(ForTools 0000000000000000000000000000000C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="GetPS"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.GameplayStatics'",MemberName="GetPlayerState")
+   NodeComment="GetPS"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=300
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000014
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="PlayerStateIndex",PinType.PinCategory="int",DefaultValue="0",)
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerState'",LinkedTo=(CastPS 00000000000000000000000000000017,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_DynamicCast Name="CastPS"
+   TargetType="/Script/CoreUObject.Class'/Script/ProjectArco.ArcoPlayerState'"
+   PureState=Pure
+   NodeComment="CastPS"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=550
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000018
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerState'",LinkedTo=(GetPS 00000000000000000000000000000016,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="AsArco Player State",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.ArcoPlayerState'",LinkedTo=(CursorInfo 0000000000000000000000000000001A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="bSuccess",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="CursorInfo"
+   VariableReference=(MemberParent="/Script/CoreUObject.Class'/Script/ProjectArco.ArcoPlayerState'",MemberName="m_cursorCastInfo")
+   NodeComment="CursorInfo"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=800
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000001C
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.ArcoPlayerState'",LinkedTo=(CastPS 00000000000000000000000000000019,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="m_cursorCastInfo",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.CursorCastInfo'",LinkedTo=(BreakCursor 0000000000000000000000000000001E,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_BreakStruct Name="BreakCursor"
+   StructType="/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.CursorCastInfo'"
+   NodeComment="BreakCursor"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1050
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000001F
+   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="CursorCastInfo",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.CursorCastInfo'",LinkedTo=(CursorInfo 0000000000000000000000000000001D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="worldPos_atZLevel",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(SetLoc 00000000000000000000000000000021,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="SetLoc"
+   VariableReference=(MemberScope="FindDockUnderCursor",MemberName="Loc")
+   NodeComment="SetLoc"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=600
+   NodePosY=-200
+   NodeGuid=00000000000000000000000000000022
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ForTools 0000000000000000000000000000000F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000023,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="Loc",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(BreakCursor 00000000000000000000000000000020,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetSel"
+   VariableReference=(MemberScope="FindDockUnderCursor",MemberName="Sel")
+   NodeComment="GetSel"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=850
+   NodePosY=-450
+   NodeGuid=00000000000000000000000000000025
+   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="Sel",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",LinkedTo=(Selected 00000000000000000000000000000027,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="Selected"
+   VariableReference=(MemberParent="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",MemberName="m_currentlySelectedGridActor")
+   NodeComment="Selected"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1100
+   NodePosY=-450
+   NodeGuid=00000000000000000000000000000028
+   CustomProperties Pin (PinId=00000000000000000000000000000027,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.SelectTool'",LinkedTo=(GetSel 00000000000000000000000000000026,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000029,PinName="m_currentlySelectedGridActor",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'",LinkedTo=(SelectedDock 0000000000000000000000000000002A,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="SelectedDock"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.Actor'",MemberName="GetComponentByClass")
+   NodeComment="SelectedDock"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1350
+   NodePosY=-450
+   NodeGuid=0000000000000000000000000000002B
+   CustomProperties Pin (PinId=0000000000000000000000000000002A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",LinkedTo=(Selected 00000000000000000000000000000029,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002C,PinName="ComponentClass",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",DefaultObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",)
+   CustomProperties Pin (PinId=0000000000000000000000000000002D,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetLocForReturn"
+   VariableReference=(MemberScope="FindDockUnderCursor",MemberName="Loc")
+   NodeComment="GetLocForReturn"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1350
+   NodePosY=-300
+   NodeGuid=0000000000000000000000000000002E
+   CustomProperties Pin (PinId=0000000000000000000000000000002F,PinName="Loc",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",)
+End Object

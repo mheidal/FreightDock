@@ -1,0 +1,127 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPos"
+   VariableReference=(MemberScope="CellKey",MemberName="Pos")
+   NodeComment="GetPos"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="Pos",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(XY 00000000000000000000000000000003,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetSize"
+   VariableReference=(MemberName="CellSize",bSelfContext=True)
+   NodeComment="GetSize"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=200
+   NodeGuid=00000000000000000000000000000004
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="CellSize",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(DivX 00000000000000000000000000000006,DivY 00000000000000000000000000000007,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="XY"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="BreakVector")
+   NodeComment="XY"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000008
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="InVec",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(GetPos 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="X",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(DivX 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="Y",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(DivY 0000000000000000000000000000000C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="Z",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DivX"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Divide_DoubleDouble")
+   NodeComment="DivX"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000000E
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(XY 00000000000000000000000000000009,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="B",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(GetSize 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(FloorX 00000000000000000000000000000010,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="FloorX"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="FFloor")
+   NodeComment="FloorX"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000011
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(DivX 0000000000000000000000000000000F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(OffX 00000000000000000000000000000013,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffX"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_IntInt")
+   NodeComment="OffX"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000014
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="A",PinType.PinCategory="int",LinkedTo=(FloorX 00000000000000000000000000000012,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="B",PinType.PinCategory="int",DefaultValue="2048",)
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Hi 00000000000000000000000000000017,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DivY"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Divide_DoubleDouble")
+   NodeComment="DivY"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000018
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(XY 0000000000000000000000000000000B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="B",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(GetSize 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(FloorY 0000000000000000000000000000001A,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="FloorY"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="FFloor")
+   NodeComment="FloorY"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000001B
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(DivY 00000000000000000000000000000019,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(OffY 0000000000000000000000000000001D,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffY"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_IntInt")
+   NodeComment="OffY"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000001E
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="A",PinType.PinCategory="int",LinkedTo=(FloorY 0000000000000000000000000000001C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001F,PinName="B",PinType.PinCategory="int",DefaultValue="2048",)
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Key 00000000000000000000000000000021,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Hi"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Multiply_IntInt")
+   NodeComment="Hi"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000022
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="A",PinType.PinCategory="int",LinkedTo=(OffX 00000000000000000000000000000016,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000023,PinName="B",PinType.PinCategory="int",DefaultValue="4096",)
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Key 00000000000000000000000000000025,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Key"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_IntInt")
+   NodeComment="Key"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000026
+   CustomProperties Pin (PinId=00000000000000000000000000000025,PinName="A",PinType.PinCategory="int",LinkedTo=(Hi 00000000000000000000000000000024,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="B",PinType.PinCategory="int",LinkedTo=(OffY 00000000000000000000000000000020,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000027,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",)
+End Object

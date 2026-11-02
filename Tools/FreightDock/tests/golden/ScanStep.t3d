@@ -1,0 +1,180 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrP1"
+   NodeComment="BrP1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Is1 00000000000000000000000000000004,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ScanTerrainStep 00000000000000000000000000000006,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrP2 00000000000000000000000000000008,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="Is1Get"
+   VariableReference=(MemberName="ScanPhase",bSelfContext=True)
+   NodeComment="Is1Get"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000009
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="ScanPhase",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Is1 0000000000000000000000000000000B,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Is1"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="EqualEqual_IntInt")
+   NodeComment="Is1"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=400
+   NodeGuid=0000000000000000000000000000000C
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="A",PinType.PinCategory="int",LinkedTo=(Is1Get 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="B",PinType.PinCategory="int",DefaultValue="1",)
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrP1 00000000000000000000000000000003,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ScanTerrainStep"
+   FunctionReference=(MemberName="ScanTerrainStep",bSelfContext=True)
+   NodeComment="ScanTerrainStep"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=100
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000000E
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrP1 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrP2"
+   NodeComment="BrP2"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000010
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrP1 00000000000000000000000000000007,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Is2 00000000000000000000000000000012,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ScanCoastStep 00000000000000000000000000000014,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrP3 00000000000000000000000000000016,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="Is2Get"
+   VariableReference=(MemberName="ScanPhase",bSelfContext=True)
+   NodeComment="Is2Get"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=500
+   NodeGuid=00000000000000000000000000000017
+   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="ScanPhase",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Is2 00000000000000000000000000000019,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Is2"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="EqualEqual_IntInt")
+   NodeComment="Is2"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=500
+   NodeGuid=0000000000000000000000000000001A
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="A",PinType.PinCategory="int",LinkedTo=(Is2Get 00000000000000000000000000000018,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="B",PinType.PinCategory="int",DefaultValue="2",)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrP2 00000000000000000000000000000011,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ScanCoastStep"
+   FunctionReference=(MemberName="ScanCoastStep",bSelfContext=True)
+   NodeComment="ScanCoastStep"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=350
+   NodePosY=400
+   NodeGuid=0000000000000000000000000000001C
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrP2 00000000000000000000000000000013,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrP3"
+   NodeComment="BrP3"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000001E
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrP2 00000000000000000000000000000015,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001F,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Is3 00000000000000000000000000000020,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ScanBuildingStep 00000000000000000000000000000022,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000023,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrP4 00000000000000000000000000000024,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="Is3Get"
+   VariableReference=(MemberName="ScanPhase",bSelfContext=True)
+   NodeComment="Is3Get"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=600
+   NodeGuid=00000000000000000000000000000025
+   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="ScanPhase",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Is3 00000000000000000000000000000027,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Is3"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="EqualEqual_IntInt")
+   NodeComment="Is3"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=600
+   NodeGuid=00000000000000000000000000000028
+   CustomProperties Pin (PinId=00000000000000000000000000000027,PinName="A",PinType.PinCategory="int",LinkedTo=(Is3Get 00000000000000000000000000000026,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000029,PinName="B",PinType.PinCategory="int",DefaultValue="3",)
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrP3 0000000000000000000000000000001F,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ScanBuildingStep"
+   FunctionReference=(MemberName="ScanBuildingStep",bSelfContext=True)
+   NodeComment="ScanBuildingStep"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=600
+   NodePosY=500
+   NodeGuid=0000000000000000000000000000002A
+   CustomProperties Pin (PinId=00000000000000000000000000000022,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrP3 00000000000000000000000000000021,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrP4"
+   NodeComment="BrP4"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000002C
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrP3 00000000000000000000000000000023,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002D,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Is4 0000000000000000000000000000002E,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ScanRouteStep 00000000000000000000000000000030,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000031,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="Is4Get"
+   VariableReference=(MemberName="ScanPhase",bSelfContext=True)
+   NodeComment="Is4Get"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000032
+   CustomProperties Pin (PinId=00000000000000000000000000000033,PinName="ScanPhase",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Is4 00000000000000000000000000000034,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Is4"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="EqualEqual_IntInt")
+   NodeComment="Is4"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=700
+   NodeGuid=00000000000000000000000000000035
+   CustomProperties Pin (PinId=00000000000000000000000000000034,PinName="A",PinType.PinCategory="int",LinkedTo=(Is4Get 00000000000000000000000000000033,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000036,PinName="B",PinType.PinCategory="int",DefaultValue="4",)
+   CustomProperties Pin (PinId=0000000000000000000000000000002E,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrP4 0000000000000000000000000000002D,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ScanRouteStep"
+   FunctionReference=(MemberName="ScanRouteStep",bSelfContext=True)
+   NodeComment="ScanRouteStep"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=850
+   NodePosY=600
+   NodeGuid=00000000000000000000000000000037
+   CustomProperties Pin (PinId=00000000000000000000000000000030,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrP4 0000000000000000000000000000002F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000038,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+End Object
