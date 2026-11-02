@@ -1,0 +1,166 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetId"
+   VariableReference=(MemberScope="DropRouteCurve",MemberName="Id")
+   NodeComment="GetId"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=400
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="Id",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(CurveOld 00000000000000000000000000000003,CurveForget 00000000000000000000000000000004,PreviewOld 00000000000000000000000000000005,PreviewForget 00000000000000000000000000000006,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="Start"
+   NodeComment="Start"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000007
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(CurveBrOld 0000000000000000000000000000000A,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="CurveGet"
+   VariableReference=(MemberName="RouteCurves",bSelfContext=True)
+   NodeComment="CurveGet"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000000B
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="RouteCurves",Direction="EGPD_Output",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="object",TerminalSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'"),LinkedTo=(CurveOld 0000000000000000000000000000000D,CurveForget 0000000000000000000000000000000E,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CurveOld"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.BlueprintMapLibrary'",MemberName="Map_Find")
+   NodeComment="CurveOld"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000000F
+   CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="TargetMap",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="object",TerminalSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'"),LinkedTo=(CurveGet 0000000000000000000000000000000C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="Key",PinType.PinCategory="int",LinkedTo=(GetId 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="Value",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'",LinkedTo=(CurveOldOk 00000000000000000000000000000011,CurveDestroy 00000000000000000000000000000012,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CurveOldOk"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
+   NodeComment="CurveOldOk"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000014
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'",LinkedTo=(CurveOld 00000000000000000000000000000010,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(CurveBrOld 00000000000000000000000000000016,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="CurveBrOld"
+   NodeComment="CurveBrOld"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000017
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Start 00000000000000000000000000000009,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(CurveOldOk 00000000000000000000000000000015,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(CurveDestroy 00000000000000000000000000000019,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(CurveForget 0000000000000000000000000000001B,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CurveDestroy"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",MemberName="K2_DestroyComponent")
+   NodeComment="CurveDestroy"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=-150
+   NodeGuid=0000000000000000000000000000001C
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="execute",PinType.PinCategory="exec",LinkedTo=(CurveBrOld 00000000000000000000000000000018,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(CurveForget 0000000000000000000000000000001B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",LinkedTo=(CurveOld 00000000000000000000000000000010,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/CoreUObject.Object'",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CurveForget"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.BlueprintMapLibrary'",MemberName="Map_Remove")
+   NodeComment="CurveForget"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000001F
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(CurveDestroy 0000000000000000000000000000001D,CurveBrOld 0000000000000000000000000000001A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(PreviewBrOld 00000000000000000000000000000021,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="TargetMap",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="object",TerminalSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'"),LinkedTo=(CurveGet 0000000000000000000000000000000C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="Key",PinType.PinCategory="int",LinkedTo=(GetId 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000022,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="PreviewGet"
+   VariableReference=(MemberName="PreviewCourses",bSelfContext=True)
+   NodeComment="PreviewGet"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000023
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="PreviewCourses",Direction="EGPD_Output",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="object",TerminalSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'"),LinkedTo=(PreviewOld 00000000000000000000000000000025,PreviewForget 00000000000000000000000000000026,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PreviewOld"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.BlueprintMapLibrary'",MemberName="Map_Find")
+   NodeComment="PreviewOld"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1250
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000027
+   CustomProperties Pin (PinId=00000000000000000000000000000025,PinName="TargetMap",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="object",TerminalSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'"),LinkedTo=(PreviewGet 00000000000000000000000000000024,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="Key",PinType.PinCategory="int",LinkedTo=(GetId 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000028,PinName="Value",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'",LinkedTo=(PreviewOldOk 00000000000000000000000000000029,PreviewDestroy 0000000000000000000000000000002A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PreviewOldOk"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
+   NodeComment="PreviewOldOk"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1500
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000002C
+   CustomProperties Pin (PinId=00000000000000000000000000000029,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'",LinkedTo=(PreviewOld 00000000000000000000000000000028,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002D,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(PreviewBrOld 0000000000000000000000000000002E,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="PreviewBrOld"
+   NodeComment="PreviewBrOld"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000002F
+   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="execute",PinType.PinCategory="exec",LinkedTo=(CurveForget 00000000000000000000000000000020,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002E,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(PreviewOldOk 0000000000000000000000000000002D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000030,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(PreviewDestroy 00000000000000000000000000000031,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000032,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(PreviewForget 00000000000000000000000000000033,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PreviewDestroy"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",MemberName="K2_DestroyComponent")
+   NodeComment="PreviewDestroy"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1250
+   NodePosY=-150
+   NodeGuid=00000000000000000000000000000034
+   CustomProperties Pin (PinId=00000000000000000000000000000031,PinName="execute",PinType.PinCategory="exec",LinkedTo=(PreviewBrOld 00000000000000000000000000000030,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000035,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(PreviewForget 00000000000000000000000000000033,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",LinkedTo=(PreviewOld 00000000000000000000000000000028,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000036,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/CoreUObject.Object'",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PreviewForget"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.BlueprintMapLibrary'",MemberName="Map_Remove")
+   NodeComment="PreviewForget"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1500
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000037
+   CustomProperties Pin (PinId=00000000000000000000000000000033,PinName="execute",PinType.PinCategory="exec",LinkedTo=(PreviewDestroy 00000000000000000000000000000035,PreviewBrOld 00000000000000000000000000000032,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000038,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="TargetMap",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="object",TerminalSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.SplineComponent'"),LinkedTo=(PreviewGet 00000000000000000000000000000024,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="Key",PinType.PinCategory="int",LinkedTo=(GetId 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000039,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object

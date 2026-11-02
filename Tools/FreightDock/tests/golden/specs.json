@@ -1,0 +1,1270 @@
+{
+ "BuildRouteLine": {
+  "entry": [
+   "BrMID",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Curve",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "DebugCells": {
+  "entry": [
+   "BrToggled",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "Centre",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "DeliverSelected": {
+  "entry": [
+   "FindSel",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "DeliverTick": {
+  "entry": [
+   "BrClicked",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "false",
+    "name": "AnyDown",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "DrawArcs": {
+  "entry": [
+   "FindSel",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "SelDock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Partner",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Cursor",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "SelId",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "SelPartnerId",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Phase",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Proxy",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "DrawRoute": {
+  "entry": [
+   "BrSailing",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "PC",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.PlayerController_Play'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Curve",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "DropRouteCurve": {
+  "entry": [
+   "Start",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "InjectDeliverButtons": {
+  "entry": [
+   "FindSel",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "W",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.UserWidget'\")"
+   },
+   {
+    "default": "",
+    "name": "Box",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.VerticalBox'\")"
+   },
+   {
+    "default": "",
+    "name": "Made",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.UserWidget'\")"
+   },
+   {
+    "default": "",
+    "name": "Cur",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.Widget'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "LogFootprint": {
+  "entry": [
+   "SetHead",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Building",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Text",
+    "type": "(PinCategory=\"string\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "MakeCourse": {
+  "entry": [
+   "ClearRaw",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   },
+   {
+    "default": "",
+    "name": "ToHome",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Raw",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
+   },
+   {
+    "default": "",
+    "name": "CourseSpline",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   },
+   {
+    "default": "",
+    "name": "Mid",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
+   },
+   {
+    "default": "",
+    "name": "StartIdx",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "EndIdx",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "ArcOut",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
+   },
+   {
+    "default": "",
+    "name": "ArcIn",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
+   },
+   {
+    "default": "",
+    "name": "Anchor",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "OutFloor",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "InCeil",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "TryFrom",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "UsedOut",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   },
+   {
+    "default": "",
+    "name": "UsedIn",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Course",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetCourseForReturn",
+    "CourseSpline",
+    "Course"
+   ]
+  ],
+  "returns": [
+   [
+    "Finish",
+    "then"
+   ]
+  ]
+ },
+ "OnBuildingChanged": {
+  "entry": [
+   "BrIdle",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "PairArcs": {
+  "entry": [
+   "BrSel",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "PC",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.PlayerController_Play'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "PairAtCursor": {
+  "entry": [
+   "Find",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "Target",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "HitLoc",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "PairKeyTick": {
+  "entry": [
+   "BrPressed",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "PlanRoute": {
+  "entry": [
+   "SetId",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Start",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Goal",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Anchor",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Prev",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Pts",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
+   },
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "PreviewCourse": {
+  "entry": [
+   "BrCached",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "ToHome",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   },
+   {
+    "default": "",
+    "name": "Picked",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Curve",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetCurveForReturn",
+    "Picked",
+    "Curve"
+   ]
+  ],
+  "returns": [
+   [
+    "Done",
+    "then_0"
+   ]
+  ]
+ },
+ "ReadFootprint": {
+  "entry": [
+   "ClearFoot",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Building",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "false",
+    "name": "Found",
+    "type": "(PinCategory=\"bool\")"
+   },
+   {
+    "default": "",
+    "name": "MinX",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "MaxX",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "MinY",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "MaxY",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Has",
+    "type": "(PinCategory=\"bool\")"
+   },
+   {
+    "default": "",
+    "name": "LoX",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "HiX",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "LoY",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "HiY",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "RetFound",
+    "Found",
+    "Has"
+   ],
+   [
+    "RetMinX",
+    "MinX",
+    "LoX"
+   ],
+   [
+    "RetMaxX",
+    "MaxX",
+    "HiX"
+   ],
+   [
+    "RetMinY",
+    "MinY",
+    "LoY"
+   ],
+   [
+    "RetMaxY",
+    "MaxY",
+    "HiY"
+   ]
+  ],
+  "returns": [
+   [
+    "ForCells",
+    "Completed"
+   ]
+  ]
+ },
+ "ReadPairKey": {
+  "entry": [
+   "Read",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RegisterExtras": {
+  "entry": [
+   "AddMod",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RegisterOptions": {
+  "entry": [
+   "PairKey",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RescanBegin": {
+  "entry": [
+   "ClearBlocked",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RescanTick": {
+  "entry": [
+   "BrIdle",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RouteCurve": {
+  "entry": [
+   "BrCached",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "CurveSpline",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Curve",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetCurveForReturn",
+    "CurveSpline",
+    "Curve"
+   ]
+  ],
+  "returns": [
+   [
+    "UseCached",
+    "then"
+   ],
+   [
+    "Store",
+    "then"
+   ]
+  ]
+ },
+ "RouteStillClear": {
+  "entry": [
+   "NotYet",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "false",
+    "name": "StillClear",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Ok",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetClearForReturn",
+    "StillClear",
+    "Ok"
+   ]
+  ],
+  "returns": [
+   [
+    "Legs",
+    "Completed"
+   ],
+   [
+    "BrHas",
+    "else"
+   ]
+  ]
+ },
+ "ScanBuildingStep": {
+  "entry": [
+   "BrDone",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ScanCoastStep": {
+  "entry": [
+   "BrDone",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ScanFrame": {
+  "entry": [
+   "Work",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ScanNow": {
+  "entry": [
+   "Begin",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ScanRouteStep": {
+  "entry": [
+   "BrDone",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ScanStep": {
+  "entry": [
+   "BrP1",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ScanTerrainStep": {
+  "entry": [
+   "BrDone",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ScanTick": {
+  "entry": [
+   "BrIdle",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "SetStevedore": {
+  "entry": [
+   "SetState",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Agent",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.Prototype_Agent'\")"
+   },
+   {
+    "default": "",
+    "name": "On",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "State",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.AgentState'\")"
+   },
+   {
+    "default": "",
+    "name": "ModState",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.AgentModifierState'\")"
+   },
+   {
+    "default": "",
+    "name": "Mods",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.AgentModifier'\"))"
+   },
+   {
+    "default": "",
+    "name": "Mod",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.AgentModifier'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "ShipAtDock": {
+  "entry": [
+   "ClearBest",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "BestShip",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   },
+   {
+    "default": "",
+    "name": "BestDist",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetBestShipForReturn",
+    "BestShip",
+    "Ship"
+   ]
+  ],
+  "returns": [
+   [
+    "ForShips",
+    "Completed"
+   ]
+  ]
+ },
+ "ShowRouteLine": {
+  "entry": [
+   "BrSame",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "SmoothTangents": {
+  "entry": [
+   "ForPts",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Spline",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "Stamp": {
+  "entry": [
+   "Pass",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Result",
+    "type": "(PinCategory=\"string\")"
+   }
+  ],
+  "pure": true,
+  "returnValues": [
+   [
+    "Str",
+    "ReturnValue",
+    "Result"
+   ]
+  ],
+  "returns": [
+   [
+    "Pass",
+    "then_0"
+   ]
+  ]
+ },
+ "StandInClick": {
+  "entry": [
+   "BrClicked",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "Cursor",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Picked",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "StartVoyage": {
+  "entry": [
+   "SetId",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Partner",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Proxy",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
+   },
+   {
+    "default": "",
+    "name": "Target",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalDock'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "SyncStevedores": {
+  "entry": [
+   "ClearCurrent",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "Current",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.Prototype_Agent'\",ContainerType=Array)"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "TurnArc": {
+  "entry": [
+   "ClearArc",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Pos",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Fwd",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Target",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Backward",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Arc",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
+   },
+   {
+    "default": "",
+    "name": "Hits",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Radius",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   },
+   {
+    "default": "",
+    "name": "Side",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   },
+   {
+    "default": "",
+    "name": "PrefSide",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   },
+   {
+    "default": "",
+    "name": "UsedRadius",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Pts",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
+   },
+   {
+    "default": "",
+    "name": "Used",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetArcForReturn",
+    "Arc",
+    "Pts"
+   ],
+   [
+    "GetUsedForReturn",
+    "UsedRadius",
+    "Used"
+   ]
+  ],
+  "returns": [
+   [
+    "Done",
+    "then_0"
+   ]
+  ]
+ },
+ "VoyageArrive": {
+  "entry": [
+   "BrDeliver",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Partner",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "VoyageTick": {
+  "entry": [
+   "BrNone",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Proxy",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
+   },
+   {
+    "default": "",
+    "name": "Phase",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "WaitHeading": {
+  "entry": [
+   "HomeDock",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "HomeFwd",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Fwd",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Turned",
+    "ReturnValue",
+    "Fwd"
+   ]
+  ],
+  "returns": [
+   [
+    "LookUp",
+    "then_0"
+   ]
+  ]
+ }
+}

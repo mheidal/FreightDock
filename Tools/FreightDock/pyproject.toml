@@ -1,0 +1,16 @@
+[project]
+name = "fdgen"
+version = "1.0.0"
+description = "FreightDock Blueprint graph generator (T3D + ImportFunction specs)"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+
+[tool.uv]
+package = false

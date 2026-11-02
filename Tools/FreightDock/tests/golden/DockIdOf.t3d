@@ -1,0 +1,45 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Owner"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",MemberName="GetOwner")
+   NodeComment="Owner"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetDock 00000000000000000000000000000003,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",LinkedTo=(CastGrid 00000000000000000000000000000005,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetDock"
+   VariableReference=(MemberScope="DockIdOf",MemberName="Dock")
+   NodeComment="GetDock"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=-250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000006
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="Dock",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Owner 00000000000000000000000000000002,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_DynamicCast Name="CastGrid"
+   TargetType="/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'"
+   PureState=Pure
+   NodeComment="CastGrid"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000007
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",LinkedTo=(Owner 00000000000000000000000000000004,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="AsGrid Actor",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'",LinkedTo=(GetId 00000000000000000000000000000009,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="bSuccess",Direction="EGPD_Output",PinType.PinCategory="bool",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetId"
+   VariableReference=(MemberParent="/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'",MemberName="ID")
+   NodeComment="GetId"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=0
+   NodeGuid=0000000000000000000000000000000B
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'",LinkedTo=(CastGrid 00000000000000000000000000000008,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="ID",Direction="EGPD_Output",PinType.PinCategory="int",)
+End Object
