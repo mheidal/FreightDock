@@ -52,3 +52,4 @@ Content/_TempFiles/*
 CLAUDE.md
 .mcp.json
 Plugins/*/Binaries/
+open_editor

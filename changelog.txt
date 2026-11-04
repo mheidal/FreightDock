@@ -1,0 +1,23 @@
+========================
+2026-11-03 v1.1
+
+Bugfixes
+- Haulers no longer have goods turned away at a freight dock that asked for them.
+- "Keep empty" warehouses set as "Deliver to" now have their needs shipped.
+- Ships leaving and returning to their home berth turn in an arc instead of turning in place, where there is room.
+- Loading requests are now limited by contents of "Pick up from" warehouses. The split of loading requests by good is proportional to the request from the partner dock.
+- A ship that is ready to leave waits up to 30 s for goods still being carried to its dock.
+
+Changes
+- A resource no hauler has picked up for 20 s is paused for 60 s, so its space goes to other resources.
+- Removed "Load resources onto ship" UI panel for freight docks.
+- Removed departure checklist UI element from game's freight dock UI.
+
+Features
+- Freight Dock panel beside the dock window: partner, ship hold and trip time, a table of what the partner wants (aboard, being carried, unloaded, still to fetch, wanted), linked warehouses, and "Deliver now" button. Clicking the partner or a warehouse pans the camera to it.
+
+========================
+2026-11-01 v1.0
+
+Features
+- Initial release.
