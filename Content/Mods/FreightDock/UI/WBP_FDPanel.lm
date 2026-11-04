@@ -31,6 +31,7 @@ var SmallFont: SlateFontInfo
 var Placed: int = 0
 var ShownAt: float = 0.0
 var HaveBrush: bool = false
+var Migrated: bool = false
 
 widget Width: SizeBox(WidthOverride: 500.0) {
     widget Stack: Overlay {
@@ -103,11 +104,17 @@ fn DeliverClicked() {
 // Every frame, from BP_MapLoad.PanelTick.
 fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     MapLoad = Owner
+    if !Migrated && Owner.Docks.Length() > 0 {
+        // once per load, when the docks are known: 1.x pairs become networks (BPL_FDNet)
+        Migrated = true
+        let made = BPL_FDNet.Migrate(Owner)
+        ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted", false)
+    }
     let found = Owner.FindDockUnderCursor()
     let dock = found.Dock
     let show = false
     if dock != none {
-        if dock.activeTradePartnerId <= -2 {
+        if BPL_FDNet.IsPaired(dock.activeTradePartnerId) {
             show = Owner.IsFreightDock(dock).Result
         }
     }
