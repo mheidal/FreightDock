@@ -35,6 +35,18 @@
   "returnValues": [],
   "returns": []
  },
+ "DebugSetup": {
+  "entry": [
+   "Cmd0",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
  "DeficitsFor": {
   "entry": [
    "ClearCounts",
@@ -740,6 +752,18 @@
  "RegisterExtras": {
   "entry": [
    "AddMod",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RegisterFreightDock": {
+  "entry": [
+   "CheckTrade",
    "execute"
   ],
   "inputs": [],

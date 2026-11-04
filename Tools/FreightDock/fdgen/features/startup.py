@@ -1,10 +1,11 @@
 """BP_Startup: RegisterFreightDock adds the freight dock building (a copy of the trade dock's GridActor rows), its
-icon and its strings.
+icon, its own unlock (a copy of the trade dock's, without prerequisites) and its strings.
 """
 from fdgen.core.graph import Graph
 from fdgen.core.types import BOOL, EXEC, NAME, OBJ, STR, T
 from fdgen.core.paths import FREIGHT_DOCK_CLASS, K2, MODAPI, STRLIB
 from fdgen.core.nodes import get_self
+from fdgen.core.specs import fn_spec
 from fdgen.core.text import LOG_PREFIX
 
 
@@ -21,6 +22,27 @@ GRIDACTOR_COLUMNS = ["Description", "GridActor", "Icon", "Quality", "SupportedIm
 FREIGHT_ROW = "freightDock"
 
 
+# unlocks columns; copied from the trade dock's unlock unless overridden
+UNLOCK_COLUMNS = ["useGridActorForLoc", "Title", "Description", "demoLocked", "IsHidden", "subCategory",
+                  "giftableInDemo", "giftable", "giftPool", "researchable", "scienceCost", "researchTier",
+                  "unlockedByDefault", "childUnlocks", "associatedGridActor", "prerequisiteUnlocks", "tierSortOrder",
+                  "associatedRecipe", "isQuestRelated", "showMailEvenAsChildUnlock", "secretPrerequisite"]
+
+
+TRADE_UNLOCK = "unlock.navaltradeDock"
+
+
+FREIGHT_UNLOCK = "unlock.freightDock"
+
+
+# researchable on its own in the trade dock's tier, sorted just after it (30; the storage dock is 40)
+UNLOCK_OVERRIDES = {
+    "associatedGridActor": FREIGHT_ROW,
+    "prerequisiteUnlocks": "()",
+    "tierSortOrder": "35",
+}
+
+
 FREIGHT_LOC = "freightdock.building.freightDock"
 
 
@@ -29,6 +51,7 @@ FREIGHT_OVERRIDES = {
     "stringKey": FREIGHT_LOC,
     "Description": FREIGHT_LOC + ".desc",
     "toolbarGroupSort": "36",
+    "unlockPrerequisite": FREIGHT_UNLOCK,
 }
 
 
@@ -39,7 +62,8 @@ FREIGHT_STRINGS = {
 
 
 def register_freight_dock():
-    """BP_Startup: add the freight dock building (a copy of the trade dock's rows), its icon and its strings."""
+    """BP_Startup: add the freight dock building (a copy of the trade dock's rows), its icon, its unlock and its
+    strings."""
     g = Graph()
     MAPI = f"/Script/CoreUObject.Class'{MODAPI}'"
     get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 400)
@@ -81,12 +105,14 @@ def register_freight_dock():
             g.link(value_src, (name, "valueStringified"))
         x += 250
 
-    def copy(prefix, table, col):
-        if col in FREIGHT_OVERRIDES and table == "GridActors":
-            write(f"{prefix}Set_{col}", table, FREIGHT_ROW, col, literal=FREIGHT_OVERRIDES[col].replace('"', '\\"'))
+    def copy(prefix, table, col, src="navaltradeDock", dst=FREIGHT_ROW, overrides=None):
+        if overrides is None:
+            overrides = FREIGHT_OVERRIDES if table == "GridActors" else {}
+        if col in overrides:
+            write(f"{prefix}Set_{col}", table, dst, col, literal=overrides[col].replace('"', '\\"'))
         else:
-            read(f"{prefix}Get_{col}", table, "navaltradeDock", col)
-            write(f"{prefix}Set_{col}", table, FREIGHT_ROW, col, value_src=(f"{prefix}Get_{col}", "ReturnValue"))
+            read(f"{prefix}Get_{col}", table, src, col)
+            write(f"{prefix}Set_{col}", table, dst, col, value_src=(f"{prefix}Get_{col}", "ReturnValue"))
 
     read("CheckTrade", "GridActors", "navaltradeDock", "GridActor")
     add_row("AddDefRow", "GridActors", FREIGHT_ROW)
@@ -94,6 +120,9 @@ def register_freight_dock():
         copy("Def", "GridActors", col)
     add_row("AddIconRow", "BuildingIcons", FREIGHT_ROW)
     copy("Icon", "BuildingIcons", "Icon")
+    add_row("AddUnlockRow", "unlocks", FREIGHT_UNLOCK)
+    for col in UNLOCK_COLUMNS:
+        copy("Unlock", "unlocks", col, src=TRADE_UNLOCK, dst=FREIGHT_UNLOCK, overrides=UNLOCK_OVERRIDES)
 
     # strings: "dev" first, then "en" (ModAPI requirement)
     mapt = T("name", container="Map", value=("string", None))
@@ -114,13 +143,21 @@ def register_freight_dock():
     # log what the new row ended up with
     read("CheckActor", "GridActors", FREIGHT_ROW, "GridActor")
     read("CheckIcon", "BuildingIcons", FREIGHT_ROW, "Icon")
+    read("CheckUnlock", "unlocks", FREIGHT_UNLOCK, "associatedGridActor")
+    read("CheckTier", "unlocks", FREIGHT_UNLOCK, "researchTier")
+    g.call("UnlockStr", STRLIB, "Conv_BoolToString", x - 250, 850,
+           [("InBool", "in", BOOL, None), ("ReturnValue", "out", STR, None)])
+    g.link(("AddUnlockRow", "ReturnValue"), ("UnlockStr", "InBool"))
     g.call("RowStr", STRLIB, "Conv_BoolToString", x - 250, 700,
            [("InBool", "in", BOOL, None), ("ReturnValue", "out", STR, None)])
     g.link(("AddDefRow", "ReturnValue"), ("RowStr", "InBool"))
     parts = [(LOG_PREFIX + "Freight dock registered: trade GridActor=", None), ("", ("CheckTrade", "ReturnValue")),
              (", added row ", None), ("", ("RowStr", "ReturnValue")),
              (", GridActor=", None), ("", ("CheckActor", "ReturnValue")),
-             (", Icon=", None), ("", ("CheckIcon", "ReturnValue"))]
+             (", Icon=", None), ("", ("CheckIcon", "ReturnValue")),
+             (", added unlock ", None), ("", ("UnlockStr", "ReturnValue")),
+             (", unlock building=", None), ("", ("CheckUnlock", "ReturnValue")),
+             (", tier=", None), ("", ("CheckTier", "ReturnValue"))]
     s = None
     for i, (lit, src) in enumerate(parts):
         n = g.call(f"Cat{i}", STRLIB, "Concat_StrStr", x + 250 * i, 700,
@@ -138,6 +175,11 @@ def register_freight_dock():
     chain("LogDone")
     g.link((s, "ReturnValue"), ("LogDone", "Msg"))
     return g.render()
+
+
+SPECS = {
+    "RegisterFreightDock": fn_spec(("CheckTrade", "execute")),
+}
 
 
 GRAPHS = {

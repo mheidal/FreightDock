@@ -12,13 +12,13 @@ This can be bidirectional: docks A and B can both send one another goods, simply
 
 Ships can be seen sailing between docks, following the shortest route from dock to dock! These routes are rebuilt periodically to account for the addition and removal of buildings and terrain. Routes are visible when a paired dock is selected.
 
-Ships can be sent off early by a button on the dock's UI.
+Freight docks have an associated UI panel showing the goods requested at a dock's partner, as well as their status at the focused dock (on the ship, worker tasked to retrieve, awaiting unloading at partner dock, total request at warehouses). This panel also displays ship and journey information, and has a button to immediately cause the ship to depart and deliver whatever goods it holds.
 
 Whiskers assigned to a freight dock gain a new modifier, "Stevedore", granting +10 carrying capacity.
 
 The hotkey to pair two docks defaults to `F5`. The timeout before a ship departs early is 120 seconds. Both are configurable in the game's Mods settings.
 
-The Freight Dock is unlocked by the same technology as the Trade Dock.
+The Freight Dock is unlocked by a tier-1 research, alongside the Deep Sea Fishing Dock.
 
 ## Known limitations
 Both sides need to have a ship for deliveries to function, even if you only want one-way logistics. (The game doesn't allow you to assign workers to docks without ships.) Goods can be dropped off at a dock if that dock doesn't have a ship/workers assigned, but they will not be unloaded.

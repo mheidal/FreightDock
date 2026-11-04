@@ -1,0 +1,186 @@
+blueprint BP_FDFling : Actor at /Game/Mods/FreightDock/Loom/BP_FDFling
+
+// Goods flying in an arc from a freight ship to the partner dock when it unloads, as the game's own resource
+// toss does (that one is native and can't be called). VoyageArrive spawns one at the stand-in ship, calls Before
+// with the partner, moves the cargo into the partner's dock store, then calls Launch with the partner: what the
+// store gained is shown as pieces (each resource's haul mesh), one per PerPiece() units, at least one of each and
+// MaxPieces() in all, taking off one after another. The actor removes itself once the
+// last has landed. Runs on game time, so it pauses with the game.
+
+component Root: SceneComponent
+component P0: StaticMeshComponent
+component P1: StaticMeshComponent
+component P2: StaticMeshComponent
+component P3: StaticMeshComponent
+component P4: StaticMeshComponent
+component P5: StaticMeshComponent
+component P6: StaticMeshComponent
+component P7: StaticMeshComponent
+component P8: StaticMeshComponent
+component P9: StaticMeshComponent
+component P10: StaticMeshComponent
+component P11: StaticMeshComponent
+component P12: StaticMeshComponent
+component P13: StaticMeshComponent
+component P14: StaticMeshComponent
+component P15: StaticMeshComponent
+component P16: StaticMeshComponent
+component P17: StaticMeshComponent
+component P18: StaticMeshComponent
+component P19: StaticMeshComponent
+component P20: StaticMeshComponent
+component P21: StaticMeshComponent
+component P22: StaticMeshComponent
+component P23: StaticMeshComponent
+component P24: StaticMeshComponent
+component P25: StaticMeshComponent
+component P26: StaticMeshComponent
+component P27: StaticMeshComponent
+component P28: StaticMeshComponent
+component P29: StaticMeshComponent
+component P30: StaticMeshComponent
+component P31: StaticMeshComponent
+component P32: StaticMeshComponent
+component P33: StaticMeshComponent
+component P34: StaticMeshComponent
+component P35: StaticMeshComponent
+
+var Pieces: array<StaticMeshComponent>
+var Starts: array<float>
+var Used: int = 0
+var Had: map<name, int>
+var From: Vector
+var To: Vector
+var Height: float = 0.0
+var Began: float = -1.0
+
+pure fn Duration() -> float {
+    return 0.8
+}
+
+pure fn Stagger() -> float {
+    return 0.07
+}
+
+pure fn MaxPieces() -> int {
+    return 36
+}
+
+pure fn PerPiece() -> int {
+    return 4
+}
+
+on ReceiveBeginPlay {
+    Pieces = [P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, P35]
+    for p in Pieces {
+        p.SetCollisionEnabled(ECollisionEnabled.NoCollision)
+        p.SetVisibility(false, false)
+    }
+}
+
+// What the partner's dock store holds before the cargo goes in.
+fn Before(Partner: WorkDock) {
+    for res, slot in Partner.m_stockpile_goodsFromSea.Slots {
+        Had[res] = slot.count
+    }
+}
+
+// Flies what the store gained since Before, from here to the partner dock.
+fn Launch(Partner: WorkDock) {
+    let names: array<name> = []
+    let amounts: array<int> = []
+    for res, slot in Partner.m_stockpile_goodsFromSea.Slots {
+        let h = Had.Find(res)
+        let gained = slot.count - (if h.ReturnValue { h.Value } else { 0 })
+        if gained > 0 {
+            names.Add(res)
+            amounts.Add(gained)
+        }
+    }
+
+    // pieces per resource: one per PerPiece() units, at least 1; then trim the largest to MaxPieces()
+    let counts: array<int> = []
+    let total = 0
+    let i = 0
+    while i < names.Length() {
+        let n = KismetMathLibrary.Max(amounts[i] / PerPiece(), 1)
+        counts.Add(n)
+        total += n
+        i += 1
+    }
+    while total > MaxPieces() {
+        let big = -1
+        i = 0
+        while i < counts.Length() {
+            if counts[i] > 1 {
+                if big < 0 || counts[i] > counts[big] {
+                    big = i
+                }
+            }
+            i += 1
+        }
+        if big < 0 {
+            total = MaxPieces()
+        } else {
+            counts[big] = counts[big] - 1
+            total -= 1
+        }
+    }
+
+    // a round at a time, so the resources take turns
+    Used = 0
+    Starts = []
+    let round = 0
+    while Used < MaxPieces() && round < MaxPieces() {
+        i = 0
+        while i < names.Length() {
+            if counts[i] > round && Used < MaxPieces() {
+                let def = ArcoGameInstance.GetResourceDefCopy(self, names[i])
+                Pieces[Used].SetStaticMesh(def.haulMesh)
+                Starts.Add(float(Used) * Stagger())
+                Used += 1
+            }
+            i += 1
+        }
+        round += 1
+    }
+    if Used == 0 {
+        K2_DestroyActor()
+        return
+    }
+
+    From = K2_GetActorLocation()
+    To = Partner.GetOwner().K2_GetActorLocation()
+    let dx = To.X - From.X
+    let dy = To.Y - From.Y
+    Height = KismetMathLibrary.FClamp(KismetMathLibrary.Sqrt(dx * dx + dy * dy) * 0.35, 150.0, 1000.0)
+    Began = GameplayStatics.GetTimeSeconds()
+}
+
+on ReceiveTick(dt: float) {
+    if Began < 0.0 {
+        return
+    }
+    let since = GameplayStatics.GetTimeSeconds() - Began
+    let flying = false
+    let i = 0
+    while i < Used {
+        let p = Pieces[i]
+        let t = (since - Starts[i]) / Duration()
+        if t < 0.0 {
+            flying = true
+        } else if t < 1.0 {
+            flying = true
+            let lift = 4.0 * Height * t * (1.0 - t)
+            let at = Vector(X: From.X + (To.X - From.X) * t, Y: From.Y + (To.Y - From.Y) * t, Z: From.Z + (To.Z - From.Z) * t + lift)
+            p.K2_SetWorldLocationAndRotation(at, Rotator(Pitch: t * 360.0, Yaw: float(i) * 40.0, Roll: 0.0), false, false)
+            p.SetVisibility(true, false)
+        } else {
+            p.SetVisibility(false, false)
+        }
+        i += 1
+    }
+    if !flying {
+        K2_DestroyActor()
+    }
+}

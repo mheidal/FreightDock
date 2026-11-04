@@ -30,7 +30,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cmd1"
    NodeGuid=00000000000000000000000000000009
    CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Cmd0 00000000000000000000000000000006,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Cmd2 0000000000000000000000000000000B,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="Command",PinType.PinCategory="string",DefaultValue="Arco_GiveResource planks 200",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="Command",PinType.PinCategory="string",DefaultValue="Arco_GiveUnlock unlock.freightDock",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cmd2"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="ExecuteConsoleCommand")
@@ -42,7 +42,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cmd2"
    NodeGuid=0000000000000000000000000000000D
    CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Cmd1 0000000000000000000000000000000A,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Cmd3 0000000000000000000000000000000F,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="Command",PinType.PinCategory="string",DefaultValue="Arco_GiveResource bricks 100",)
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="Command",PinType.PinCategory="string",DefaultValue="Arco_GiveResource planks 200",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cmd3"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="ExecuteConsoleCommand")
@@ -53,42 +53,54 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cmd3"
    NodePosY=0
    NodeGuid=00000000000000000000000000000011
    CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Cmd2 0000000000000000000000000000000E,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LogDebug 00000000000000000000000000000013,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="Command",PinType.PinCategory="string",DefaultValue="Arco_GiveResource cannedfood 50",)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Cmd4 00000000000000000000000000000013,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="Command",PinType.PinCategory="string",DefaultValue="Arco_GiveResource bricks 100",)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogDebug"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="LogMessage")
-   NodeComment="LogDebug"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cmd4"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="ExecuteConsoleCommand")
+   NodeComment="Cmd4"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=1000
    NodePosY=0
    NodeGuid=00000000000000000000000000000015
    CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Cmd3 00000000000000000000000000000012,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LogDebug 00000000000000000000000000000017,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="Command",PinType.PinCategory="string",DefaultValue="Arco_GiveResource cannedfood 50",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogDebug"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="LogMessage")
+   NodeComment="LogDebug"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000019
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Cmd4 00000000000000000000000000000016,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
    CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="Msg",PinType.PinCategory="string",LinkedTo=(LogDebug_Cat 00000000000000000000000000000018,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="doPrependDate",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="Msg",PinType.PinCategory="string",LinkedTo=(LogDebug_Cat 0000000000000000000000000000001C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="doPrependDate",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogDebug_Stamp"
    FunctionReference=(MemberName="Stamp",bSelfContext=True)
    NodeComment="LogDebug_Stamp"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
-   NodePosX=750
+   NodePosX=1000
    NodePosY=200
-   NodeGuid=0000000000000000000000000000001A
-   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="Result",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogDebug_Cat 0000000000000000000000000000001C,),)
+   NodeGuid=0000000000000000000000000000001E
+   CustomProperties Pin (PinId=0000000000000000000000000000001F,PinName="Result",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogDebug_Cat 00000000000000000000000000000020,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogDebug_Cat"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
    NodeComment="LogDebug_Cat"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
-   NodePosX=1000
+   NodePosX=1250
    NodePosY=200
-   NodeGuid=0000000000000000000000000000001D
-   CustomProperties Pin (PinId=0000000000000000000000000000001C,PinName="A",PinType.PinCategory="string",LinkedTo=(LogDebug_Stamp 0000000000000000000000000000001B,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="B",PinType.PinCategory="string",DefaultValue="Debug: sent trade dock unlock and 200 planks, 100 bricks, 50 cannedfood",)
-   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogDebug 00000000000000000000000000000017,),)
+   NodeGuid=00000000000000000000000000000021
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="A",PinType.PinCategory="string",LinkedTo=(LogDebug_Stamp 0000000000000000000000000000001F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000022,PinName="B",PinType.PinCategory="string",DefaultValue="Debug: sent trade and freight dock unlocks and 200 planks, 100 bricks, 50 cannedfood",)
+   CustomProperties Pin (PinId=0000000000000000000000000000001C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogDebug 0000000000000000000000000000001B,),)
 End Object

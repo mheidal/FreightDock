@@ -14,7 +14,15 @@ Changes
 - Removed departure checklist UI element from game's freight dock UI.
 
 Features
-- Freight Dock panel beside the dock window: partner, ship hold and trip time, a table of what the partner wants (aboard, being carried, unloaded, still to fetch, wanted), linked warehouses, and "Deliver now" button. Clicking the partner or a warehouse pans the camera to it.
+- The Freight Dock has its own technology.
+- Freight Dock panel beside the dock window:
+- - partner freight dock ID (click to pan to dock)
+- - ship hold contents and trip time
+- - goods waiting to be unloaded
+- - a table of what the partner wants (aboard, being carried, unloaded, still to fetch, wanted)
+- - linked warehouses (click to pan to warehouse)
+- - "Deliver now" button
+- When a freight ship arrives, its goods fly from the ship to the dock.
 
 ========================
 2026-11-01 v1.0

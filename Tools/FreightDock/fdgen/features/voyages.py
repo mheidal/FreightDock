@@ -1,12 +1,12 @@
 """Voyages: StartVoyage spawns the stand-in and course, VoyageTick moves it along the spline (moored / sailing /
-waiting phases), VoyageArrive unloads and returns the ship.
+waiting phases), VoyageArrive unloads (with goods flying to the dock, BP_FDFling) and returns the ship.
 """
 from fdgen.core.graph import Graph
 from fdgen.core.types import (
     BOOL, CLASSPIN, COLLISION_PIN, DOUBLE, EXEC, FLOAT, INT, INT_ARRAY_T, MAP_INT_ACTOR,
     MAP_INT_DOUBLE, MAP_INT_INT, MAP_INT_OBJ, MAP_INT_SHIP, MAP_INT_VECTOR, OBJ, SPLINE_SPACE, STRUCT)
 from fdgen.core.paths import (
-    ACTOR, ACTORCOMP, CHILDCOMP, HIT, K2, MAPLIB, MATHLIB, MODAPI, NDOCK, NDOCKSTATE,
+    ACTOR, ACTORCOMP, CHILDCOMP, FD_FLING_CLASS, HIT, K2, MAPLIB, MATHLIB, MODAPI, NDOCK, NDOCKSTATE,
     ROTATOR, SHIP, SHIPSTATE, SPLINE, SYSLIB, TRANSFORM, VECTOR, WORKDOCK)
 from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
@@ -459,7 +459,9 @@ def voyage_tick():
 
 
 def voyage_arrive():
-    """Phase 1 (at the partner): deliver the hold, start the wait. Phase 3 (home): remove the stand-in, show the ship,
+    """Phase 1 (at the partner): deliver the hold, shown as goods flying from the stand-in to the partner dock
+    (BP_FDFling, spawned at the stand-in: Before records the partner's dock store, Launch flies what it gained),
+    start the wait. Phase 3 (home): remove the stand-in, show the ship,
     end the trip. A missing stand-in also ends the trip."""
     g = Graph()
     F = "VoyageArrive"
@@ -511,9 +513,34 @@ def voyage_arrive():
     branch(g, "BrPartner", 1250, -400)
     g.link(("SetPartner", "then"), ("BrPartner", "execute"))
     g.link(("PartnerOk", "ReturnValue"), ("BrPartner", "Condition"))
+    fling_t = OBJ(FD_FLING_CLASS)
+    fling_cls = f"/Script/Engine.BlueprintGeneratedClass'{FD_FLING_CLASS}'"
+    g.call("ProxyXform", f"/Script/CoreUObject.Class'{ACTOR}'", "GetTransform", 1250, -900,
+           [("self", "in", OBJ(ACTOR), None), ("ReturnValue", "out", STRUCT(TRANSFORM), None)])
+    g.link(("FindProxy", "Value"), ("ProxyXform", "self"))
+    fct, fcd = CLASSPIN(ACTOR, FD_FLING_CLASS)
+    g.node("SpawnFling", K2 + "K2Node_SpawnActorFromClass", [], 1500, -900,
+           [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
+            ("Class", "in", fct, fcd), ("ReturnValue", "out", fling_t, None),
+            ("SpawnTransform", "in", STRUCT(TRANSFORM), None),
+            ("CollisionHandlingOverride", "in", COLLISION_PIN, 'DefaultValue="AlwaysSpawn"'),
+            ("Owner", "in", OBJ(ACTOR), None)])
+    g.link(("BrPartner", "then"), ("SpawnFling", "execute"))
+    g.link(("ProxyXform", "ReturnValue"), ("SpawnFling", "SpawnTransform"))
+    g.call("FlingBefore", fling_cls, "Before", 1750, -900,
+           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", fling_t, None),
+            ("Partner", "in", OBJ(WORKDOCK), None)])
+    g.link(("SpawnFling", "then"), ("FlingBefore", "execute"))
+    g.link(("SpawnFling", "ReturnValue"), ("FlingBefore", "self"))
+    g.link(("GetPartner", "Partner"), ("FlingBefore", "Partner"))
     user_call(g, "Transfer", "TransferFrom", 1500, -400,
               ins=[("Dock", OBJ(WORKDOCK)), ("Partner", OBJ(WORKDOCK))], outs=[("Total", INT)])
-    g.link(("BrPartner", "then"), ("Transfer", "execute"))
+    g.link(("FlingBefore", "then"), ("Transfer", "execute"))
+    g.call("FlingLaunch", fling_cls, "Launch", 2000, -900,
+           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", fling_t, None),
+            ("Partner", "in", OBJ(WORKDOCK), None)])
+    g.link(("SpawnFling", "ReturnValue"), ("FlingLaunch", "self"))
+    g.link(("GetPartner", "Partner"), ("FlingLaunch", "Partner"))
     g.link(("GetDock", "Dock"), ("Transfer", "Dock"))
     g.link(("GetPartner", "Partner"), ("Transfer", "Partner"))
     pid = dock_id_call(g, "PartnerId", ("GetPartner", "Partner"), 1500, -650)
@@ -524,7 +551,8 @@ def voyage_arrive():
     g.link(("Transfer", "Total"), ("FmtArrived", "n"))
     log_msg(g, "LogArrived", "GetModAPI", 1750, -400)
     user_call(g, "ClearReq", "ClearRequested", 1750, -200, ins=[("Id", INT)])
-    g.link(("Transfer", "then"), ("ClearReq", "execute"))
+    g.link(("Transfer", "then"), ("FlingLaunch", "execute"))
+    g.link(("FlingLaunch", "then"), ("ClearReq", "execute"))
     g.link(key, ("ClearReq", "Id"))
     g.link(("ClearReq", "then"), ("LogArrived", "execute"))
     g.link((s, "ReturnValue"), ("LogArrived", "Msg"))

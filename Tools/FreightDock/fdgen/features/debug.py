@@ -485,7 +485,7 @@ def debug_cells():
 def debug_setup():
     g = Graph()
     get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 300)
-    cmds = ["Arco_GiveUnlock unlock.navaltradeDock", "Arco_GiveResource planks 200", "Arco_GiveResource bricks 100", "Arco_GiveResource cannedfood 50"]
+    cmds = ["Arco_GiveUnlock unlock.navaltradeDock", "Arco_GiveUnlock unlock.freightDock", "Arco_GiveResource planks 200", "Arco_GiveResource bricks 100", "Arco_GiveResource cannedfood 50"]
     prev = None
     for i, cmd in enumerate(cmds):
         n = g.call(f"Cmd{i}", SYSLIB, "ExecuteConsoleCommand", 250 * i, 0,
@@ -495,7 +495,7 @@ def debug_setup():
             g.link((prev, "then"), (n, "execute"))
         prev = n
     log_msg(g, "LogDebug", "GetModAPI", 250 * len(cmds), 0,
-            literal="Debug: sent trade dock unlock and 200 planks, 100 bricks, 50 cannedfood")
+            literal="Debug: sent trade and freight dock unlocks and 200 planks, 100 bricks, 50 cannedfood")
     g.link((prev, "then"), ("LogDebug", "execute"))
     return g.render()
 
@@ -613,6 +613,7 @@ def log_nautical_docks():
 
 SPECS = {
     "DebugCells": fn_spec(("BrToggled", "execute"), locals_=[("Centre", INT)]),
+    "DebugSetup": fn_spec(("Cmd0", "execute")),
     "Stamp": fn_spec(("Pass", "execute"), outputs=[("Result", STR)], returns=[("Pass", "then_0")],
                      values=[("Str", "ReturnValue", "Result")], pure=True),
 }

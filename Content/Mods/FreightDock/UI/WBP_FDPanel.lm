@@ -1,8 +1,8 @@
 blueprint WBP_FDPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDPanel
 
 // The Freight Dock panel: while a paired freight dock is selected, it stands to the left of the dock's window
-// (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the partner, the ship, a
-// table of what the partner wants (WBP_FDWantRow), the partner's "Deliver to" and this dock's "Pick up from"
+// (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the partner, the ship, the
+// goods waiting at this dock to be unloaded (while there are any), a table of what the partner wants (WBP_FDWantRow), the partner's "Deliver to" and this dock's "Pick up from"
 // warehouses (links that pan the camera there; pick-up warehouses with what they hold), and Deliver now.
 // It sits in the game's rounded frame over the dock window's own background, borrows the window's fonts, and
 // hides the window's "Load resources onto ship" bar and its supported-actions frames, giving them back their
@@ -44,6 +44,11 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 widget ShipHead: TextBlock(Text: "SHIP", ColorAndOpacity: "#e8c872ff")
                 widget ShipText: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 widget Div2: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                widget UnloadBox: VerticalBox {
+                    widget UnloadHead: TextBlock(Text: "WAITING TO UNLOAD", ColorAndOpacity: "#e8c872ff")
+                    widget UnloadIcons: ResourceCollectionAsRowOfIcons slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                    widget DivUnload: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                }
                 widget ReqHead: TextBlock(Text: "PARTNER WANTS", ColorAndOpacity: "#e8c872ff")
                 widget ReqBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
                 widget ReqNone: TextBlock(Text: "Nothing", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
@@ -401,6 +406,7 @@ fn TakeFonts() {
     HaveFonts = true
     Title.SetFont(TitleFont)
     ShipHead.SetFont(HeadFont)
+    UnloadHead.SetFont(HeadFont)
     ReqHead.SetFont(HeadFont)
     DestHead.SetFont(HeadFont)
     SrcHead.SetFont(HeadFont)
@@ -480,6 +486,7 @@ fn Refresh(Dock: WorkDock) {
     }
 
     ShipText.SetText(text(ShipLine(Dock, id)))
+    FillUnload(Dock)
     FillWants(Dock, partner)
     let i = 0
     for row in SrcRows {
@@ -571,6 +578,22 @@ fn ShipLine(Dock: WorkDock, Id: int) -> string {
         s += "\nOne-way trip about " + Clock(int(float(curve.GetSplineLength()) / MapLoad.ShipSpeed))
     }
     return s
+}
+
+// What the partner's ship left at this dock (its goods-from-sea store) and haulers haven't picked up yet; the
+// section is hidden while the store is empty.
+fn FillUnload(Dock: WorkDock) {
+    let pile = Dock.m_stockpile_goodsFromSea
+    let total = 0
+    for res, slot in pile.Slots {
+        total += slot.count
+    }
+    if total > 0 {
+        UnloadIcons.SetDataFromStockpile(pile, false, false)
+        UnloadBox.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    } else {
+        UnloadBox.SetVisibility(ESlateVisibility.Collapsed)
+    }
 }
 
 // A table row per resource the partner wants (WBP_FDWantRow): aboard (hold + waiting at the dock), being carried,
