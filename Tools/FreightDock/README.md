@@ -28,6 +28,7 @@ This creates `.venv` with pytest. The generator itself uses only the standard li
 | `uv run python -m fdgen.install --manifest` | Refresh `tests/blueprint_vars.json` from the Blueprints; needs the editor |
 | `uv run pytest` | All tests |
 | `uv run pytest --update-golden` | Accept the current output as the new snapshot |
+| `uv run python loom_test.py` | Test the Loom libraries' pure functions with Loom's test commandlet (headless editor, about 15 s) |
 
 ### What `fdgen.install` does
 

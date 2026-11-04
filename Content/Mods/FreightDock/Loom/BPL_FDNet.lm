@@ -1,0 +1,330 @@
+blueprint BPL_FDNet : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDNet
+
+// Freight networks: which networks a freight dock belongs to, and in which role, stored in the game's own
+// WorkDock.activeTradePartnerId (it survives a save). See Docs/FreightDock/Many-to-many links.md.
+//
+//   stored = -(2 + packed)
+//   packed bits:  30 format | 29 reserved (clear) | 28 depart only when full | 27..21, 20..14, 13..7, 6..0 memberships
+//   membership (7 bits): 6..5 role (1 provide, 2 request, 3 both) | 4..0 network ID (1..31; 0 = empty)
+//
+// Older values (mod 1.x, one-to-one pairs) are -2 - partnerDockId: no format bit. -1 (or anything above -2) is
+// "no partner", as the game uses it. Nothing is cached: queries decode every freight dock's value each time.
+
+pure fn Slots() -> int {
+    return 4
+}
+
+pure fn FormatBit() -> int {
+    return 1073741824
+}
+
+pure fn FullBit() -> int {
+    return 268435456
+}
+
+pure fn Provide() -> int {
+    return 1
+}
+
+pure fn Request() -> int {
+    return 2
+}
+
+pure fn Both() -> int {
+    return 3
+}
+
+pure fn MaxNet() -> int {
+    return 31
+}
+
+// 128 to the power of a membership's index: where its 7 bits start.
+pure fn Place(Index: int) -> int {
+    let p = 1
+    let i = 0
+    while i < Index {
+        p = p * 128
+        i += 1
+    }
+    return p
+}
+
+// The stored value decoded. IsNew: in the network format. OldPartner: the partner's dock ID of a 1.x pair, else -1.
+// Nets and Roles always have Slots() entries; an empty membership is net 0, role 0.
+pure fn Unpack(Stored: int, out Nets: array<int>, out Roles: array<int>, out Full: bool, out IsNew: bool, out OldPartner: int) {
+    Nets = []
+    Roles = []
+    Full = false
+    IsNew = false
+    OldPartner = -1
+    let packed = -1
+    if Stored <= -2 {
+        packed = 0 - Stored - 2
+    }
+    if packed >= 0 && (packed & FormatBit()) != 0 {
+        IsNew = true
+        Full = (packed & FullBit()) != 0
+    } else if packed >= 0 {
+        OldPartner = packed
+    }
+    let i = 0
+    while i < Slots() {
+        let net = 0
+        let role = 0
+        if IsNew {
+            let m = (packed / Place(i)) % 128
+            net = m % 32
+            role = m / 32
+            if net == 0 || role == 0 {
+                net = 0
+                role = 0
+            }
+        }
+        Nets.Add(net)
+        Roles.Add(role)
+        i += 1
+    }
+}
+
+// The stored value for these memberships. Entries past Slots(), with a network outside 1..MaxNet(), or with a role
+// outside 1..3 are left out.
+pure fn Pack(Nets: array<int>, Roles: array<int>, Full: bool) -> int {
+    let packed = FormatBit()
+    if Full {
+        packed += FullBit()
+    }
+    let slot = 0
+    let i = 0
+    while i < Nets.Length() && slot < Slots() {
+        let net = Nets[i]
+        let role = if i < Roles.Length() { Roles[i] } else { 0 }
+        if net >= 1 && net <= MaxNet() && role >= 1 && role <= 3 {
+            packed += (role * 32 + net) * Place(slot)
+            slot += 1
+        }
+        i += 1
+    }
+    return 0 - packed - 2
+}
+
+// The dock's role on Net (0 when not a member).
+pure fn RoleOn(Stored: int, Net: int) -> int {
+    let u = Unpack(Stored)
+    let i = 0
+    while i < Slots() {
+        if u.Nets[i] == Net && Net > 0 {
+            return u.Roles[i]
+        }
+        i += 1
+    }
+    return 0
+}
+
+pure fn Provides(Stored: int, Net: int) -> bool {
+    return (RoleOn(Stored, Net) & Provide()) != 0
+}
+
+pure fn Requests(Stored: int, Net: int) -> bool {
+    return (RoleOn(Stored, Net) & Request()) != 0
+}
+
+// The stored value with the dock's role on Net set to Role (0 removes it). Ok is false, and the value unchanged,
+// when Net or Role is out of range, or when Net is new and all Slots() memberships are taken. A 1.x value is
+// replaced: its pair is dropped.
+pure fn With(Stored: int, Net: int, Role: int, out Ok: bool) -> int {
+    Ok = false
+    if Net < 1 || Net > MaxNet() || Role < 0 || Role > 3 {
+        return Stored
+    }
+    let u = Unpack(Stored)
+    let nets = u.Nets
+    let roles = u.Roles
+    let found = -1
+    let free = -1
+    let i = 0
+    while i < Slots() {
+        if nets[i] == Net && found < 0 {
+            found = i
+        }
+        if nets[i] == 0 && free < 0 {
+            free = i
+        }
+        i += 1
+    }
+    let at = if found >= 0 { found } else { free }
+    if at < 0 {
+        if Role != 0 {
+            return Stored
+        }
+        Ok = true
+        return Stored
+    }
+    nets[at] = if Role == 0 { 0 } else { Net }
+    roles[at] = Role
+    Ok = true
+    return Pack(nets, roles, u.Full)
+}
+
+// The stored value with the "depart only when full" flag set or cleared.
+pure fn WithFull(Stored: int, Full: bool) -> int {
+    let u = Unpack(Stored)
+    return Pack(u.Nets, u.Roles, Full)
+}
+
+// Whether the dock belongs to any network.
+pure fn IsMember(Stored: int) -> bool {
+    let u = Unpack(Stored)
+    for n in u.Nets {
+        if n > 0 {
+            return true
+        }
+    }
+    return false
+}
+
+// Every freight dock (MapLoad.Docks, freight docks only), in dock ID order.
+fn FreightDocks(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> array<WorkDock> {
+    let out: array<WorkDock> = []
+    for d in MapLoad.Docks {
+        if d != none {
+            if MapLoad.IsFreightDock(d).Result {
+                out.Add(d)
+            }
+        }
+    }
+    SortById(out)
+    return out
+}
+
+// Sorts docks by dock ID (insertion sort; there are few).
+fn SortById(Docks: ref array<WorkDock>) {
+    let i = 1
+    while i < Docks.Length() {
+        let j = i
+        while j > 0 && BPL_FDLoad.DockId(Docks[j - 1]) > BPL_FDLoad.DockId(Docks[j]) {
+            Docks.Swap(j - 1, j)
+            j -= 1
+        }
+        i += 1
+    }
+}
+
+// The providers and requesters on Net, in dock ID order. A dock with the role "both" is in each.
+fn Members(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, out Providers: array<WorkDock>, out Requesters: array<WorkDock>) {
+    Providers = []
+    Requesters = []
+    for d in FreightDocks(MapLoad) {
+        let role = RoleOn(d.activeTradePartnerId, Net)
+        if (role & Provide()) != 0 {
+            Providers.Add(d)
+        }
+        if (role & Request()) != 0 {
+            Requesters.Add(d)
+        }
+    }
+}
+
+// The networks with at least one member, ascending, and the lowest ID not in use (0 when all are).
+fn InUse(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, out Nets: array<int>, out NextFree: int) {
+    Nets = []
+    NextFree = 0
+    let used: array<int> = []
+    for d in FreightDocks(MapLoad) {
+        let u = Unpack(d.activeTradePartnerId)
+        for n in u.Nets {
+            if n > 0 {
+                used.AddUnique(n)
+            }
+        }
+    }
+    let n = 1
+    while n <= MaxNet() {
+        if used.Contains(n) {
+            Nets.Add(n)
+        } else if NextFree == 0 {
+            NextFree = n
+        }
+        n += 1
+    }
+}
+
+// The docks this dock supplies: requesters on every network it provides on, itself left out, each once, in dock
+// ID order (the order round-robin follows).
+fn RequestersOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> array<WorkDock> {
+    let out: array<WorkDock> = []
+    let u = Unpack(Dock.activeTradePartnerId)
+    let i = 0
+    while i < Slots() {
+        if u.Nets[i] > 0 && (u.Roles[i] & Provide()) != 0 {
+            let m = Members(MapLoad, u.Nets[i])
+            for r in m.Requesters {
+                if r != Dock {
+                    out.AddUnique(r)
+                }
+            }
+        }
+        i += 1
+    }
+    SortById(out)
+    return out
+}
+
+// The docks that supply this dock: providers on every network it requests on, itself left out, each once.
+fn ProvidersOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> array<WorkDock> {
+    let out: array<WorkDock> = []
+    let u = Unpack(Dock.activeTradePartnerId)
+    let i = 0
+    while i < Slots() {
+        if u.Nets[i] > 0 && (u.Roles[i] & Request()) != 0 {
+            let m = Members(MapLoad, u.Nets[i])
+            for p in m.Providers {
+                if p != Dock {
+                    out.AddUnique(p)
+                }
+            }
+        }
+        i += 1
+    }
+    SortById(out)
+    return out
+}
+
+// Converts every 1.x pair (A <-> B) into a network of its own, the lowest free ID, with both docks in the role
+// "both"; a 1.x value whose partner is gone becomes -1. Returns the number of networks made. Once converted, a
+// save can't be read by mod 1.x.
+fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
+    let made = 0
+    let docks = FreightDocks(MapLoad)
+    for d in docks {
+        let u = Unpack(d.activeTradePartnerId)
+        if !u.IsNew && u.OldPartner >= 0 {
+            let partner: WorkDock = none
+            for p in docks {
+                if BPL_FDLoad.DockId(p) == u.OldPartner && p != d {
+                    partner = p
+                }
+            }
+            if partner == none {
+                d.activeTradePartnerId = -1
+            } else {
+                let free = InUse(MapLoad).NextFree
+                if free == 0 {
+                    // all 31 networks taken: leave the pair as it is
+                    continue
+                }
+                let both = Both()
+                d.activeTradePartnerId = Pack([free], [both], false)
+                let pu = Unpack(partner.activeTradePartnerId)
+                if pu.IsNew {
+                    let w = With(partner.activeTradePartnerId, free, both)
+                    partner.activeTradePartnerId = w.ReturnValue
+                } else {
+                    // the partner's own value (its pair with d, or with another dock) is replaced
+                    partner.activeTradePartnerId = Pack([free], [both], false)
+                }
+                made += 1
+            }
+        }
+    }
+    return made
+}

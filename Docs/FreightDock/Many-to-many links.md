@@ -203,6 +203,15 @@ Still to find out:
 1. Whether the mod can see Ctrl+C / Ctrl+V on a freight dock, to copy memberships itself.
 2. The colour palette itself.
 
+## Storage library (built)
+
+`Content/Mods/FreightDock/Loom/BPL_FDNet.lm`. Nothing calls it yet; the mod still runs one-to-one.
+
+- **Encoding:** `Unpack`, `Pack`, `RoleOn`, `Provides`, `Requests`, `IsMember`, `With` (set or remove one membership; refuses a fifth), `WithFull`.
+- **Queries,** stateless (decoded from every freight dock's value on each call): `FreightDocks`, `Members` (providers and requesters of a network), `InUse` (networks in use, lowest free ID), `RequestersOf` and `ProvidersOf` a dock, in dock ID order for round-robin.
+- **Migration:** `Migrate` turns each 1.x pair into the lowest free network with both docks in the role "both"; a 1.x value whose partner is gone becomes -1. A converted save can't be read by mod 1.x.
+- **Tests:** `Tools/FreightDock/loom_test.py` runs 36 cases of the encoding functions with Loom's test commandlet, against a Python model of the encoding. The queries and `Migrate` need a loaded colony, so they are tested in game.
+
 ## If resumed
 
 1. Remove the spike leftovers (see above).
