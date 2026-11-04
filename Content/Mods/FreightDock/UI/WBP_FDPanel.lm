@@ -21,6 +21,8 @@ var ReqRows: array<WBP_FDWantRow>
 var Window: Details_WorkDock_Generic
 var Kept: array<Widget>
 var KeptWas: array<ESlateVisibility>
+var Spacers: array<SizeBox>
+var SpacerMins: array<float>
 var HaveFonts: bool = false
 var TitleFont: SlateFontInfo
 var HeadFont: SlateFontInfo
@@ -161,6 +163,15 @@ fn Restore() {
     }
     Kept = []
     KeptWas = []
+    i = 0
+    while i < Spacers.Length() {
+        if KismetSystemLibrary.IsValid(Spacers[i]) {
+            Spacers[i].SetMinDesiredHeight(SpacerMins[i])
+        }
+        i += 1
+    }
+    Spacers = []
+    SpacerMins = []
     Window = none
 }
 
@@ -213,6 +224,8 @@ fn FindWindow() {
         return
     }
     Keep(Window.ShipPreparationWidget)
+    Keep(Window.EmbarkationPanel)
+    Unstretch()
     Keep(Window.supportedActions)
     Keep(Window.supportedActions_1)
     Keep(Window.SupportedNauticalActionsHint_Arco)
@@ -221,6 +234,34 @@ fn FindWindow() {
         TakeFonts()
     }
     Sweep()
+}
+
+// The departure checklist's frames keep their height with Size Boxes that have a minimum height (one beside the
+// ship frame's content, one around the ship frame, which sits at its bottom); without the checklist they leave a
+// gap. Clears every such minimum from the checklist up to the window's tabs, stepping out of nested widgets
+// (root -> WidgetTree -> UserWidget), remembering each for Restore.
+fn Unstretch() {
+    let w: Widget = Window.EmbarkationDetails
+    let depth = 0
+    while w != none && w != Window.Tabs_Parent && depth < 20 {
+        let p: Widget = w.GetParent()
+        if p != none {
+            for c in cast(p, PanelWidget).GetAllChildren() {
+                let sb = cast(c, SizeBox)
+                if sb != none {
+                    if sb.MinDesiredHeight > 0.0 && !Spacers.Contains(sb) {
+                        Spacers.Add(sb)
+                        SpacerMins.Add(sb.MinDesiredHeight)
+                        sb.ClearMinDesiredHeight()
+                    }
+                }
+            }
+        } else {
+            p = cast(KismetSystemLibrary.GetOuterObject(KismetSystemLibrary.GetOuterObject(w)), Widget)
+        }
+        w = p
+        depth += 1
+    }
 }
 
 // The topmost parent of a widget within its own widget tree.
