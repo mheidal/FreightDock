@@ -1,0 +1,72 @@
+blueprint WBP_FDWantRow : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDWantRow
+
+// One row of the Freight Dock panel's "Partner wants" table (WBP_FDPanel): a resource's icon and name, then
+// aboard, being carried, unloaded at the partner, still to fetch, and wanted. No header: each cell explains
+// itself on hover.
+
+widget Row: HorizontalBox {
+    widget IconBox: SizeBox(WidthOverride: 26.0, HeightOverride: 26.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Icon: Image
+    }
+    widget NameBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 6, Top: 0, Right: 0, Bottom: 0)) {
+        widget ResName: LocTextBlock(ColorAndOpacity: "#ddd3bcff")
+    }
+    widget AboardBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Aboard: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
+    }
+    widget CarriedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Carried: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
+    }
+    widget UnloadedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Unloaded: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
+    }
+    widget FetchBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Fetch: TextBlock(Text: "0", ColorAndOpacity: "#9c917cff", Justification: ETextJustify.Center)
+    }
+    widget WantedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Wanted: TextBlock(Text: "0", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+    }
+}
+
+var Tips: array<WBP_FDTip>
+
+// Each cell's tooltip: a WBP_FDTip in the table's font. Made on the first Show and set again on every Show, since
+// the panel may not have the window's fonts yet the first time.
+fn Tip(Index: int, Cell: Widget, Msg: string, Font: SlateFontInfo) {
+    if Tips.Length() <= Index {
+        let t = create_widget(WBP_FDTip)
+        Cell.SetToolTip(t)
+        Tips.Add(t)
+    }
+    Tips[Index].Setup(Msg, Font)
+}
+
+// StallLeft: seconds until a stalled resource (none picked up lately, so its space went to others) is asked for
+// again; 0 when not stalled.
+fn Show(Res: name, InAboard: int, InCarried: int, InUnloaded: int, InFetch: int, InWanted: int, StallLeft: int, Font: SlateFontInfo) {
+    let def = ArcoGameInstance.GetResourceDefCopy(self, Res)
+    Icon.SetBrushFromTexture(def.Icon, false)
+    ResName.SetKey(def.stringKey)
+    let stalled = StallLeft > 0
+    let fetchTip = "Asked for, no hauler yet"
+    if stalled {
+        fetchTip += "\nPaused: none picked up lately, retrying in " + string(StallLeft) + " s"
+    }
+    Tip(0, AboardBox, "On the ship", Font)
+    Tip(1, CarriedBox, "On the way here", Font)
+    Tip(2, UnloadedBox, "At the partner, not yet stored", Font)
+    Tip(3, FetchBox, fetchTip, Font)
+    Tip(4, WantedBox, "Partner's warehouses still want", Font)
+    Fetch.SetColorAndOpacity(SlateColor(SpecifiedColor: if stalled { LinearColor(R: 0.85, G: 0.35, B: 0.25, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 1.0) }))
+    ResName.SetFont(Font)
+    Aboard.SetFont(Font)
+    Carried.SetFont(Font)
+    Unloaded.SetFont(Font)
+    Fetch.SetFont(Font)
+    Wanted.SetFont(Font)
+    Aboard.SetText(text(string(InAboard)))
+    Carried.SetText(text(string(InCarried)))
+    Unloaded.SetText(text(string(InUnloaded)))
+    Fetch.SetText(text(string(InFetch)))
+    Wanted.SetText(text(string(InWanted)))
+}

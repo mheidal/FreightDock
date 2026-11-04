@@ -63,11 +63,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Click"
    NodePosY=0
    NodeGuid=00000000000000000000000000000013
    CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Pair 00000000000000000000000000000012,BrPressed 0000000000000000000000000000000F,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Deliver 00000000000000000000000000000015,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Panel 00000000000000000000000000000015,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Deliver"
-   FunctionReference=(MemberName="DeliverTick",bSelfContext=True)
-   NodeComment="Deliver"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Panel"
+   FunctionReference=(MemberName="PanelTick",bSelfContext=True)
+   NodeComment="Panel"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=750

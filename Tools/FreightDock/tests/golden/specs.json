@@ -35,6 +35,57 @@
   "returnValues": [],
   "returns": []
  },
+ "DeficitsFor": {
+  "entry": [
+   "ClearCounts",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Counts",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   },
+   {
+    "default": "",
+    "name": "Linker",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.StockpileLinker'\")"
+   },
+   {
+    "default": "",
+    "name": "Deficit",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Want",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceCollection'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "MakeWant",
+    "ResourceCollection",
+    "Want"
+   ]
+  ],
+  "returns": [
+   [
+    "ForIds",
+    "Completed"
+   ]
+  ]
+ },
  "DeliverSelected": {
   "entry": [
    "FindSel",
@@ -42,24 +93,6 @@
   ],
   "inputs": [],
   "locals": [],
-  "outputs": [],
-  "pure": false,
-  "returnValues": [],
-  "returns": []
- },
- "DeliverTick": {
-  "entry": [
-   "BrClicked",
-   "execute"
-  ],
-  "inputs": [],
-  "locals": [
-   {
-    "default": "false",
-    "name": "AnyDown",
-    "type": "(PinCategory=\"bool\")"
-   }
-  ],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -165,38 +198,119 @@
   "returnValues": [],
   "returns": []
  },
- "InjectDeliverButtons": {
+ "FreightTick": {
   "entry": [
-   "FindSel",
+   "Refresh",
    "execute"
   ],
   "inputs": [],
   "locals": [
    {
     "default": "",
-    "name": "W",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.UserWidget'\")"
+    "name": "Partner",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    },
    {
     "default": "",
-    "name": "Box",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.VerticalBox'\")"
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
    },
    {
     "default": "",
-    "name": "Made",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.UserWidget'\")"
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
    },
    {
     "default": "",
-    "name": "Cur",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/UMG.Widget'\")"
+    "name": "Remaining",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Loaded",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Now",
+    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
+   },
+   {
+    "default": "",
+    "name": "Freight",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "InFlight",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Reason",
+    "type": "(PinCategory=\"string\")"
    }
   ],
   "outputs": [],
   "pure": false,
   "returnValues": [],
   "returns": []
+ },
+ "KeepEmptyDeficits": {
+  "entry": [
+   "ClearResult",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Storage",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.ResourceBuilding'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Result",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   },
+   {
+    "default": "",
+    "name": "Inbound",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   },
+   {
+    "default": "",
+    "name": "Slots",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\"))"
+   },
+   {
+    "default": "",
+    "name": "Need",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Deficit",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetResultForReturn",
+    "Result",
+    "Deficit"
+   ]
+  ],
+  "returns": [
+   [
+    "ForKeys",
+    "Completed"
+   ]
+  ]
  },
  "LogFootprint": {
   "entry": [
@@ -389,6 +503,18 @@
  "PairKeyTick": {
   "entry": [
    "BrPressed",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "PanelTick": {
+  "entry": [
+   "BrHas",
    "execute"
   ],
   "inputs": [],
@@ -630,6 +756,50 @@
   ],
   "inputs": [],
   "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RequestFor": {
+  "entry": [
+   "SetOld",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Want",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceCollection'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Live",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   },
+   {
+    "default": "",
+    "name": "Slots",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\"))"
+   },
+   {
+    "default": "",
+    "name": "Slot",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\")"
+   },
+   {
+    "default": "",
+    "name": "Old",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   }
+  ],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -1167,6 +1337,70 @@
    [
     "Done",
     "then_0"
+   ]
+  ]
+ },
+ "UpdateRequest": {
+  "entry": [
+   "Plan",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Partner",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   },
+   {
+    "default": "",
+    "name": "NoMore",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Remaining",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "InFlight",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Plan",
+    "Remaining",
+    "Remaining"
+   ],
+   [
+    "Plan",
+    "InFlight",
+    "InFlight"
+   ]
+  ],
+  "returns": [
+   [
+    "LogReq",
+    "then"
+   ],
+   [
+    "BrChanged",
+    "else"
    ]
   ]
  },

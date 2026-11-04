@@ -1505,7 +1505,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat0"
    NodePosY=700
    NodeGuid=00000000000000000000000000000301
    CustomProperties Pin (PinId=00000000000000000000000000000302,PinName="A",PinType.PinCategory="string",)
-   CustomProperties Pin (PinId=00000000000000000000000000000303,PinName="B",PinType.PinCategory="string",DefaultValue="Freight dock registered: trade GridActor=",)
+   CustomProperties Pin (PinId=00000000000000000000000000000303,PinName="B",PinType.PinCategory="string",DefaultValue="[FreightDock] Freight dock registered: trade GridActor=",)
    CustomProperties Pin (PinId=00000000000000000000000000000304,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Cat1 00000000000000000000000000000305,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Cat1"

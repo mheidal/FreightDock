@@ -50,3 +50,5 @@ Content/_TempFiles/*
 
 # mheidal-custom
 CLAUDE.md
+.mcp.json
+Plugins/*/Binaries/

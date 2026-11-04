@@ -1,0 +1,115 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPanel"
+   VariableReference=(MemberName="FDPanel",bSelfContext=True)
+   NodeComment="GetPanel"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="FDPanel",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",LinkedTo=(PanelOk 00000000000000000000000000000003,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PanelOk"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
+   NodeComment="PanelOk"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=300
+   NodeGuid=00000000000000000000000000000004
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",LinkedTo=(GetPanel 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrHas 00000000000000000000000000000006,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrHas"
+   NodeComment="BrHas"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000007
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(PanelOk 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Step 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Make 0000000000000000000000000000000C,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PCForWidget"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.GameplayStatics'",MemberName="GetPlayerController")
+   NodeComment="PCForWidget"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000000D
+   CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="PlayerIndex",PinType.PinCategory="int",DefaultValue="0",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerController'",LinkedTo=(Make 00000000000000000000000000000010,),)
+End Object
+Begin Object Class=/Script/UMGEditor.K2Node_CreateWidget Name="Make"
+   NodeComment="Make"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=150
+   NodeGuid=00000000000000000000000000000011
+   CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrHas 0000000000000000000000000000000B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(SetPanel 00000000000000000000000000000013,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/UMG.UserWidget'",DefaultObject="/Script/CoreUObject.Class'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="OwningPlayer",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerController'",LinkedTo=(PCForWidget 0000000000000000000000000000000F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",LinkedTo=(SetPanel 00000000000000000000000000000016,Show 00000000000000000000000000000017,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="SetPanel"
+   VariableReference=(MemberName="FDPanel",bSelfContext=True)
+   NodeComment="SetPanel"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=500
+   NodePosY=150
+   NodeGuid=00000000000000000000000000000018
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Make 00000000000000000000000000000012,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Show 0000000000000000000000000000001A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="FDPanel",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",LinkedTo=(Make 00000000000000000000000000000015,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Show"
+   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/UMG.UserWidget'",MemberName="AddToViewport")
+   NodeComment="Show"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=750
+   NodePosY=150
+   NodeGuid=0000000000000000000000000000001C
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(SetPanel 00000000000000000000000000000019,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Step 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/UMG.UserWidget'",LinkedTo=(Make 00000000000000000000000000000015,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="ZOrder",PinType.PinCategory="int",DefaultValue="20",)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_Self Name="Self"
+   NodeComment="Self"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=300
+   NodeGuid=0000000000000000000000000000001F
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="self",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategory="self",LinkedTo=(Step 00000000000000000000000000000021,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPanelForStep"
+   VariableReference=(MemberName="FDPanel",bSelfContext=True)
+   NodeComment="GetPanelForStep"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1000
+   NodePosY=450
+   NodeGuid=00000000000000000000000000000022
+   CustomProperties Pin (PinId=00000000000000000000000000000023,PinName="FDPanel",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",LinkedTo=(Step 00000000000000000000000000000024,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Step"
+   FunctionReference=(MemberParent="/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",MemberName="Step")
+   NodeComment="Step"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=1250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000025
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrHas 00000000000000000000000000000009,Show 0000000000000000000000000000001D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'",LinkedTo=(GetPanelForStep 00000000000000000000000000000023,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="Owner",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C'",LinkedTo=(Self 00000000000000000000000000000020,),)
+End Object

@@ -5,6 +5,7 @@ from fdgen.core.graph import Graph
 from fdgen.core.types import BOOL, EXEC, NAME, OBJ, STR, T
 from fdgen.core.paths import FREIGHT_DOCK_CLASS, K2, MODAPI, STRLIB
 from fdgen.core.nodes import get_self
+from fdgen.core.text import LOG_PREFIX
 
 
 # GridActors (ModAPI name of GridactorDefs_Sync) columns; copied from the trade dock unless overridden
@@ -116,7 +117,7 @@ def register_freight_dock():
     g.call("RowStr", STRLIB, "Conv_BoolToString", x - 250, 700,
            [("InBool", "in", BOOL, None), ("ReturnValue", "out", STR, None)])
     g.link(("AddDefRow", "ReturnValue"), ("RowStr", "InBool"))
-    parts = [("Freight dock registered: trade GridActor=", None), ("", ("CheckTrade", "ReturnValue")),
+    parts = [(LOG_PREFIX + "Freight dock registered: trade GridActor=", None), ("", ("CheckTrade", "ReturnValue")),
              (", added row ", None), ("", ("RowStr", "ReturnValue")),
              (", GridActor=", None), ("", ("CheckActor", "ReturnValue")),
              (", Icon=", None), ("", ("CheckIcon", "ReturnValue"))]

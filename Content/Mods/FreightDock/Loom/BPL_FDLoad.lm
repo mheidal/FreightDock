@@ -1,0 +1,204 @@
+blueprint BPL_FDLoad : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDLoad
+
+// Loading plan for a freight dock (BP_MapLoad.UpdateRequest calls Plan): how much of each resource the partner
+// wants to ask haulers to bring to this dock.
+//
+// - A resource's need: the partner's deficit - our hold - the partner's dock cargo - what is waiting at this dock
+//   (dropped by haulers, not yet loaded: the input slot's count) - what is being carried here.
+// - Its cap: with "Pick up from" warehouses set, what they hold free (count - reservedForPickup); else the need.
+// - The free hold space (cargoLimit - hold - all waiting at the dock or being carried; 0 while NoMore) is shared in
+//   proportion to the capped needs; what rounding leaves goes to them in order, then to stalled resources.
+// - Stalled: a resource with an open request (asked for more than is aboard, at the dock and being carried) that no
+//   hauler has picked up for STALL seconds is left out for RETRY seconds, so its space goes to the others.
+//   MapLoad.PickupSeen holds each "<dock>|<resource>"'s hold + at dock + carried at the last plan, MapLoad.PickupSince
+//   when it last grew (or the request last opened); a time in the future means stalled until then.
+//
+// The request is a total to have aboard: the game sets the input slot's capacity to the request less the hold, and
+// turns away haulers beyond it. So a resource being brought is asked for as hold + at dock + carried (+ allowance);
+// one only in the hold (ship provisions) stays out, so it isn't freight. InFlight is all at the dock or carried.
+
+pure fn Stall() -> float {
+    return 20.0
+}
+
+pure fn Retry() -> float {
+    return 60.0
+}
+
+pure fn DockId(Dock: WorkDock) -> int {
+    let grid = cast(Dock.GetOwner(), GridActor)
+    return if grid == none { -1 } else { grid.ID }
+}
+
+pure fn Key(Id: int, Res: name) -> string {
+    return string(Id) + "|" + string(Res)
+}
+
+// Seconds until "<dock>|<resource>" is asked for again, 0 when not stalled (for the panel).
+fn StallLeft(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Res: name) -> int {
+    let f = MapLoad.PickupSince.Find(Key(Id, Res))
+    if !f.ReturnValue {
+        return 0
+    }
+    return KismetMathLibrary.Max(KismetMathLibrary.FCeil(f.Value - GameplayStatics.GetTimeSeconds()), 0)
+}
+
+// Per resource, what the dock's "Pick up from" warehouses hold free; HasSources false when none is set.
+fn SourceStock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, out Stock: map<name, int>, out HasSources: bool) {
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return
+    }
+    for id in linker.m_sourceStockpileIds {
+        HasSources = true
+        let b = MapLoad.BuildingById(id).Building
+        if b != none {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            if rb != none {
+                for res, slot in rb.m_stockpile.Slots {
+                    let free = slot.count - slot.reservedForPickup
+                    if free > 0 {
+                        let had = Stock.Find(res)
+                        Stock[res] = (if had.ReturnValue { had.Value } else { 0 }) + free
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn Plan(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Partner: WorkDock, Ship: NauticalShip, NoMore: bool, out Request: map<name, int>, out Remaining: int, out InFlight: int, out Space: int, out Detail: string) {
+    let now = GameplayStatics.GetTimeSeconds()
+    let id = DockId(Dock)
+    let want = MapLoad.DeficitsFor(Partner).Want
+    let held = MapLoad.HoldCounts(Ship)
+    let hold = held.Counts
+
+    // what is waiting at the dock or being carried here stays requested
+    for res, slot in Dock.m_inputStockpile.Slots {
+        let kept = slot.count + slot.reservedSpaceForDropoff
+        if kept > 0 {
+            let hh = hold.Find(res)
+            Request[res] = (if hh.ReturnValue { hh.Value } else { 0 }) + kept
+            InFlight += kept
+        }
+    }
+    Space = 0
+    if !NoMore {
+        Space = KismetMathLibrary.Max(Ship.config.cargoLimit - held.Total - InFlight, 0)
+    }
+    let src = SourceStock(MapLoad, Dock)
+
+    // need, cap and stall state per resource
+    let names: array<name> = []
+    let avail: array<int> = []
+    let stalled: array<bool> = []
+    let fly: array<int> = []
+    let docked: array<int> = []
+    let holds: array<int> = []
+    let needs: array<int> = []
+    for res, deficit in want.counts {
+        let h = hold.Find(res)
+        let inHold = if h.ReturnValue { h.Value } else { 0 }
+        let f = Dock.m_inputStockpile.Slots.Find(res)
+        let carried = if f.ReturnValue { f.Value.reservedSpaceForDropoff } else { 0 }
+        let atDock = if f.ReturnValue { f.Value.count } else { 0 }
+        let s = Partner.m_stockpile_goodsFromSea.Slots.Find(res)
+        let atPartner = if s.ReturnValue { s.Value.count } else { 0 }
+        let need = deficit - inHold - atPartner - atDock - carried
+        if need > 0 {
+            Remaining += need
+        }
+        let cap = need
+        if src.HasSources {
+            let st = src.Stock.Find(res)
+            cap = KismetMathLibrary.Min(need, if st.ReturnValue { st.Value } else { 0 })
+        }
+
+        // stall: no pickup (hold + at dock + carried growing) for Stall() seconds while asked for more than that
+        let key = Key(id, res)
+        let got = inHold + atDock + carried
+        // copied into variables before PickupSeen is written: a map Find is re-read wherever it is used
+        let before = -1
+        let seen = MapLoad.PickupSeen.Find(key)
+        if seen.ReturnValue {
+            before = seen.Value
+        }
+        let since = MapLoad.PickupSince.Find(key)
+        let sinceT = if since.ReturnValue { since.Value } else { now }
+        if before < 0 || got > before {
+            sinceT = now
+        }
+        let a = Dock.m_requiredEmbarkSupplies_dockSpecific.counts.Find(res)
+        let asked = if a.ReturnValue { a.Value } else { 0 }
+
+        MapLoad.PickupSeen[key] = got
+        let open = asked > got
+        if sinceT <= now {
+            if !open {
+                sinceT = now
+            } else if now - sinceT > Stall() {
+                sinceT = now + Retry()
+            }
+        }
+        MapLoad.PickupSince[key] = sinceT
+
+        names.Add(res)
+        avail.Add(KismetMathLibrary.Max(cap, 0))
+        stalled.Add(sinceT > now)
+        fly.Add(carried)
+        docked.Add(atDock)
+        holds.Add(inHold)
+        needs.Add(need)
+    }
+
+    // share the space in proportion to the capped needs of the resources not stalled
+    let total = 0
+    let i = 0
+    while i < names.Length() {
+        if !stalled[i] {
+            total += avail[i]
+        }
+        i += 1
+    }
+    let takes: array<int> = []
+    let added = 0
+    i = 0
+    while i < names.Length() {
+        let t = 0
+        if !stalled[i] && total > 0 {
+            t = if total <= Space { avail[i] } else { int(float(Space) * float(avail[i]) / float(total)) }
+        }
+        takes.Add(t)
+        added += t
+        i += 1
+    }
+    // what is left: first to the others, then to stalled resources
+    let pass = 0
+    while pass < 2 {
+        i = 0
+        while i < names.Length() {
+            let take = stalled[i] == (pass == 1)
+            if take {
+                let more = KismetMathLibrary.Min(avail[i] - takes[i], Space - added)
+                if more > 0 {
+                    takes[i] = takes[i] + more
+                    added += more
+                }
+            }
+            i += 1
+        }
+        pass += 1
+    }
+
+    i = 0
+    while i < names.Length() {
+        let res = names[i]
+        if takes[i] > 0 {
+            Request[res] = holds[i] + docked[i] + fly[i] + takes[i]
+        }
+        let capText = if src.HasSources { string(avail[i]) } else { "any" }
+        Detail += string(res) + ": need " + string(needs[i]) + " (at dock " + string(docked[i]) + ", in flight " + string(fly[i]) + ", free at sources " + capText + (if stalled[i] { ", stalled" } else { "" }) + "), +" + string(takes[i]) + "; "
+        i += 1
+    }
+}

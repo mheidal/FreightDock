@@ -1,0 +1,570 @@
+blueprint WBP_FDPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDPanel
+
+// The Freight Dock panel: while a paired freight dock is selected, it stands to the left of the dock's window
+// (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the partner, the ship, a
+// table of what the partner wants (WBP_FDWantRow), the partner's "Deliver to" and this dock's "Pick up from"
+// warehouses (links that pan the camera there; pick-up warehouses with what they hold), and Deliver now.
+// It sits in the game's rounded frame over the dock window's own background, borrows the window's fonts, and
+// hides the window's "Load resources onto ship" bar and its supported-actions frames, giving them back their
+// visibility when anything else is selected.
+// BP_MapLoad creates it once and calls Step every frame (PanelTick).
+
+var MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C
+var ShownId: int = -1
+var NextRefresh: float = 0.0
+var RowsKey: string = ""
+var PartnerRows: array<WBP_FDLinkRow>
+var DestRows: array<WBP_FDLinkRow>
+var SrcRows: array<WBP_FDLinkRow>
+var SrcIds: array<int>
+var ReqRows: array<WBP_FDWantRow>
+var Window: Details_WorkDock_Generic
+var Kept: array<Widget>
+var KeptWas: array<ESlateVisibility>
+var HaveFonts: bool = false
+var TitleFont: SlateFontInfo
+var HeadFont: SlateFontInfo
+var BodyFont: SlateFontInfo
+var SmallFont: SlateFontInfo
+var Placed: int = 0
+var ShownAt: float = 0.0
+var HaveBrush: bool = false
+
+widget Width: SizeBox(WidthOverride: 500.0) {
+    widget Stack: Overlay {
+        widget Bg: Image(ColorAndOpacity: "#0d1520f2") slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill)
+        widget Frame: RoundedFrameWithHeaderIcon(showIcon: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill, Padding: Margin(Left: 26, Top: 16, Right: 26, Bottom: 16))
+        widget Inner: Border(BrushColor: "#00000000", Padding: Margin(Left: 20, Top: 16, Right: 20, Bottom: 16)) {
+            widget Col: VerticalBox {
+                widget Title: TextBlock(Text: "FREIGHT DOCK", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
+                widget PartnerBox: VerticalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
+                widget Div1: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                widget ShipHead: TextBlock(Text: "SHIP", ColorAndOpacity: "#e8c872ff")
+                widget ShipText: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                widget Div2: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                widget ReqHead: TextBlock(Text: "PARTNER WANTS", ColorAndOpacity: "#e8c872ff")
+                widget ReqBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
+                widget ReqNone: TextBlock(Text: "Nothing", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                widget Div3: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                widget DestHead: TextBlock(Text: "PARTNER DELIVERS TO", ColorAndOpacity: "#e8c872ff")
+                widget DestBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
+                widget SrcHead: TextBlock(Text: "PICKING UP FROM", ColorAndOpacity: "#e8c872ff")
+                widget SrcBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
+                widget Deliver: Arco_Button_CommonRound slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 0))
+            }
+        }
+    }
+}
+
+on Construct {
+    // The content goes into the game's rounded frame (its named slot); Inner is declared in Stack only because
+    // a widget tree has a single root.
+    Frame.NamedSlot_93.SetContent(Inner)
+    HideFrameIcon()
+    Deliver.SetLabelText("Deliver now")
+    Deliver.OnClicked.bind(DeliverClicked)
+    SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// A click on the panel's background stays on the panel, so it doesn't reach the world behind it.
+on OnMouseButtonDown(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+// The rounded frame draws its header icon whatever showIcon says once built: collapse its images showing the
+// frame's Icon texture.
+fn HideFrameIcon() {
+    if Frame.Icon == none {
+        return
+    }
+    let parts: array<Image> = [Frame.Image, Frame.Image_1, Frame.Image_125, Frame.Image_42, Frame.Image_85]
+    for img in parts {
+        if img != none {
+            if img.Brush.ResourceObject == Frame.Icon {
+                img.SetVisibility(ESlateVisibility.Collapsed)
+            }
+        }
+    }
+}
+
+fn DeliverClicked() {
+    if MapLoad != none {
+        MapLoad.DeliverSelected()
+    }
+}
+
+// Every frame, from BP_MapLoad.PanelTick.
+fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    MapLoad = Owner
+    let found = Owner.FindDockUnderCursor()
+    let dock = found.Dock
+    let show = false
+    if dock != none {
+        if dock.activeTradePartnerId <= -2 {
+            show = Owner.IsFreightDock(dock).Result
+        }
+    }
+    if !show {
+        if ShownId != -1 {
+            Leave()
+        }
+        return
+    }
+    let id = DockId(dock)
+    let now = GameplayStatics.GetRealTimeSeconds()
+    if id != ShownId {
+        Restore()
+        ShownId = id
+        NextRefresh = 0.0
+        RowsKey = ""
+        Placed = 0
+        ShownAt = now
+        // Laid out but not drawn until it has been placed, so it doesn't jump into place.
+        SetVisibility(ESlateVisibility.Hidden)
+    }
+    KeepHidden()
+    let wasFound = Window != none
+    FindWindow()
+    if now >= NextRefresh {
+        NextRefresh = now + 0.5
+        Refresh(dock)
+        if wasFound {
+            Sweep()
+        }
+    }
+    Place()
+    if Window != none {
+        Placed += 1
+    }
+    if GetVisibility() == ESlateVisibility.Hidden {
+        if Placed >= 2 || now > ShownAt + 1.0 {
+            SetVisibility(ESlateVisibility.Visible)
+        }
+    }
+}
+
+// Nothing to show: hide, and give the dock window's parts back their visibility.
+fn Leave() {
+    ShownId = -1
+    SetVisibility(ESlateVisibility.Collapsed)
+    Restore()
+}
+
+fn Restore() {
+    let i = Kept.Length() - 1
+    while i >= 0 {
+        let w = Kept[i]
+        if KismetSystemLibrary.IsValid(w) {
+            w.SetVisibility(KeptWas[i])
+        }
+        i -= 1
+    }
+    Kept = []
+    KeptWas = []
+    Window = none
+}
+
+// Collapses a part of the dock window, remembering how it was shown.
+fn Keep(Part: Widget) {
+    if Part == none {
+        return
+    }
+    if Kept.Contains(Part) {
+        return
+    }
+    Kept.Add(Part)
+    KeptWas.Add(Part.GetVisibility())
+    Part.SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// The game may show them again as it updates the window: collapse them every frame.
+fn KeepHidden() {
+    for w in Kept {
+        if KismetSystemLibrary.IsValid(w) {
+            if w.GetVisibility() != ESlateVisibility.Collapsed {
+                w.SetVisibility(ESlateVisibility.Collapsed)
+            }
+        }
+    }
+}
+
+// The open dock window; when found, its parts to hide and its fonts.
+fn FindWindow() {
+    if Window != none {
+        if KismetSystemLibrary.IsValid(Window) {
+            if Window.IsVisible() {
+                return
+            }
+        }
+    }
+    Window = none
+    let found = WidgetBlueprintLibrary.GetAllWidgetsOfClass(/Game/UI/GridActor_DetailViews/Details_WorkDock_Generic.Details_WorkDock_Generic_C, false)
+    for w in found.FoundWidgets {
+        let win = cast(w, Details_WorkDock_Generic)
+        if win != none {
+            if win.IsVisible() {
+                if SlateBlueprintLibrary.GetAbsoluteSize(win.Tabs_Parent.GetCachedGeometry()).X > 50.0 {
+                    Window = win
+                }
+            }
+        }
+    }
+    if Window == none {
+        return
+    }
+    Keep(Window.ShipPreparationWidget)
+    Keep(Window.supportedActions)
+    Keep(Window.supportedActions_1)
+    Keep(Window.SupportedNauticalActionsHint_Arco)
+    Keep(Window.SupportedNauticalActionsHint_Arco_Horizontal)
+    if !HaveFonts {
+        TakeFonts()
+    }
+    Sweep()
+}
+
+// The topmost parent of a widget within its own widget tree.
+fn TopOf(W: Widget) -> Widget {
+    let cur = W
+    let up = W.GetParent()
+    while up != none {
+        cur = up
+        up = up.GetParent()
+    }
+    return cur
+}
+
+pure fn PosOf(W: Widget) -> Vector2D {
+    return SlateBlueprintLibrary.LocalToViewport(W.GetCachedGeometry(), Vector2D(X: 0.0, Y: 0.0)).PixelPosition
+}
+
+pure fn SizeOf(W: Widget) -> Vector2D {
+    return SlateBlueprintLibrary.GetAbsoluteSize(W.GetCachedGeometry())
+}
+
+// Walks the dock window's tree and the tree holding ShipPreparationWidget (the window puts it in a nested
+// widget's slot). Collapses the images, borders and ShipPreparationWidget's containers that lie wholly left of
+// the window: the bar it sat in, with its background. The first time, copies the window's own background (the
+// largest image or border behind its tabs; else the bar's) onto the panel's Bg.
+fn Sweep() {
+    let view = WidgetLayoutLibrary.GetViewportSize()
+    let left = WindowLeft(view.X)
+    let chain: array<Widget> = []
+    let up = Window.ShipPreparationWidget.GetParent()
+    while up != none {
+        chain.Add(up)
+        up = up.GetParent()
+    }
+    let all: array<Widget> = [TopOf(Window.Tabs_Parent)]
+    let other = TopOf(Window.ShipPreparationWidget)
+    if !all.Contains(other) {
+        all.Add(other)
+    }
+    let tabs = PosOf(Window.Tabs_Parent)
+    let behind: Widget = none
+    let behindArea = 0.0
+    let bar: Widget = none
+    let barArea = 0.0
+    let i = 0
+    while i < all.Length() {
+        let w = all[i]
+        i += 1
+        let panel = cast(w, PanelWidget)
+        if panel != none {
+            for c in panel.GetAllChildren() {
+                all.Add(c)
+            }
+        }
+        let isBg = cast(w, Image) != none
+        if !isBg {
+            isBg = cast(w, Border) != none
+        }
+        let consider = isBg
+        if !consider {
+            consider = chain.Contains(w)
+        }
+        if consider {
+            consider = w.IsVisible()
+        }
+        if consider {
+            let p = PosOf(w)
+            let z = SizeOf(w)
+            let area = z.X * z.Y
+            let leftOf = z.X > 100.0 && z.X < view.X * 0.9
+            if leftOf {
+                leftOf = p.X + z.X <= left + 20.0
+            }
+            if leftOf {
+                if isBg && area > barArea {
+                    bar = w
+                    barArea = area
+                }
+                Keep(w)
+            } else if isBg && z.X < view.X * 0.6 {
+                let covers = p.X <= tabs.X + 1.0 && p.Y <= tabs.Y + 1.0
+                if covers {
+                    covers = p.X + z.X >= tabs.X && p.Y + z.Y >= tabs.Y
+                }
+                if covers && area > behindArea {
+                    behind = w
+                    behindArea = area
+                }
+            }
+        }
+    }
+    if !HaveBrush {
+        let src = if behind == none { bar } else { behind }
+        if src != none {
+            CopyBrush(src)
+        }
+    }
+}
+
+// The panel's background takes the brush and tint of an image or border of the dock window.
+fn CopyBrush(Src: Widget) {
+    let img = cast(Src, Image)
+    if img != none {
+        Bg.SetBrush(img.Brush)
+        Bg.SetColorAndOpacity(img.ColorAndOpacity)
+    }
+    let bor = cast(Src, Border)
+    if bor != none {
+        Bg.SetBrush(bor.Background)
+        Bg.SetColorAndOpacity(bor.BrushColor)
+    }
+    HaveBrush = true
+}
+
+// Left edge (viewport pixels) of the widest parent of the window's tabs that is narrower than half the screen.
+fn WindowLeft(ViewWidth: float) -> float {
+    let geo = Window.Tabs_Parent.GetCachedGeometry()
+    let best = SlateBlueprintLibrary.LocalToViewport(geo, Vector2D(X: 0.0, Y: 0.0)).PixelPosition.X
+    let p = Window.Tabs_Parent.GetParent()
+    while p != none {
+        let g = p.GetCachedGeometry()
+        let width = SlateBlueprintLibrary.GetAbsoluteSize(g).X
+        if width > 50.0 && width < ViewWidth * 0.5 {
+            best = SlateBlueprintLibrary.LocalToViewport(g, Vector2D(X: 0.0, Y: 0.0)).PixelPosition.X
+        }
+        p = p.GetParent()
+    }
+    return best
+}
+
+// The dock window's own fonts, at the panel's sizes; texts and rows restyled with them.
+fn TakeFonts() {
+    TitleFont = Sized(Window.ShipName_2.Font, 21.0)
+    HeadFont = Sized(Window.ShipStateKey.Font, 17.0)
+    BodyFont = Sized(Window.capacity_count.Font, 16.0)
+    SmallFont = Sized(Window.capacity_count.Font, 14.0)
+    HaveFonts = true
+    Title.SetFont(TitleFont)
+    ShipHead.SetFont(HeadFont)
+    ReqHead.SetFont(HeadFont)
+    DestHead.SetFont(HeadFont)
+    SrcHead.SetFont(HeadFont)
+    ShipText.SetFont(BodyFont)
+    ReqNone.SetFont(BodyFont)
+    RowsKey = ""
+}
+
+pure fn Sized(Font: SlateFontInfo, Size: float) -> SlateFontInfo {
+    let f = Font
+    f.Size = Size
+    return f
+}
+
+pure fn DockId(Dock: WorkDock) -> int {
+    let grid = cast(Dock.GetOwner(), GridActor)
+    return if grid == none { -1 } else { grid.ID }
+}
+
+// Bottom right corner of the panel at the dock window's left edge, 8 px above the bottom of the screen.
+fn Place() {
+    let size = WidgetLayoutLibrary.GetViewportSize()
+    let left = if Window == none { size.X * 0.64 } else { WindowLeft(size.X) }
+    SetAlignmentInViewport(Vector2D(X: 1.0, Y: 1.0))
+    SetPositionInViewport(Vector2D(X: left - 6.0, Y: size.Y - 8.0), true)
+}
+
+// Seconds as "m:ss".
+pure fn Clock(Seconds: int) -> string {
+    let s = Seconds % 60
+    return string(Seconds / 60) + ":" + (if s < 10 { "0" } else { "" }) + string(s)
+}
+
+// "Medium warehouse" for a medium_warehouse building.
+fn BuildingName(Building: Actor) -> string {
+    let raw = KismetSystemLibrary.GetClassDisplayName(GameplayStatics.GetObjectClass(Building))
+    if KismetStringLibrary.EndsWith(raw, "_C", ESearchCase.CaseSensitive) {
+        raw = KismetStringLibrary.LeftChop(raw, 2)
+    }
+    raw = KismetStringLibrary.Replace(raw, "_", " ", ESearchCase.CaseSensitive)
+    return KismetStringLibrary.ToUpper(KismetStringLibrary.Left(raw, 1)) + KismetStringLibrary.RightChop(raw, 1)
+}
+
+fn Refresh(Dock: WorkDock) {
+    let id = DockId(Dock)
+    let partner = MapLoad.PartnerOf(Dock).Partner
+    let pid = if partner == none { -1 } else { DockId(partner) }
+    Title.SetText(text("FREIGHT DOCK " + string(id)))
+
+    let destIds: array<int> = []
+    if partner != none {
+        let plinker = cast(partner.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+        if plinker != none {
+            for d in plinker.m_destStockpileIds {
+                destIds.Add(d)
+            }
+        }
+    }
+    let srcIds: array<int> = []
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker != none {
+        for s in linker.m_sourceStockpileIds {
+            srcIds.Add(s)
+        }
+    }
+    let key = string(pid) + "|"
+    for d in destIds {
+        key += string(d) + ","
+    }
+    key += "|"
+    for s in srcIds {
+        key += string(s) + ","
+    }
+    if key != RowsKey {
+        RowsKey = key
+        BuildRows(partner, pid, destIds, srcIds)
+    }
+
+    ShipText.SetText(text(ShipLine(Dock, id)))
+    FillWants(Dock, partner)
+    let i = 0
+    for row in SrcRows {
+        let b = MapLoad.BuildingById(SrcIds[i]).Building
+        if b != none {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            if rb != none {
+                row.SetPile(rb.m_stockpile)
+            }
+        }
+        i += 1
+    }
+}
+
+fn Row(Box: VerticalBox, Caption: string, Where: Vector, CanPan: bool) -> WBP_FDLinkRow {
+    let r = create_widget(WBP_FDLinkRow)
+    r.Setup(Caption, Where, CanPan, BodyFont)
+    Box.AddChildToVerticalBox(r)
+    return r
+}
+
+// Partner, "Deliver to" and "Pick up from" link rows; rebuilt only when the set of buildings changes.
+fn BuildRows(Partner: WorkDock, Pid: int, DestIds: array<int>, Src: array<int>) {
+    PartnerBox.ClearChildren()
+    DestBox.ClearChildren()
+    SrcBox.ClearChildren()
+    PartnerRows = []
+    DestRows = []
+    SrcRows = []
+    SrcIds = Src
+    let nowhere = Vector(X: 0.0, Y: 0.0, Z: 0.0)
+    if Partner == none {
+        PartnerRows.Add(Row(PartnerBox, "No partner", nowhere, false))
+    } else {
+        PartnerRows.Add(Row(PartnerBox, "Partner: Freight Dock " + string(Pid), Partner.GetOwner().K2_GetActorLocation(), true))
+    }
+    for d in DestIds {
+        let b = MapLoad.BuildingById(d).Building
+        if b == none {
+            DestRows.Add(Row(DestBox, "Building " + string(d) + " (gone)", nowhere, false))
+        } else {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            let empty = if rb == none { false } else { rb.m_forceEmpty }
+            DestRows.Add(Row(DestBox, BuildingName(b) + " " + string(d) + (if empty { "  ·  Keep empty" } else { "" }), b.K2_GetActorLocation(), true))
+        }
+    }
+    if DestIds.Length() == 0 {
+        DestRows.Add(Row(DestBox, "None", nowhere, false))
+    }
+    for s in Src {
+        let b = MapLoad.BuildingById(s).Building
+        if b == none {
+            SrcRows.Add(Row(SrcBox, "Building " + string(s) + " (gone)", nowhere, false))
+        } else {
+            SrcRows.Add(Row(SrcBox, BuildingName(b) + " " + string(s), b.K2_GetActorLocation(), true))
+        }
+    }
+    if Src.Length() == 0 {
+        Row(SrcBox, "None", nowhere, false)
+    }
+}
+
+// The ship: where it is, its hold, the wait clock or a pending departure, and the one-way trip time.
+fn ShipLine(Dock: WorkDock, Id: int) -> string {
+    let s = ""
+    if MapLoad.Voyages.Contains(Id) {
+        let phase = MapLoad.VoyagePhase[Id]
+        s = if phase == 1 { "Sailing to the partner" } else if phase == 2 { "At the partner" } else { "Sailing home" }
+    } else {
+        let ship = MapLoad.ShipAtDock(Dock).Ship
+        if ship == none {
+            s = "No ship at the dock"
+        } else {
+            let hold = MapLoad.HoldCounts(ship)
+            s = "Hold " + string(hold.Total) + " / " + string(ship.config.cargoLimit)
+            if MapLoad.DepartingSince.Contains(Id) {
+                s += "\nLeaving once the goods being carried arrive"
+            } else if MapLoad.LoadingSince.Contains(Id) {
+                let waited = int(GameplayStatics.GetTimeSeconds() - MapLoad.LoadingSince[Id])
+                let limit = MapLoad.MaxWaitSeconds
+                s += "\nLoading " + Clock(waited) + (if limit > 100000.0 { "" } else { " of " + Clock(int(limit)) })
+            } else {
+                s += "\nWaiting for cargo"
+            }
+        }
+    }
+    let curve = MapLoad.RouteCurve(Id).Curve
+    if curve != none && MapLoad.ShipSpeed > 0.0 {
+        s += "\nOne-way trip about " + Clock(int(float(curve.GetSplineLength()) / MapLoad.ShipSpeed))
+    }
+    return s
+}
+
+// A table row per resource the partner wants (WBP_FDWantRow): aboard (hold + waiting at the dock), being carried,
+// unloaded at the partner, still to fetch (this dock's request, a total to have aboard, less what is aboard, at the dock or being carried) and wanted
+// (the partner's deficit).
+fn FillWants(Dock: WorkDock, Partner: WorkDock) {
+    let n = 0
+    if Partner != none {
+        let want = MapLoad.DeficitsFor(Partner).Want
+        let ship = MapLoad.ShipAtDock(Dock).Ship
+        let aboard: map<name, int> = {}
+        if ship != none {
+            aboard = MapLoad.HoldCounts(ship).Counts
+        }
+        for res, deficit in want.counts {
+            let flying = Dock.m_inputStockpile.Slots[res].reservedSpaceForDropoff
+            let atDock = Dock.m_inputStockpile.Slots[res].count
+            let waiting = Partner.m_stockpile_goodsFromSea.Slots[res].count
+            let asked = Dock.m_requiredEmbarkSupplies_dockSpecific.counts[res]
+            let toFetch = KismetMathLibrary.Max(asked - aboard[res] - atDock - flying, 0)
+            if n >= ReqRows.Length() {
+                let made = create_widget(WBP_FDWantRow)
+                ReqBox.AddChildToVerticalBox(made)
+                ReqRows.Add(made)
+            }
+            let row = ReqRows[n]
+            row.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+            row.Show(res, aboard[res] + atDock, flying, waiting, toFetch, deficit, BPL_FDLoad.StallLeft(MapLoad, DockId(Dock), res), BodyFont)
+            n += 1
+        }
+    }
+    let i = n
+    while i < ReqRows.Length() {
+        ReqRows[i].SetVisibility(ESlateVisibility.Collapsed)
+        i += 1
+    }
+    ReqNone.SetVisibility(if n == 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
+}

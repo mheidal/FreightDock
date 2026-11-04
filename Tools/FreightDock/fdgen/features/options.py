@@ -113,8 +113,8 @@ def read_pair_key():
 
 
 def pair_key_tick():
-    """PairKeyTick (Event Tick, also while paused): PairAtCursor when PairKey was just pressed; then StandInClick and
-    DeliverTick. (DebugCells, the F7 cell overlay, is not called: hook it in here while debugging routes.)"""
+    """PairKeyTick (Event Tick, also while paused): PairAtCursor when PairKey was just pressed; then StandInClick,
+    and PanelTick. (DebugCells, the F7 cell overlay, is not called: hook it in here while debugging routes.)"""
     g = Graph()
     get_self(g, "GetKey", "PairKey", KEY, 0, 400)
     g.call("PC", STATICS, "GetPlayerController", 0, 250,
@@ -130,8 +130,8 @@ def pair_key_tick():
     user_call(g, "Click", "StandInClick", 500, 0)
     g.link(("Pair", "then"), ("Click", "execute"))
     g.link(("BrPressed", "else"), ("Click", "execute"))
-    user_call(g, "Deliver", "DeliverTick", 750, 0)
-    g.link(("Click", "then"), ("Deliver", "execute"))
+    user_call(g, "Panel", "PanelTick", 750, 0)
+    g.link(("Click", "then"), ("Panel", "execute"))
     return g.render()
 
 

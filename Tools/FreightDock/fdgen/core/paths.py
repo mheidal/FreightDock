@@ -101,7 +101,8 @@ PANEL = "/Script/UMG.PanelWidget"
 UBUTTON = "/Script/UMG.Button"
 
 
-DELIVER_BUTTON_CLASS = "/Game/Mods/FreightDock/WBP_FDDeliverButton.WBP_FDDeliverButton_C"
+# Loom-built (Content/Mods/FreightDock/UI/*.lm)
+FD_PANEL_CLASS = "/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C"
 
 
 WLIB = "/Script/CoreUObject.Class'/Script/UMG.WidgetBlueprintLibrary'"
@@ -177,6 +178,7 @@ CURSORCAST = "/Script/ProjectArco.CursorCastInfo"
 
 
 RESBUILDING = "/Script/ProjectArco.ResourceBuilding"
+STORAGETAB = "/Script/ProjectArco.ResourceBuilding_StorageTab"
 
 
 RESCOLL = "/Script/ProjectArco.ResourceCollection"

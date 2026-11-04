@@ -10,7 +10,7 @@ from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
     arrfn, bnot, bop, branch, break_struct, for_each, get_local, get_member, get_self,
     is_valid, set_fields, set_local, set_member, set_pin_default, set_self, user_call)
-from fdgen.core.text import concat_parts, log_msg, to_str
+from fdgen.core.text import LOG_PREFIX, concat_parts, log_msg, to_str
 
 
 STEVEDORE = "mod.stevedore"
@@ -74,7 +74,7 @@ def register_extras():
                                                  ("ReturnValue", "out", BOOL, None)])
         g.link(("Strings", "Map"), ("Strings_" + lang, "idStringPairs"))
 
-    parts = ["Stevedore modifier added: ", to_str(g, "SMod", "Conv_BoolToString", "InBool", BOOL, ("AddMod", "ReturnValue"), 0, 900)]
+    parts = [LOG_PREFIX + "Stevedore modifier added: ", to_str(g, "SMod", "Conv_BoolToString", "InBool", BOOL, ("AddMod", "ReturnValue"), 0, 900)]
     msg = concat_parts(g, "Msg", parts, 0, 1100)
     api("LogDone", "LogMessage", [("Msg", "in", STR, None), ("doPrependDate", "in", BOOL, 'DefaultValue="true"')])
     g.link((msg, "ReturnValue"), ("LogDone", "Msg"))

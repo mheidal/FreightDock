@@ -1,0 +1,14 @@
+blueprint WBP_FDTip : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDTip
+
+// A tooltip for the Freight Dock panel, in the panel's own font (the engine's default tooltip text is tiny).
+
+widget Width: SizeBox(MaxDesiredWidth: 340.0) {
+    widget Box: Border(BrushColor: "#0d1520f2", Padding: Margin(Left: 10, Top: 6, Right: 10, Bottom: 6)) {
+        widget Msg: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff")
+    }
+}
+
+fn Setup(Text: string, Font: SlateFontInfo) {
+    Msg.SetText(text(Text))
+    Msg.SetFont(Font)
+}

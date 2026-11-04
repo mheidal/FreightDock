@@ -1,0 +1,46 @@
+blueprint WBP_FDLinkRow : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDLinkRow
+
+// One clickable line of the Freight Dock panel (WBP_FDPanel): clicking it pans the camera to Target.
+// Under the link, optionally, a row of resource icons (what a warehouse holds).
+
+var Target: Vector
+var HasTarget: bool = false
+
+widget Rows: VerticalBox {
+    widget Link: Button(BackgroundColor: "#00000000") slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Left) {
+        widget Label: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff") slot(Padding: Margin(Left: 0, Top: 0, Right: 0, Bottom: 0))
+    }
+    widget Icons: ResourceCollectionAsRowOfIcons slot(Padding: Margin(Left: 12, Top: 0, Right: 0, Bottom: 4))
+}
+
+on Construct {
+    Link.OnClicked.bind(Clicked)
+    Icons.SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// Caption in Font; a click pans to Where (when CanPan).
+fn Setup(Caption: string, Where: Vector, CanPan: bool, Font: SlateFontInfo) {
+    Label.SetText(text(Caption))
+    Label.SetFont(Font)
+    Target = Where
+    HasTarget = CanPan
+}
+
+// Shows what a stockpile holds as icons under the link.
+fn SetPile(Pile: Stockpile) {
+    Icons.SetDataFromStockpile(Pile, false, false)
+    Icons.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+}
+
+// Pans the play camera to Target, keeping its height (as StandInClick does).
+fn Clicked() {
+    if !HasTarget {
+        return
+    }
+    let pawn = cast(GameplayStatics.GetPlayerPawn(0), Pawn_Play)
+    if pawn == none {
+        return
+    }
+    let height = pawn.m_desiredPanPos.Z
+    pawn.m_desiredPanPos = Vector(X: Target.X, Y: Target.Y, Z: height)
+}

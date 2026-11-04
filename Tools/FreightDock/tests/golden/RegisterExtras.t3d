@@ -372,7 +372,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Msg0"
    NodePosY=1100
    NodeGuid=000000000000000000000000000000B9
    CustomProperties Pin (PinId=000000000000000000000000000000BA,PinName="A",PinType.PinCategory="string",)
-   CustomProperties Pin (PinId=000000000000000000000000000000BB,PinName="B",PinType.PinCategory="string",DefaultValue="Stevedore modifier added: ",)
+   CustomProperties Pin (PinId=000000000000000000000000000000BB,PinName="B",PinType.PinCategory="string",DefaultValue="[FreightDock] Stevedore modifier added: ",)
    CustomProperties Pin (PinId=000000000000000000000000000000BC,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(Msg1 000000000000000000000000000000BD,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Msg1"

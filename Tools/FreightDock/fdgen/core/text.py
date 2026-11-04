@@ -5,6 +5,10 @@ from fdgen.core.types import BOOL, EXEC, INT, OBJ, STR, TEXT
 from fdgen.core.paths import K2, MODAPI, STRLIB, TEXTLIB
 
 
+# Starts every FreightDock log line (after the date), so the mod's lines stand out in a shared modlog.
+LOG_PREFIX = "[FreightDock] "
+
+
 def log_msg(g, name, modapi_get, x, y, literal=None):
     """LogMessage node, prefixed with Stamp() ("[yyyy-mm-dd hh:mm:ss] "); target wired from an existing Get ModAPI node.
     Links to (name, "Msg") go to the message part."""

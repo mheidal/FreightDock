@@ -475,7 +475,9 @@ def make_course():
     arc: the course runs straight from / to the pose and the ship turns in place (VoyageTick, using the end heading
     saved in VoyageEndFwd). Resampled every CourseSpacing with corners rounded (corner_leg).
     If a turn finds no clean arc and straight to that point, nearer points are tried in turn (down to the nearest
-    2 x TurnRadius away) before turning in place.
+    2 x TurnRadius away) before turning in place. The route's first point, the home berth's stand-off point, isn't
+    aimed at (it is beside the berthed ship, too near to turn towards); where the home end turns in place, the course
+    runs via it.
     Locals: Raw, Mid, ArcOut, ArcIn (Vector arrays), CourseSpline (Spline Component), StartIdx, EndIdx, Anchor, OutFloor,
     InCeil, TryFrom (Integer), UsedOut, UsedIn (Float).
     Wire Finish -> Return and GetCourseForReturn -> Course."""
@@ -544,17 +546,19 @@ def make_course():
     end_pos = vsel("EndPos", home, away, to_home, 1750, 2600)
     end_fwd = vsel("EndFwd", ("Fwd", "ReturnValue"), ("Wait", "Fwd"), to_home, 1750, 2750)
 
-    # Mid: the route points between the two ends (the route minus its last point; reversed when homeward)
+    # Mid: the route points between the two ends - the route minus its last point (the partner's stand-off point, an
+    # end pose) and its first (the home berth's stand-off point: beside the berthed ship, too near to turn towards);
+    # reversed when homeward. The home stand-off point is only used when the home end turns in place (below).
     for n_, arr, x in (("ClearRaw", raw, 0), ("ClearMid", mid, 250)):
         arrfn(g, n_, "Array_Clear", x, 0,
               [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("TargetArray", "in", VEC_ARRAY, None)])
         g.link(arr, (n_, "TargetArray"))
     chain(g, "ClearRaw", "ClearMid", "Wait")
     last_mid = ii(g, "LastMid", "Subtract_IntInt", ("N", "Value"), None, 750, 300, b_default="2")
-    for_loop(g, "ForMid", 750, 0, first=0)
+    for_loop(g, "ForMid", 750, 0, first=1)
     g.link(last_mid, ("ForMid", "LastIndex"))
     g.link(("Wait", "then"), ("ForMid", "Exec"))
-    rev = ii(g, "RevIdx", "Subtract_IntInt", last_mid, ("ForMid", "Index"), 1000, 300)
+    rev = ii(g, "RevIdx", "Subtract_IntInt", last_pt, ("ForMid", "Index"), 1000, 300)
     g.call("Idx", MATHLIB, "SelectInt", 1250, 300,
            [("A", "in", INT, None), ("B", "in", INT, None), ("bPickA", "in", BOOL, None), ("ReturnValue", "out", INT, None)])
     g.link(rev, ("Idx", "A"))
@@ -748,12 +752,35 @@ def make_course():
         L("Get" + src_var, src_var, VEC_ARRAY, x, 300)
         g.link(("Get" + src_var, src_var), (name, "SourceArray"))
 
+    # where the home end turns in place, the course runs via the home stand-off point (checked clear by the planner)
+    map_find(g, "HomeStandOff", ("GetRoutePts", "RoutePts"), base, MAP_INT_VECTOR, STRUCT(VECTOR), 6000, 1900, key_type=INT)
+    stand_off = at_home_z("StandOffAtZ", ("HomeStandOff", "Value"), 6250, 1900)
+
+    def via_stand_off(name, used_var, homeward, x):
+        L("Get" + name + used_var, used_var, DOUBLE, x, 2050)
+        pivot = dmath(g, name + "Pivot", "LessEqual_DoubleDouble", ("Get" + name + used_var, used_var), None, x, 2200,
+                      b_default="0.0", out=BOOL)
+        way = to_home if homeward else bnot(g, name + "Outward", to_home, x, 2350)
+        cond = bop(g, name + "Cond", "BooleanAND", bop(g, name + "Way", "BooleanAND", pivot, way, x + 250, 2200),
+                   has_route, x + 500, 2200)
+        branch(g, name + "Br", x, 0)
+        g.link(cond, (name + "Br", "Condition"))
+        add_to(name, raw, stand_off, x + 250, 0)
+        g.link((name + "Br", "then"), (name, "execute"))
+        g.node(name + "Next", K2 + "K2Node_ExecutionSequence", [], x + 500, 0,
+               [("execute", "in", EXEC, None), ("then_0", "out", EXEC, None)])
+        g.link((name + "Br", "else"), (name + "Next", "execute"))
+        g.link((name, "then"), (name + "Next", "execute"))
+        return (name + "Next", "then_0")
+
     add_to("AddStart", raw, start_pos, 6000, 0)
     g.link(after_in, ("AddStart", "execute"))
     append("AddOut", "ArcOut", 6250)
     g.link(("AddStart", "then"), ("AddOut", "execute"))
+    after_out_pts = via_stand_off("StandOffOut", "UsedOut", False, 6250)
+    g.link(("AddOut", "then"), ("StandOffOutBr", "execute"))
     branch(g, "BrMid", 6500, 0)
-    g.link(("AddOut", "then"), ("BrMid", "execute"))
+    g.link(after_out_pts, ("BrMid", "execute"))
     g.link(has_mid, ("BrMid", "Condition"))
     for_loop(g, "ForKeep", 6750, 0)
     g.link(("GetStartIdx", "StartIdx"), ("ForKeep", "FirstIndex"))
@@ -764,8 +791,10 @@ def make_course():
     append("AddIn", "ArcIn", 7250)
     g.link(("ForKeep", "Completed"), ("AddIn", "execute"))
     g.link(("BrMid", "else"), ("AddIn", "execute"))
+    after_in_pts = via_stand_off("StandOffIn", "UsedIn", True, 7250)
+    g.link(("AddIn", "then"), ("StandOffInBr", "execute"))
     add_to("AddEnd", raw, end_pos, 7500, 0)
-    g.link(("AddIn", "then"), ("AddEnd", "execute"))
+    g.link(after_in_pts, ("AddEnd", "execute"))
     # the heading to turn to at the end (VoyageTick)
     get_self(g, "GetEndFwds", "VoyageEndFwd", MAP_INT_VECTOR, 7750, 300)
     map_add(g, "SaveEndFwd", ("GetEndFwds", "VoyageEndFwd"), key, end_fwd, MAP_INT_VECTOR, STRUCT(VECTOR), 7750, 0, key_type=INT)

@@ -17,9 +17,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Parts"
    NodePosY=0
    NodeGuid=00000000000000000000000000000004
    CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="InDateTime",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.DateTime'",LinkedTo=(Now 00000000000000000000000000000002,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="year",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_y 00000000000000000000000000000006,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="Year",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_y 00000000000000000000000000000006,),)
    CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="Month",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_mo 00000000000000000000000000000008,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="day",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_d 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="Day",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_d 0000000000000000000000000000000A,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="Hour",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_h 0000000000000000000000000000000C,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="Minute",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_mi 0000000000000000000000000000000E,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="Second",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(T_s 00000000000000000000000000000010,),)
@@ -38,7 +38,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_FormatText Name="Fmt"
    NodePosX=750
    NodePosY=0
    NodeGuid=00000000000000000000000000000012
-   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="Format",PinType.PinCategory="text",DefaultTextValue=INVTEXT("[{y}-{mo}-{d} {h}:{mi}:{s}] "),)
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="Format",PinType.PinCategory="text",DefaultTextValue=INVTEXT("[{y}-{mo}-{d} {h}:{mi}:{s}] [FreightDock] "),)
    CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="Result",Direction="EGPD_Output",PinType.PinCategory="text",LinkedTo=(Str 00000000000000000000000000000015,),)
    CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="y",PinType.PinCategory="text",LinkedTo=(T_y 00000000000000000000000000000017,),)
    CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="mo",PinType.PinCategory="text",LinkedTo=(T_mo 00000000000000000000000000000019,),)

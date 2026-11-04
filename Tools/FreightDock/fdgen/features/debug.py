@@ -14,7 +14,7 @@ from fdgen.core.nodes import (
     actor_loc, all_actors, all_ships, bnot, branch, break_struct, break_vec, comp_owner,
     display_name, dmath, for_each, for_loop, get_local, get_member, get_self, ii, is_valid, make_vec, self_call,
     set_contains, set_local, set_self)
-from fdgen.core.text import fmt_to_string, int_text, log_msg
+from fdgen.core.text import LOG_PREFIX, fmt_to_string, int_text, log_msg
 from fdgen.routes.cells import KEY_MUL, cell_key_call, cell_pos_call
 
 
@@ -84,18 +84,18 @@ def cargo_to_string():
 
 
 def stamp():
-    """Pure: "[yyyy-mm-dd hh:mm:ss] " for log lines."""
+    """Pure: "[yyyy-mm-dd hh:mm:ss] [FreightDock] " (LOG_PREFIX) for log lines."""
     g = Graph()
     g.call("Now", MATHLIB, "Now", 0, 0, [("ReturnValue", "out", STRUCT("/Script/CoreUObject.DateTime"), None)])
     g.call("Parts", MATHLIB, "BreakDateTime", 250, 0,
            [("InDateTime", "in", STRUCT("/Script/CoreUObject.DateTime"), None),
-            ("year", "out", INT, None), ("Month", "out", INT, None), ("day", "out", INT, None),
+            ("Year", "out", INT, None), ("Month", "out", INT, None), ("Day", "out", INT, None),
             ("Hour", "out", INT, None), ("Minute", "out", INT, None), ("Second", "out", INT, None),
             ("Millisecond", "out", INT, None)])
     g.link(("Now", "ReturnValue"), ("Parts", "InDateTime"))
-    fields = (("y", "year", 4), ("mo", "Month", 2), ("d", "day", 2), ("h", "Hour", 2), ("mi", "Minute", 2), ("s", "Second", 2))
+    fields = (("y", "Year", 4), ("mo", "Month", 2), ("d", "Day", 2), ("h", "Hour", 2), ("mi", "Minute", 2), ("s", "Second", 2))
     g.node("Fmt", K2 + "K2Node_FormatText", [f'PinNames({i})="{a}"' for i, (a, _, _) in enumerate(fields)], 750, 0,
-           [("Format", "in", TEXT, 'DefaultTextValue=INVTEXT("[{y}-{mo}-{d} {h}:{mi}:{s}] ")'), ("Result", "out", TEXT, None)]
+           [("Format", "in", TEXT, 'DefaultTextValue=INVTEXT("[{y}-{mo}-{d} {h}:{mi}:{s}] ' + LOG_PREFIX + '")'), ("Result", "out", TEXT, None)]
            + [(a, "in", TEXT, None) for a, _, _ in fields])
     for i, (a, part, digits) in enumerate(fields):
         conv = int_text(g, "T_" + a, 500, 120 * i, digits)

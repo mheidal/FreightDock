@@ -97,5 +97,6 @@ The tests don't cover behaviour: whether a graph does the right thing in game. T
 
 ## Conventions
 
-- Every generated log line goes through `Stamp` (pure, output `Result`: `"[yyyy-mm-dd hh:mm:ss] "`). Integers in log text are printed without thousands separators.
-- Hand-built in the editor, not generated: the Event Graph, Toast, StockpileToString, CollectionToString, LogDocks, and the widgets WBP_FDToast and WBP_FDDeliverButton.
+- Every generated log line goes through `Stamp` (pure, output `Result`: `"[yyyy-mm-dd hh:mm:ss] [FreightDock] "`). Lines that use ModAPI's own date instead (BP_Startup, hand-built functions) start their message with `text.LOG_PREFIX`. Integers in log text are printed without thousands separators.
+- Hand-built in the editor, not generated: the Event Graph, Toast, StockpileToString, CollectionToString, LogDocks, and the widget WBP_FDToast.
+- Written in Loom, not here: the Freight Dock panel (`Content/Mods/FreightDock/UI/WBP_FDPanel.lm`, `WBP_FDLinkRow.lm`, `WBP_FDWantRow.lm`, `WBP_FDTip.lm`) and the loading plan (`Loom/BPL_FDLoad.lm`, called by `UpdateRequest`). Generated graphs call them by path (`paths.FD_PANEL_CLASS`), and they call BP_MapLoad's functions by name, so renaming a BP_MapLoad function or its pins also needs the `.lm` files changed.

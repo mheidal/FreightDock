@@ -3,11 +3,11 @@
 A module contributes `GRAPHS` ({FunctionName: builder}, builder() -> T3D text) and optionally `SPECS`
 ({FunctionName: fn_spec(...)}). Only functions with a spec can be installed by `--emit`.
 """
-from fdgen.features import (arcs, debug, deliver, docks, freight, options, pairing, standins, startup,
+from fdgen.features import (arcs, debug, deliver, docks, freight, options, pairing, panel, standins, startup,
                             stevedore, voyages)
 from fdgen.routes import cells, course, display, pathfind, rescan
 
-MODULES = [docks, pairing, options, startup, stevedore, freight, standins, voyages, deliver, arcs, debug,
+MODULES = [docks, pairing, options, startup, stevedore, freight, standins, voyages, deliver, panel, arcs, debug,
            cells, pathfind, course, display, rescan]
 
 GRAPHS = {}
