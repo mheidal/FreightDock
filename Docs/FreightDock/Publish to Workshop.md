@@ -12,6 +12,7 @@ mod whose `.uplugin` lacks `"EngineVersion": "5.8"` or later (reason written to 
 | `Assets/Thumbnail.jpg` | Workshop preview image (Steam limit: under 1 MB). |
 | `Tools/FreightDock/stage_workshop.ps1` | Copies the installed pak and uplugin into `Saved/Workshop/FreightDock/content/`. |
 | `Tools/FreightDock/upload_workshop.ps1` | Writes `Saved/Workshop/FreightDock/FreightDock.vdf` and runs SteamCMD. |
+| `Tools/FreightDock/readme_to_bbcode.py` | Converts `README.md` to Steam BBCode in `Saved/Workshop/FreightDock/description.txt`, to paste into the item's description: `uv run python readme_to_bbcode.py` (in `Tools/FreightDock`). |
 | `Tools/FreightDock/workshop_id.txt` | The item's ID, written by the first upload. Keep it: without it the next upload creates a new item. |
 
 ## Releasing

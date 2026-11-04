@@ -48,6 +48,8 @@ This mod was ideated and refined by feedback from myself, but its code was writt
 This repository is a fork of [Buckminsterfullerene's Whiskerwood Project](https://github.com/Whiskerwood-Modding/Whiskerwood-Project), the Whiskerwood modkit. Many thanks for developing this handy tool! It uses the MIT License.
 
 ## Credits
+Much of this mod is written in the Unreal Engine scripting language Loom, created by pierrekin.
+
 Several mods were consulted to learn the structure of Whiskerwood mods; no data was directly borrowed from these mods. Thank you to the authors of those mods, including:
 - [WhiskerChurch by MRemingtonB](https://steamcommunity.com/sharedfiles/filedetails/?id=3817728506)
 - [Flagship by MRemingtonB](https://steamcommunity.com/sharedfiles/filedetails/?id=3809890598)
