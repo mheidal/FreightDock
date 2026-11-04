@@ -103,6 +103,10 @@ UBUTTON = "/Script/UMG.Button"
 
 # Loom-built (Content/Mods/FreightDock/UI/*.lm)
 FD_PANEL_CLASS = "/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C"
+# Loom function libraries (Content/Mods/FreightDock/Loom/*.lm), as call-node class paths
+MAPLOAD_C = "/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C"
+NET_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDNet.BPL_FDNet_C'"
+PAIRING_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDPairing.BPL_FDPairing_C'"
 # Loom-built (Content/Mods/FreightDock/Loom/BP_FDFling.lm): goods flying from the ship to the dock on unloading
 FD_FLING_CLASS = "/Game/Mods/FreightDock/Loom/BP_FDFling.BP_FDFling_C"
 

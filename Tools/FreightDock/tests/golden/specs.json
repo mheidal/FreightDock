@@ -112,52 +112,11 @@
  },
  "DrawArcs": {
   "entry": [
-   "FindSel",
+   "Call",
    "execute"
   ],
   "inputs": [],
-  "locals": [
-   {
-    "default": "",
-    "name": "SelDock",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   },
-   {
-    "default": "",
-    "name": "Partner",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   },
-   {
-    "default": "",
-    "name": "Cursor",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "SelId",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "SelPartnerId",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Id",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Phase",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Proxy",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
-   }
-  ],
+  "locals": [],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -491,22 +450,11 @@
  },
  "PairAtCursor": {
   "entry": [
-   "Find",
+   "Call",
    "execute"
   ],
   "inputs": [],
-  "locals": [
-   {
-    "default": "",
-    "name": "Target",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   },
-   {
-    "default": "",
-    "name": "HitLoc",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   }
-  ],
+  "locals": [],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -535,6 +483,41 @@
   "pure": false,
   "returnValues": [],
   "returns": []
+ },
+ "PartnerOf": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Partner",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Call",
+    "ReturnValue",
+    "Partner"
+   ]
+  ],
+  "returns": [
+   [
+    "Call",
+    "then"
+   ]
+  ]
  },
  "PlanRoute": {
   "entry": [
@@ -1363,6 +1346,24 @@
     "then_0"
    ]
   ]
+ },
+ "Unpair": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
  },
  "UpdateRequest": {
   "entry": [

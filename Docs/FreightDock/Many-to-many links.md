@@ -205,10 +205,11 @@ Still to find out:
 
 ## Storage library (built)
 
-`Content/Mods/FreightDock/Loom/BPL_FDNet.lm`. Nothing calls it yet; the mod still runs one-to-one.
+`Content/Mods/FreightDock/Loom/BPL_FDNet.lm`. The one-to-one checkpoint (step 4) runs on it: each pair is a network of its own, both docks "both". `PartnerOf` and `Unpair` call it, `PairAtCursor` and `DrawArcs` are ported to `Loom/BPL_FDPairing.lm`, the panel shows for any paired dock (`IsPaired`), and the panel runs `Migrate` once per load, when the docks are known.
 
 - **Encoding:** `Unpack`, `Pack`, `RoleOn`, `Provides`, `Requests`, `IsMember`, `With` (set or remove one membership; refuses a fifth), `WithFull`.
 - **Queries,** stateless (decoded from every freight dock's value on each call): `FreightDocks`, `Members` (providers and requesters of a network), `InUse` (networks in use, lowest free ID), `RequestersOf` and `ProvidersOf` a dock, in dock ID order for round-robin.
+- **Pairing:** `PartnerOf` (the single other member, or a 1.x partner before migration), `Unpair` (the dock and the other members leave its networks), `Pair` (both leave their networks, then share the lowest free one), `IsPaired`, `Emptied`.
 - **Migration:** `Migrate` turns each 1.x pair into the lowest free network with both docks in the role "both"; a 1.x value whose partner is gone becomes -1. A converted save can't be read by mod 1.x.
 - **Tests:** `Tools/FreightDock/loom_test.py` runs 36 cases of the encoding functions with Loom's test commandlet, against a Python model of the encoding. The queries and `Migrate` need a loaded colony, so they are tested in game.
 

@@ -328,3 +328,90 @@ fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
     }
     return made
 }
+
+// The dock it delivers to, or receives from, while every dock is on at most one network with one other member (the
+// one-to-one checkpoint): its first requester, else its first provider. A 1.x value gives its old partner, until
+// Migrate has run. none when it has neither.
+fn PartnerOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> WorkDock {
+    if Dock == none {
+        return none
+    }
+    let u = Unpack(Dock.activeTradePartnerId)
+    if !u.IsNew {
+        if u.OldPartner >= 0 {
+            return MapLoad.DockById(u.OldPartner).Dock
+        }
+        return none
+    }
+    let r = RequestersOf(MapLoad, Dock)
+    if r.Length() > 0 {
+        return r[0]
+    }
+    let p = ProvidersOf(MapLoad, Dock)
+    if p.Length() > 0 {
+        return p[0]
+    }
+    return none
+}
+
+// The value for a dock left in no network: -1, or an empty network value when it keeps "depart only when full".
+pure fn Emptied(Stored: int) -> int {
+    let u = Unpack(Stored)
+    let none4: array<int> = []
+    return if u.Full { Pack(none4, none4, true) } else { -1 }
+}
+
+// Takes the dock out of every network, and the other members out of those networks too (as unpairing both docks of
+// a pair does today). A 1.x pair is cleared on both ends.
+fn Unpair(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) {
+    if Dock == none {
+        return
+    }
+    let u = Unpack(Dock.activeTradePartnerId)
+    if !u.IsNew {
+        if u.OldPartner >= 0 {
+            let p = MapLoad.DockById(u.OldPartner).Dock
+            if p != none {
+                p.activeTradePartnerId = -1
+            }
+        }
+        Dock.activeTradePartnerId = -1
+        return
+    }
+    for net in u.Nets {
+        if net > 0 {
+            for d in FreightDocks(MapLoad) {
+                if d != Dock && RoleOn(d.activeTradePartnerId, net) != 0 {
+                    let w = With(d.activeTradePartnerId, net, 0)
+                    d.activeTradePartnerId = if IsMember(w.ReturnValue) { w.ReturnValue } else { Emptied(w.ReturnValue) }
+                }
+            }
+        }
+    }
+    Dock.activeTradePartnerId = Emptied(Dock.activeTradePartnerId)
+}
+
+// Pairs two docks, as F5 does: both leave their networks, then share the lowest free network, both in the role
+// "both". Returns the network, or 0 when all are taken (nothing changes then).
+fn Pair(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, A: WorkDock, B: WorkDock) -> int {
+    if A == none || B == none || A == B {
+        return 0
+    }
+    Unpair(MapLoad, A)
+    Unpair(MapLoad, B)
+    let net = InUse(MapLoad).NextFree
+    if net == 0 {
+        return 0
+    }
+    let wa = With(A.activeTradePartnerId, net, Both())
+    A.activeTradePartnerId = wa.ReturnValue
+    let wb = With(B.activeTradePartnerId, net, Both())
+    B.activeTradePartnerId = wb.ReturnValue
+    return net
+}
+
+// Whether the dock is paired: in a network, or holding a 1.x pair.
+pure fn IsPaired(Stored: int) -> bool {
+    let u = Unpack(Stored)
+    return IsMember(Stored) || u.OldPartner >= 0
+}

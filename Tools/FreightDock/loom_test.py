@@ -113,6 +113,12 @@ def net_cases():
     with_case("with refuses role 4", s, 3, 4, False, s)
     with_case("with replaces a 1.x pair", -2 - 12126, 2, 3, True, pack([2], [3]))
     with_case("with keeps the full flag", pack([3], [1], True), 4, 2, True, pack([3, 4], [1, 2], True))
+    for name, stored, want in (("1.x pair is paired", -2 - 12126, True), ("unpaired -1 isn't", -1, False),
+                               ("member is paired", s, True), ("empty new value isn't", pack([], [], True), False)):
+        cases.append({"name": name, "call": "IsPaired", "args": {"Stored": str(stored)}, "expect": {"return": b(want)}})
+    cases.append({"name": "emptied is -1", "call": "Emptied", "args": {"Stored": str(s)}, "expect": {"return": "-1"}})
+    cases.append({"name": "emptied keeps full", "call": "Emptied", "args": {"Stored": str(pack([3], [1], True))},
+                  "expect": {"return": str(pack([], [], True))}})
     cases.append({"name": "with full", "call": "WithFull", "args": {"Stored": str(s), "Full": "True"},
                   "expect": {"return": str(pack([3, 7], [1, 2], True))}})
     return cases

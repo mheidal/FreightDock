@@ -6,7 +6,7 @@ from fdgen.core.types import (
     BOOL, CLASSPIN, DOUBLE, EXEC, FLOAT, INT, INT_SET, NAME, NAME_ARRAY, OBJ, STR, STRUCT,
     struct_obj)
 from fdgen.core.paths import (
-    ACTOR, ACTORCOMP, ARRAYLIB, FOREACH, K2, MACRO_GUIDS, MAPLIB, MATHLIB, SETLIB, SHIP,
+    ACTOR, ACTORCOMP, ARRAYLIB, FOREACH, K2, MACRO_GUIDS, MAPLIB, MAPLOAD_C, MATHLIB, SETLIB, SHIP,
     STATICS, SYSLIB, VECTOR)
 
 
@@ -263,6 +263,18 @@ def user_call(g, name, func, x, y, ins=(), outs=(), impure=True):
     pins += [(n, "in", t, None) for n, t in ins] + [(n, "out", t, None) for n, t in outs]
     return g.node(name, K2 + "K2Node_CallFunction",
                   [f'FunctionReference=(MemberName="{func}",bSelfContext=True)'], x, y, pins)
+
+
+def loom_call(g, name, lib, func, x, y, ins=(), outs=()):
+    """Call a Loom library function whose first parameter is MapLoad (this BP_MapLoad), with further inputs `ins` and
+    outputs `outs` ((pin, type) pairs). Wires a Self node into MapLoad. Returns the call node's name."""
+    g.node(name + "_Self", K2 + "K2Node_Self", [], x, y + 200,
+           [("self", "out", ['PinType.PinCategory="object"', 'PinType.PinSubCategory="self"'], None)])
+    g.call(name, lib, func, x, y,
+           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("MapLoad", "in", OBJ(MAPLOAD_C), None)]
+           + [(n, "in", t, None) for n, t in ins] + [(n, "out", t, None) for n, t in outs])
+    g.link((name + "_Self", "self"), (name, "MapLoad"))
+    return name
 
 
 def clear_var(g, name, ref_props, var, ptype, x, y):

@@ -1,0 +1,123 @@
+blueprint BPL_FDPairing : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDPairing
+
+// The pairing key and the arcs, ported from fdgen (BP_MapLoad's PairAtCursor and DrawArcs now just call these).
+// Pairs are stored as networks (BPL_FDNet): each pair is a network of its own, both docks in the role "both".
+
+fn Log(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Msg: string) {
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + Msg, false)
+}
+
+// The pairing key (F5 by default): select a freight dock, then its partner; the same dock again cancels; with no
+// dock under the cursor, a waiting dock is unpaired (or the selection cancelled).
+fn PairAtCursor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let target = MapLoad.FindDockUnderCursor().Dock
+    let pending = MapLoad.PendingDock
+    if target == none {
+        if pending == none {
+            MapLoad.Toast("Select a dock first")
+            return
+        }
+        if BPL_FDNet.IsPaired(pending.activeTradePartnerId) {
+            MapLoad.Unpair(pending)
+            Log(MapLoad, "Unpaired dock " + string(BPL_FDLoad.DockId(pending)))
+            MapLoad.Toast("Unpaired")
+        } else {
+            MapLoad.Toast("Pairing cancelled")
+        }
+        MapLoad.PendingDock = none
+        return
+    }
+    if !MapLoad.IsFreightDock(target).Result {
+        MapLoad.Toast("Only freight docks can be paired")
+        MapLoad.PendingDock = none
+        return
+    }
+    if pending == none {
+        MapLoad.PendingDock = target
+        let key = string(KismetInputLibrary.Key_GetDisplayName(MapLoad.PairKey, true))
+        MapLoad.Toast("Dock selected - select its partner and press " + key)
+        return
+    }
+    if pending == target {
+        MapLoad.Toast("Pairing cancelled")
+        MapLoad.PendingDock = none
+        return
+    }
+    let net = BPL_FDNet.Pair(MapLoad, pending, target)
+    if net == 0 {
+        MapLoad.Toast("No free network left")
+        MapLoad.PendingDock = none
+        return
+    }
+    let msg = "Paired docks " + string(BPL_FDLoad.DockId(pending)) + " and " + string(BPL_FDLoad.DockId(target))
+    MapLoad.Toast(msg)
+    Log(MapLoad, msg + " (network " + string(net) + ")")
+    MapLoad.PlanRoute(pending)
+    MapLoad.PlanRoute(target)
+    MapLoad.PendingDock = none
+}
+
+// An arc from A to B for this frame.
+fn Queue(PC: PlayerController_Play, A: Vector, B: Vector, Tint: Color, Width: float, Height: float) {
+    PC.QueueSynchronizedArcPlanForFrame(ArcPlan(worldStart: A, worldEnd: B, Color: Tint, linewidthTop: Width, linewidthEnd: Width, arcHeightRatioOfLength: Height))
+}
+
+// Every frame (Event Tick, also while paused): the selected paired dock's route, and each voyage's arc (stand-in to
+// where it's heading) while the stand-in is hovered or its dock or partner is selected; while hovered, also one to
+// its home dock and its course as the route line. Then the selected pair's arc (PairArcs).
+fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let pc = GameplayStatics.GetPlayerController(0)
+    let play = cast(pc, PlayerController_Play)
+    let sel = MapLoad.FindDockUnderCursor().Dock
+
+    // the cursor on the sea plane (z = 0)
+    let ray = pc.DeprojectMousePositionToWorld()
+    let rayEnd = KismetMathLibrary.Add_VectorVector(ray.WorldLocation, KismetMathLibrary.Multiply_VectorFloat(ray.WorldDirection, 10000000.0))
+    let sea = KismetMathLibrary.LinePlaneIntersection_OriginNormal(ray.WorldLocation, rayEnd, Vector(X: 0.0, Y: 0.0, Z: 0.0), Vector(X: 0.0, Y: 0.0, Z: 1.0))
+    let cursor = sea.Intersection
+
+    // the selected dock and its partner (-999 with nothing selected, -1 with no partner)
+    let selId = -999
+    let selPartnerId = -999
+    let partner: WorkDock = none
+    if sel != none {
+        selId = BPL_FDLoad.DockId(sel)
+        partner = BPL_FDNet.PartnerOf(MapLoad, sel)
+        selPartnerId = if partner == none { -1 } else { BPL_FDLoad.DockId(partner) }
+    }
+
+    // the route arc, worked out again only when the selection changes
+    if selId != MapLoad.RouteSelId {
+        MapLoad.RouteSelId = selId
+        MapLoad.RouteValid = false
+        if sel != none && partner != none {
+            MapLoad.RouteStart = sel.GetOwner().K2_GetActorLocation()
+            MapLoad.RouteEnd = partner.GetOwner().K2_GetActorLocation()
+            MapLoad.RouteValid = true
+        }
+    }
+    if MapLoad.RouteValid {
+        MapLoad.DrawRoute(MapLoad.RouteSelId, play)
+    }
+
+    // voyage arcs
+    for id, proxy in MapLoad.Voyages {
+        if KismetSystemLibrary.IsValid(proxy) {
+            let pos = proxy.K2_GetActorLocation()
+            let phase = MapLoad.VoyagePhase.Find(id)
+            let home = MapLoad.VoyageHome.Find(id)
+            let away = MapLoad.VoyageTarget.Find(id)
+            let dest = if phase.Value >= 2 { home.Value } else { away.Value }
+            let hovered = KismetMathLibrary.Vector_Distance2D(cursor, pos) <= MapLoad.HoverRadius
+            if hovered || id == selId || id == selPartnerId {
+                Queue(play, pos, dest, MapLoad.ArcColor, MapLoad.ArcWidth, MapLoad.ArcHeight)
+                if hovered {
+                    Queue(play, pos, home.Value, MapLoad.ArcColor, MapLoad.ArcWidth, MapLoad.ArcHeight)
+                    // after the selected dock's route, so the hovered ship's course wins
+                    MapLoad.DrawRoute(id, play)
+                }
+            }
+        }
+    }
+    MapLoad.PairArcs(play)
+}

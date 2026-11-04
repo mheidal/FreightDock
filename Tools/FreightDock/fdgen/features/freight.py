@@ -6,7 +6,7 @@ from fdgen.core.types import (
     BOOL, DOUBLE, EXEC, INT, INT_ARRAY, INT_SET, MAP_INT_ACTOR, MAP_INT_DOUBLE,
     MAP_NAME_INT, MAP_NAME_TO, NAME, NAME_ARRAY, OBJ, SEARCHCASE_PIN, STR, STR_ARRAY, STR_SET, STRUCT)
 from fdgen.core.paths import (
-    CARGO, GRIDACTOR, ITEM, K2, LINKER, MAPLIB, MATHLIB, MODAPI, RESBUILDING, RESCOLL,
+    CARGO, GRIDACTOR, ITEM, K2, LINKER, MAPLIB, MAPLOAD_C, MATHLIB, MODAPI, RESBUILDING, RESCOLL,
     SETLIB, SHIP, SHIPCONFIG, SHIPSTATE, SLOT, STOCKPILE, STORAGETAB, STRLIB, SYSLIB, WORKDOCK)
 from fdgen.core.nodes import (
     bnot, branch, break_struct, comp_owner, find_component, for_each, get_local, get_member,
@@ -489,7 +489,6 @@ def hold_counts():
 
 
 LOAD_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDLoad.BPL_FDLoad_C'"
-MAPLOAD_C = "/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C"
 
 
 def update_request():
