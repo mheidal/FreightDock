@@ -1068,7 +1068,7 @@
  },
  "ShipAtDock": {
   "entry": [
-   "ClearBest",
+   "Call",
    "execute"
   ],
   "inputs": [
@@ -1078,18 +1078,7 @@
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    }
   ],
-  "locals": [
-   {
-    "default": "",
-    "name": "BestShip",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
-   },
-   {
-    "default": "",
-    "name": "BestDist",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   }
-  ],
+  "locals": [],
   "outputs": [
    {
     "default": "",
@@ -1100,15 +1089,15 @@
   "pure": false,
   "returnValues": [
    [
-    "GetBestShipForReturn",
-    "BestShip",
+    "Call",
+    "ReturnValue",
     "Ship"
    ]
   ],
   "returns": [
    [
-    "ForShips",
-    "Completed"
+    "Call",
+    "then"
    ]
   ]
  },

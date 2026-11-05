@@ -7,8 +7,10 @@ fn Log(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Msg: string) {
     ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + Msg, false)
 }
 
-// The pairing key (F5 by default): select a freight dock, then its partner; the same dock again cancels; with no
-// dock under the cursor, a waiting dock is unpaired (or the selection cancelled).
+// The pairing key (F5 by default), until the network picker replaces it: select a freight dock, then another. If
+// either is in a network, the other joins it (as "both"; the first's network wins); else the two get a new network
+// of their own. The
+// same dock again cancels. With no dock under the cursor, the waiting dock leaves its networks (the others stay).
 fn PairAtCursor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let target = MapLoad.FindDockUnderCursor().Dock
     let pending = MapLoad.PendingDock
@@ -17,10 +19,9 @@ fn PairAtCursor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             MapLoad.Toast("Select a dock first")
             return
         }
-        if BPL_FDNet.IsPaired(pending.activeTradePartnerId) {
-            MapLoad.Unpair(pending)
-            Log(MapLoad, "Unpaired dock " + string(BPL_FDLoad.DockId(pending)))
-            MapLoad.Toast("Unpaired")
+        if BPL_FDNet.Leave(MapLoad, pending) {
+            Log(MapLoad, "Dock " + string(BPL_FDNet.DockId(pending)) + " left its networks")
+            MapLoad.Toast("Left its networks")
         } else {
             MapLoad.Toast("Pairing cancelled")
         }
@@ -43,15 +44,36 @@ fn PairAtCursor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         MapLoad.PendingDock = none
         return
     }
-    let net = BPL_FDNet.Pair(MapLoad, pending, target)
+    let a = string(BPL_FDNet.DockId(pending))
+    let b = string(BPL_FDNet.DockId(target))
+    let msg = ""
+    let net = 0
+    if BPL_FDNet.IsMember(pending.activeTradePartnerId) {
+        net = BPL_FDNet.Join(MapLoad, pending, target)
+        msg = "Dock " + b + " joined network " + string(net) + " (with dock " + a + ")"
+        if net == 0 {
+            msg = "Dock " + b + " can't join: it is already in 4 networks"
+        }
+    } else if BPL_FDNet.IsMember(target.activeTradePartnerId) {
+        // the waiting dock joins the target's network instead of breaking it up
+        net = BPL_FDNet.Join(MapLoad, target, pending)
+        msg = "Dock " + a + " joined network " + string(net) + " (with dock " + b + ")"
+        if net == 0 {
+            msg = "Dock " + a + " can't join: it is already in 4 networks"
+        }
+    } else {
+        net = BPL_FDNet.Pair(MapLoad, pending, target)
+        msg = "Paired docks " + a + " and " + b + " (network " + string(net) + ")"
+        if net == 0 {
+            msg = "No free network left"
+        }
+    }
+    MapLoad.Toast(msg)
+    Log(MapLoad, msg)
     if net == 0 {
-        MapLoad.Toast("No free network left")
         MapLoad.PendingDock = none
         return
     }
-    let msg = "Paired docks " + string(BPL_FDLoad.DockId(pending)) + " and " + string(BPL_FDLoad.DockId(target))
-    MapLoad.Toast(msg)
-    Log(MapLoad, msg + " (network " + string(net) + ")")
     MapLoad.PlanRoute(pending)
     MapLoad.PlanRoute(target)
     MapLoad.PendingDock = none
@@ -81,9 +103,9 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let selPartnerId = -999
     let partner: WorkDock = none
     if sel != none {
-        selId = BPL_FDLoad.DockId(sel)
+        selId = BPL_FDNet.DockId(sel)
         partner = BPL_FDNet.PartnerOf(MapLoad, sel)
-        selPartnerId = if partner == none { -1 } else { BPL_FDLoad.DockId(partner) }
+        selPartnerId = if partner == none { -1 } else { BPL_FDNet.DockId(partner) }
     }
 
     // the route arc, worked out again only when the selection changes

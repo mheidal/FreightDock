@@ -18,7 +18,7 @@ from fdgen.features.docks import dock_id_call
 
 
 def deficits_for():
-    """Sum of unmet requests over the dock's "Deliver to" warehouses (StockpileLinker.m_destStockpileIds): the game's
+    """Sum of unmet requests over the dock's output warehouses (the game's "Deliver to", StockpileLinker.m_destStockpileIds): the game's
     logistics deficits, or for a "Keep empty" warehouse (which reports none) KeepEmptyDeficits."""
     g = Graph()
     F = "DeficitsFor"
@@ -493,9 +493,9 @@ LOAD_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/B
 
 def update_request():
     """The dock's request, planned by the Loom library (BPL_FDLoad.Plan): what is already being carried to the dock
-    plus, per resource, a share of the ship's free space, capped by what the "Pick up from" warehouses hold free
+    plus, per resource, a share of the ship's free space, capped by what the input warehouses hold free
     and leaving out resources no hauler has picked up for a while (see BPL_FDLoad.lm). 0 new while NoMore.
-    Outputs: Remaining (unmet need, ignoring space) and InFlight (units waiting at the dock or being carried to it).
+    Outputs: Remaining (unmet need the input warehouses can still supply, ignoring space) and InFlight (units waiting at the dock or being carried to it).
     When the request changes, the log line lists every resource's parts and the free space."""
     g = Graph()
     get_local(g, "GetDock", "UpdateRequest", "Dock", OBJ(WORKDOCK), 0, 300)

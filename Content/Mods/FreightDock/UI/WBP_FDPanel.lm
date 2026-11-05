@@ -2,8 +2,9 @@ blueprint WBP_FDPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDPanel
 
 // The Freight Dock panel: while a paired freight dock is selected, it stands to the left of the dock's window
 // (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the partner, the ship, the
-// goods waiting at this dock to be unloaded (while there are any), a table of what the partner wants (WBP_FDWantRow), the partner's "Deliver to" and this dock's "Pick up from"
-// warehouses (links that pan the camera there; pick-up warehouses with what they hold), and Deliver now.
+// goods waiting at this dock to be unloaded (while there are any), a table of what the partner wants (WBP_FDWantRow),
+// the partner's output and this dock's input warehouses (links that pan the camera there; input warehouses with
+// what they hold), and Deliver now.
 // It sits in the game's rounded frame over the dock window's own background, borrows the window's fonts, and
 // hides the window's "Load resources onto ship" bar and its supported-actions frames, giving them back their
 // visibility when anything else is selected.
@@ -54,9 +55,9 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 widget ReqBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
                 widget ReqNone: TextBlock(Text: "Nothing", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 widget Div3: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
-                widget DestHead: TextBlock(Text: "PARTNER DELIVERS TO", ColorAndOpacity: "#e8c872ff")
+                widget DestHead: TextBlock(Text: "PARTNER'S OUTPUT", ColorAndOpacity: "#e8c872ff")
                 widget DestBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
-                widget SrcHead: TextBlock(Text: "PICKING UP FROM", ColorAndOpacity: "#e8c872ff")
+                widget SrcHead: TextBlock(Text: "THIS DOCK'S INPUT", ColorAndOpacity: "#e8c872ff")
                 widget SrcBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
                 widget Deliver: Arco_Button_CommonRound slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 0))
             }
@@ -479,7 +480,13 @@ fn Refresh(Dock: WorkDock) {
             srcIds.Add(s)
         }
     }
-    let key = string(pid) + "|"
+    // where the ship goes: its turn among its requesters, or (a dock that only requests) who supplies it
+    let turn = BPL_FDNet.Turn(MapLoad, Dock)
+    let caption = "Supplied by: Freight Dock " + string(pid)
+    if turn.Count > 0 {
+        caption = "Delivering to: Freight Dock " + string(pid) + (if turn.Count > 1 { " (" + string(turn.Place) + " of " + string(turn.Count) + ")" } else { "" })
+    }
+    let key = caption + "|"
     for d in destIds {
         key += string(d) + ","
     }
@@ -489,10 +496,16 @@ fn Refresh(Dock: WorkDock) {
     }
     if key != RowsKey {
         RowsKey = key
-        BuildRows(partner, pid, destIds, srcIds)
+        BuildRows(partner, caption, destIds, srcIds)
     }
 
-    ShipText.SetText(text(ShipLine(Dock, id)))
+    let line = ShipLine(Dock, id)
+    if turn.Count > 0 {
+        if !BPL_FDNet.SourceStock(MapLoad, Dock).HasSources {
+            line += "\nLoads nothing: no input warehouses"
+        }
+    }
+    ShipText.SetText(text(line))
     FillUnload(Dock)
     FillWants(Dock, partner)
     let i = 0
@@ -515,8 +528,8 @@ fn Row(Box: VerticalBox, Caption: string, Where: Vector, CanPan: bool) -> WBP_FD
     return r
 }
 
-// Partner, "Deliver to" and "Pick up from" link rows; rebuilt only when the set of buildings changes.
-fn BuildRows(Partner: WorkDock, Pid: int, DestIds: array<int>, Src: array<int>) {
+// Partner, output and input link rows; rebuilt only when the set of buildings changes.
+fn BuildRows(Partner: WorkDock, Caption: string, DestIds: array<int>, Src: array<int>) {
     PartnerBox.ClearChildren()
     DestBox.ClearChildren()
     SrcBox.ClearChildren()
@@ -528,7 +541,7 @@ fn BuildRows(Partner: WorkDock, Pid: int, DestIds: array<int>, Src: array<int>) 
     if Partner == none {
         PartnerRows.Add(Row(PartnerBox, "No partner", nowhere, false))
     } else {
-        PartnerRows.Add(Row(PartnerBox, "Partner: Freight Dock " + string(Pid), Partner.GetOwner().K2_GetActorLocation(), true))
+        PartnerRows.Add(Row(PartnerBox, Caption, Partner.GetOwner().K2_GetActorLocation(), true))
     }
     for d in DestIds {
         let b = MapLoad.BuildingById(d).Building

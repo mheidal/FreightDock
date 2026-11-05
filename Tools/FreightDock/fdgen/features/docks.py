@@ -2,14 +2,14 @@
 cursor, the ship moored at a dock, and the nautical dock at a position.
 """
 from fdgen.core.graph import Graph, local_var
-from fdgen.core.types import BOOL, DOUBLE, EXEC, INT, NAME, OBJ, STR, STRUCT
+from fdgen.core.types import BOOL, EXEC, INT, NAME, OBJ, STR, STRUCT
 from fdgen.core.paths import (
     ACTOR, ARRAYLIB, CURSORCAST, FREIGHT_DOCK_CLASS, GRIDACTOR, K2, MATHLIB, NDOCK,
-    NDOCKSTATE, PLAYERSTATE, SELECTTOOL, SHIP, SHIPSTATE, STATICS, STRLIB, VECTOR, WORKDOCK)
+    NDOCKSTATE, NET_LIB, PLAYERSTATE, SELECTTOOL, SHIP, STATICS, STRLIB, VECTOR, WORKDOCK)
 from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
-    all_actors, all_ships, branch, break_struct, clear_var, comp_owner, find_component,
-    for_each, get_local, get_member, get_self, int_op, is_valid, set_local, user_call)
+    all_actors, branch, break_struct, clear_var, comp_owner, find_component,
+    for_each, get_local, get_member, get_self, int_op, is_valid, loom_call, set_local, user_call)
 
 
 def dock_id_call(g, name, dock_src, x, y):
@@ -127,9 +127,6 @@ def find_selected_dock():
     return g.render()
 
 
-SHIP_RADIUS = "800.0"
-
-
 def refresh_docks():
     """Rebuild the member Docks array from every actor with a WorkDock."""
     g = Graph()
@@ -189,54 +186,11 @@ def building_by_id():
 
 
 def ship_at_dock():
+    """ShipAtDock(Dock) -> Ship: BPL_FDNet.ShipAtDock - the ship whose docked berth is the dock's own."""
     g = Graph()
-    F = "ShipAtDock"
-    clear_var(g, "ClearBest", [local_var(F, "BestShip")], "BestShip", OBJ(SHIP), 0, 0)
-    g.node("ResetDist", K2 + "K2Node_VariableSet", [local_var(F, "BestDist")], 250, 0,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
-            ("BestDist", "in", DOUBLE, f'DefaultValue="{SHIP_RADIUS}"'), ("Output_Get", "out", DOUBLE, None)])
-    g.link(("ClearBest", "then"), ("ResetDist", "execute"))
-    all_ships(g, "GetAll", 500, 0)
-    g.link(("ResetDist", "then"), ("GetAll", "execute"))
-    for_each(g, "ForShips", OBJ(SHIP), 800, 0)
-    g.link(("GetAll", "then"), ("ForShips", "Exec"))
-    g.link(("GetAll", "OutActors"), ("ForShips", "Array"))
-
-    get_member(g, "ElemState", SHIP, "State", STRUCT(SHIPSTATE), 800, 250)
-    g.link(("ForShips", "Array Element"), ("ElemState", "self"))
-    break_struct(g, "ElemBreak", SHIPSTATE, [("dockedDock", OBJ(NDOCK)), ("worldLoc", STRUCT(VECTOR))], 1050, 250)
-    g.link(("ElemState", "State"), ("ElemBreak", "NauticalShipState"))
-    is_valid(g, "Docked", NDOCK, 1300, 200)
-    g.link(("ElemBreak", "dockedDock"), ("Docked", "Object"))
-    get_local(g, "GetDock", F, "Dock", OBJ(WORKDOCK), 1050, 450)
-    comp_owner(g, "DockOwner", WORKDOCK, 1300, 450)
-    g.link(("GetDock", "Dock"), ("DockOwner", "self"))
-    g.call("DockLoc", f"/Script/CoreUObject.Class'{ACTOR}'", "K2_GetActorLocation", 1550, 450,
-           [("self", "in", OBJ(ACTOR), None), ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(("DockOwner", "ReturnValue"), ("DockLoc", "self"))
-    g.call("Dist", MATHLIB, "Vector_Distance", 1800, 300,
-           [("v1", "in", STRUCT(VECTOR), None), ("v2", "in", STRUCT(VECTOR), None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("ElemBreak", "worldLoc"), ("Dist", "v1"))
-    g.link(("DockLoc", "ReturnValue"), ("Dist", "v2"))
-    get_local(g, "GetBestDist", F, "BestDist", DOUBLE, 1800, 450)
-    g.call("Closer", MATHLIB, "Less_DoubleDouble", 2050, 300,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("Dist", "ReturnValue"), ("Closer", "A"))
-    g.link(("GetBestDist", "BestDist"), ("Closer", "B"))
-    g.call("Both", MATHLIB, "BooleanAND", 2300, 250,
-           [("A", "in", BOOL, None), ("B", "in", BOOL, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("Docked", "ReturnValue"), ("Both", "A"))
-    g.link(("Closer", "ReturnValue"), ("Both", "B"))
-    branch(g, "BrBetter", 2300, 0)
-    g.link(("ForShips", "LoopBody"), ("BrBetter", "execute"))
-    g.link(("Both", "ReturnValue"), ("BrBetter", "Condition"))
-    set_local(g, "SetBestDist", F, "BestDist", DOUBLE, 2550, 0)
-    g.link(("BrBetter", "then"), ("SetBestDist", "execute"))
-    g.link(("Dist", "ReturnValue"), ("SetBestDist", "BestDist"))
-    set_local(g, "SetBestShip", F, "BestShip", OBJ(SHIP), 2800, 0)
-    g.link(("SetBestDist", "then"), ("SetBestShip", "execute"))
-    g.link(("ForShips", "Array Element"), ("SetBestShip", "BestShip"))
-    get_local(g, "GetBestShipForReturn", F, "BestShip", OBJ(SHIP), 800, -200)
+    get_local(g, "GetDock", "ShipAtDock", "Dock", OBJ(WORKDOCK), 0, 250)
+    loom_call(g, "Call", NET_LIB, "ShipAtDock", 250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("ReturnValue", OBJ(SHIP))])
+    g.link(("GetDock", "Dock"), ("Call", "Dock"))
     return g.render()
 
 
@@ -282,9 +236,8 @@ def nautical_dock_at():
 
 
 SPECS = {
-    "ShipAtDock": fn_spec(("ClearBest", "execute"), inputs=[("Dock", OBJ(WORKDOCK))], outputs=[("Ship", OBJ(SHIP))],
-                          locals_=[("BestShip", OBJ(SHIP)), ("BestDist", DOUBLE)], returns=[("ForShips", "Completed")],
-                          values=[("GetBestShipForReturn", "BestShip", "Ship")]),
+    "ShipAtDock": fn_spec(("Call", "execute"), inputs=[("Dock", OBJ(WORKDOCK))], outputs=[("Ship", OBJ(SHIP))],
+                          returns=[("Call", "then")], values=[("Call", "ReturnValue", "Ship")]),
 }
 
 

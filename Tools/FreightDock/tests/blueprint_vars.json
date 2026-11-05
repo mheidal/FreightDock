@@ -100,7 +100,9 @@
   "DepartingSince": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"real\",TerminalSubCategory=\"double\"),ContainerType=Map)",
   "FDPanel": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "PickupSeen": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)",
-  "PickupSince": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"real\",TerminalSubCategory=\"double\"),ContainerType=Map)"
+  "PickupSince": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"real\",TerminalSubCategory=\"double\"),ContainerType=Map)",
+  "NetDest": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)",
+  "NetUsed": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"bool\"),ContainerType=Map)"
  },
  "BP_Startup": {
   "ModAPI": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())"

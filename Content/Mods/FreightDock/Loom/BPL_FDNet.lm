@@ -10,6 +10,57 @@ blueprint BPL_FDNet : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BP
 // Older values (mod 1.x, one-to-one pairs) are -2 - partnerDockId: no format bit. -1 (or anything above -2) is
 // "no partner", as the game uses it. Nothing is cached: queries decode every freight dock's value each time.
 
+pure fn DockId(Dock: WorkDock) -> int {
+    let grid = cast(Dock.GetOwner(), GridActor)
+    return if grid == none { -1 } else { grid.ID }
+}
+
+// Per resource, what the dock's input warehouses hold free (with WithReserved, also what haulers have
+// reserved for pickup); HasSources false when none is set.
+fn SourceStock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, WithReserved: bool = false, out Stock: map<name, int>, out HasSources: bool) {
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return
+    }
+    for id in linker.m_sourceStockpileIds {
+        HasSources = true
+        let b = MapLoad.BuildingById(id).Building
+        if b != none {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            if rb != none {
+                for res, slot in rb.m_stockpile.Slots {
+                    let free = if WithReserved { slot.count } else { slot.count - slot.reservedForPickup }
+                    if free > 0 {
+                        let had = Stock.Find(res)
+                        Stock[res] = (if had.ReturnValue { had.Value } else { 0 }) + free
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The ship berthed at the dock: the one whose docked berth is the dock's own (NauticalDockAt, playerDock_<id>).
+// none when its ship is away or it has none. (Not the nearest ship: two docks side by side would mix up ships.)
+fn ShipAtDock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> NauticalShip {
+    if Dock == none {
+        return none
+    }
+    let berth = MapLoad.NauticalDockAt(Dock).Best
+    if berth == none {
+        return none
+    }
+    for a in GameplayStatics.GetAllActorsOfClass(NauticalShip).OutActors {
+        let ship = cast(a, NauticalShip)
+        if ship != none {
+            if ship.State.dockedDock == berth {
+                return ship
+            }
+        }
+    }
+    return none
+}
+
 pure fn Slots() -> int {
     return 4
 }
@@ -201,7 +252,7 @@ fn SortById(Docks: ref array<WorkDock>) {
     let i = 1
     while i < Docks.Length() {
         let j = i
-        while j > 0 && BPL_FDLoad.DockId(Docks[j - 1]) > BPL_FDLoad.DockId(Docks[j]) {
+        while j > 0 && DockId(Docks[j - 1]) > DockId(Docks[j]) {
             Docks.Swap(j - 1, j)
             j -= 1
         }
@@ -300,7 +351,7 @@ fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
         if !u.IsNew && u.OldPartner >= 0 {
             let partner: WorkDock = none
             for p in docks {
-                if BPL_FDLoad.DockId(p) == u.OldPartner && p != d {
+                if DockId(p) == u.OldPartner && p != d {
                     partner = p
                 }
             }
@@ -329,9 +380,9 @@ fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
     return made
 }
 
-// The dock it delivers to, or receives from, while every dock is on at most one network with one other member (the
-// one-to-one checkpoint): its first requester, else its first provider. A 1.x value gives its old partner, until
-// Migrate has run. none when it has neither.
+// The dock it delivers to: its current destination (NetDest, chosen by ChooseDest) while that is still one of its
+// requesters, else its first requester. A dock that only requests gets its first provider (for the panel and arcs).
+// A 1.x value gives its old partner, until Migrate has run. none when it has neither.
 fn PartnerOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> WorkDock {
     if Dock == none {
         return none
@@ -345,6 +396,14 @@ fn PartnerOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Work
     }
     let r = RequestersOf(MapLoad, Dock)
     if r.Length() > 0 {
+        let cur = MapLoad.NetDest.Find(DockId(Dock))
+        if cur.ReturnValue {
+            for d in r {
+                if DockId(d) == cur.Value {
+                    return d
+                }
+            }
+        }
         return r[0]
     }
     let p = ProvidersOf(MapLoad, Dock)
@@ -352,6 +411,147 @@ fn PartnerOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Work
         return p[0]
     }
     return none
+}
+
+// Whether Requester wants something Provider can load: a resource its output warehouses lack (beyond what
+// is already unloaded at it) that Provider's input warehouses hold, reserved for pickup or not (stock
+// haulers have reserved is on its way to the dock). A provider without input warehouses can load nothing.
+fn Wants(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Provider: WorkDock, Requester: WorkDock) -> bool {
+    let src = SourceStock(MapLoad, Provider, true)
+    if !src.HasSources {
+        return false
+    }
+    let want = MapLoad.DeficitsFor(Requester).Want
+    for res, deficit in want.counts {
+        let s = Requester.m_stockpile_goodsFromSea.Slots.Find(res)
+        let atPartner = if s.ReturnValue { s.Value.count } else { 0 }
+        let st = src.Stock.Find(res)
+        if deficit - atPartner > 0 && st.ReturnValue && st.Value > 0 {
+            return true
+        }
+    }
+    return false
+}
+
+// Round-robin over a provider's requesters (dock ID order). Called by the loading plan for a berthed dock. While
+// goods are on their way to it or aboard, its destination stays; once freight is aboard (LoadingSince), the
+// destination is marked used (NetUsed): a trip is under way. Once idle again after a trip, the turn passes to the
+// next requester that wants something it can load; while idle, a destination that wants nothing it can load is
+// passed on the same way. With none wanting anything, the destination stays. A change replans the route.
+fn ChooseDest(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) {
+    let id = DockId(Dock)
+    let reqs = RequestersOf(MapLoad, Dock)
+    let n = reqs.Length()
+    if n == 0 {
+        MapLoad.NetDest.Remove(id)
+        MapLoad.NetUsed.Remove(id)
+        return
+    }
+    let cur = MapLoad.NetDest.Find(id)
+    let curIdx = -1
+    if cur.ReturnValue {
+        let i = 0
+        while i < n {
+            if DockId(reqs[i]) == cur.Value {
+                curIdx = i
+            }
+            i += 1
+        }
+    }
+    let busy = MapLoad.LoadingSince.Contains(id) || MapLoad.DepartingSince.Contains(id) || MapLoad.Voyages.Contains(id)
+    for res, slot in Dock.m_inputStockpile.Slots {
+        if slot.count + slot.reservedSpaceForDropoff > 0 {
+            busy = true
+        }
+    }
+    // goods aboard that were requested for this trip keep the destination they were loaded for
+    let ship = ShipAtDock(MapLoad, Dock)
+    if ship != none {
+        for res, held in MapLoad.HoldCounts(ship).Counts {
+            if held > 0 && MapLoad.Requested.Contains(string(id) + "|" + string(res)) {
+                busy = true
+            }
+        }
+    }
+    if busy && curIdx >= 0 {
+        if MapLoad.LoadingSince.Contains(id) {
+            MapLoad.NetUsed[id] = true
+        }
+        return
+    }
+    let u = MapLoad.NetUsed.Find(id)
+    let used = u.ReturnValue && u.Value
+    let start = if curIdx < 0 { 0 } else if used { (curIdx + 1) % n } else { curIdx }
+    let pick = -1
+    let k = 0
+    while k < n && pick < 0 {
+        let i = (start + k) % n
+        if Wants(MapLoad, Dock, reqs[i]) {
+            pick = i
+        }
+        k += 1
+    }
+    if pick < 0 {
+        pick = if curIdx >= 0 { curIdx } else { 0 }
+    }
+    MapLoad.NetUsed[id] = false
+    let newId = DockId(reqs[pick])
+    if !cur.ReturnValue || cur.Value != newId {
+        MapLoad.NetDest[id] = newId
+        MapLoad.PlanRoute(Dock)
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(id) + " now delivers to " + string(newId) + " (" + string(pick + 1) + " of " + string(n) + ")", false)
+    }
+}
+
+// Where the dock stands in its round-robin: the current destination's place (1-based) and the number of requesters.
+fn Turn(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, out Place: int, out Count: int) {
+    let reqs = RequestersOf(MapLoad, Dock)
+    Count = reqs.Length()
+    Place = 0
+    let dest = PartnerOf(MapLoad, Dock)
+    let i = 0
+    while i < Count {
+        if reqs[i] == dest {
+            Place = i + 1
+        }
+        i += 1
+    }
+}
+
+// The dock leaves every network it is in; the other members stay. Returns whether it was paired.
+fn Leave(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> bool {
+    if Dock == none || !IsPaired(Dock.activeTradePartnerId) {
+        return false
+    }
+    let u = Unpack(Dock.activeTradePartnerId)
+    if !u.IsNew {
+        Unpair(MapLoad, Dock)
+        return true
+    }
+    Dock.activeTradePartnerId = Emptied(Dock.activeTradePartnerId)
+    MapLoad.NetDest.Remove(DockId(Dock))
+    return true
+}
+
+// Target joins Member's first network as "both". Returns the network, or 0 when Member is in none or Target has no
+// free membership.
+fn Join(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Member: WorkDock, Target: WorkDock) -> int {
+    let u = Unpack(Member.activeTradePartnerId)
+    let net = 0
+    for n in u.Nets {
+        if net == 0 && n > 0 {
+            net = n
+        }
+    }
+    if net == 0 {
+        return 0
+    }
+    let w = With(Target.activeTradePartnerId, net, Both())
+    if !w.Ok {
+        return 0
+    }
+    Target.activeTradePartnerId = w.ReturnValue
+    return net
 }
 
 // The value for a dock left in no network: -1, or an empty network value when it keeps "depart only when full".

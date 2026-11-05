@@ -12,7 +12,7 @@ Let freight docks take part in **networks** instead of fixed pairs. Every provid
   - Paired means a value of -2 or below; `-1` is the game's own "no partner".
   - The game never sets values of -2 or below, so its own trade logic ignores them.
 - **Persistence:** the field survives the game's `.whisker` save format even though it has no `CPF_SaveGame` flag. The mod adds no save data of its own; all other state is rebuilt on load.
-- **Native flags:** each dock's `StockpileLinker` holds two lists the game saves itself: "Deliver to" (`m_destStockpileIds`) and "Pick up from" (`m_sourceStockpileIds`). The mod already reads both: the partner's "Deliver to" warehouses make the demand (`DeficitsFor`), and this dock's "Pick up from" warehouses cap what is loaded (`BPL_FDLoad.Plan`).
+- **Native flags:** each dock's `StockpileLinker` holds two lists the game saves itself, which the mod calls output (the game's "Deliver to", `m_destStockpileIds`) and input (the game's "Pick up from", `m_sourceStockpileIds`). The mod already reads both: the partner's output warehouses make the demand (`DeficitsFor`), and this dock's input warehouses cap what is loaded (`BPL_FDLoad.Plan`).
 - **Per-dock state:** runtime state in BP_MapLoad is keyed by dock ID and assumes one partner per dock:
   - routes: `RoutePts`, `RouteLen`, `RouteCurves`, `PreviewCourses`;
   - voyages: `Voyages`, `VoyageShip`, `VoyageSpline`, `VoyageDist`, `VoyagePhase`, `VoyageWait`, `VoyageBerth`, `VoyagePartner`, `VoyageEndFwd`;
@@ -45,7 +45,7 @@ A dock stores **which networks it belongs to, and in which role**, never which d
 - **Links:** on each network, every provider supplies every requester; a dock never supplies itself.
 - **Example:** dock A provides on 1; dock B requests on 1 and provides on 3; dock C requests on 3. The result is a chain, A → B → C.
 - **Roles per membership** matter for chains like this one: a single role per dock could not express B.
-- **Provide and request on the same network** is allowed. It is today's two-way pairing, and migration relies on it. Goods only bounce back and forth if one warehouse is both a "Pick up from" and a "Deliver to" on opposite ends; the panel can warn about that instead of forbidding it.
+- **Provide and request on the same network** is allowed. It is today's two-way pairing, and migration relies on it. Goods only bounce back and forth if one warehouse is both an input and an output on opposite ends; the panel can warn about that instead of forbidding it.
 - **Not included:** storage, buffer and active-provider roles (as in Factorio's logistic chests). Without a target amount, "storage" has no meaning here, and warehouses already do that job.
 
 ### Bit layout (4 memberships of 7 bits)
@@ -64,16 +64,16 @@ membership (7 bits):  6..5 role (0 unused, 1 provide, 2 request, 3 both) | 4..0 
 
 ### Roles and the native flags
 
-The linker lists already say much of what a role says: a dock with "Deliver to" warehouses has demand; a dock with "Pick up from" warehouses has a known supply.
+The linker lists already say much of what a role says: a dock with output warehouses has demand; a dock with input warehouses has a known supply.
 
-**Decided: providing requires at least one "Pick up from" warehouse.** A dock loads only from its own "Pick up from" warehouses, never from any warehouse it can reach, as it does today. The player sees exactly what a dock will load, and has finer control. A provider membership on a dock without sources does nothing, and the panel says so.
+**Decided: providing requires at least one input warehouse.** A dock loads only from its own input warehouses, never from any warehouse it can reach, as it does today. The player sees exactly what a dock will load, and has finer control. A provider membership on a dock without sources does nothing, and the panel says so.
 
 The role is still stored per membership: the lists say what a dock *can* supply or wants, the role says on which network.
 
 ### On load
 
 1. Read every freight dock's value and decode it.
-2. Convert each old one-to-one pair (A ↔ B) into one fresh network on which both docks have the role "both". This keeps today's behaviour, with one exception: a migrated dock with no "Pick up from" warehouses stops loading, since providing now requires them. The panel (and a toast after migration) should say so.
+2. Convert each old one-to-one pair (A ↔ B) into one fresh network on which both docks have the role "both". This keeps today's behaviour, with one exception: a migrated dock with no input warehouses stops loading, since providing now requires them. The panel (and a toast after migration) should say so.
 3. Build, per network, the list of providers and requesters. The working links are the provider × requester pairs.
 4. Test migration on its own first: a 1.x save loads, converts, saves and reloads with the same behaviour.
 
@@ -85,7 +85,7 @@ All in the Loom panel (`WBP_FDPanel`), not injected into the game's dock window.
 - **Network picker,** opened from there:
   - a row per network, with a role choice per row; at most 4 memberships, so one must be removed before a fifth is added;
   - rows for every ID from 1 to the highest in use, plus the next one. Gaps left by demolished or unhooked docks (with 1, 2 and 5 in use: 3, 4 and 6) are still shown, so free numbers are easy to find;
-  - beside each row: the number of providers and requesters, and the icons of the resources that have requests set on that network (from its requesters' "Deliver to" warehouses), whether or not they are met and regardless of amount;
+  - beside each row: the number of providers and requesters, and the icons of the resources that have requests set on that network (from its requesters' output warehouses), whether or not they are met and regardless of amount;
   - the tooltip of a row: demand and satisfaction per resource.
 - **Naming:** networks have no names while only their IDs are stored (a signpost could hold names; see Extra storage). Show numbers 1–31.
 - **Colours:** a fixed palette, one colour per network ID, for the minimap and arcs. 31 colours that stay distinct at a glance are hard to find, so the number is always shown next to the colour; the palette only has to help, not identify on its own. Choosing it is still to do.
@@ -98,7 +98,7 @@ All in the Loom panel (`WBP_FDPanel`), not injected into the game's dock window.
 
 The game copies and pastes a building's settings with Ctrl+C / Ctrl+V. Some building windows also have a `CopyPasteWidget` (buttons `btn_copy`, `btn_paste`; `Context` is the building), but the dock window has none.
 
-**Tested (2026-11-04):** copying a paired freight dock and pasting onto an unpaired one changes nothing the mod uses: `activeTradePartnerId`, the "Pick up from" and "Deliver to" lists and the request all stayed as they were. So memberships are not copied natively.
+**Tested (2026-11-04):** copying a paired freight dock and pasting onto an unpaired one changes nothing the mod uses: `activeTradePartnerId`, the input and output lists and the request all stayed as they were. So memberships are not copied natively.
 
 - **Copying memberships ourselves** would need the mod to notice Ctrl+C / Ctrl+V on a freight dock: read the keys while a freight dock is selected (as the pairing key is read today), remember the dock on copy, and apply its memberships (and, if wanted, its linker lists cannot be written: they are read-only to Blueprint) on paste. Not yet tried; whether the game consumes the keys before the mod sees them is unknown.
 - **Alternative:** a "copy from" picker in the panel instead of the keyboard.
@@ -138,7 +138,7 @@ For FreightDock:
 
 ## Dispatch (the hardest part)
 
-**Decided: round-robin.** A provider's ship serves its requesters in turn, skipping a requester that wants nothing the provider's "Pick up from" warehouses hold. It is the simplest rule to build and for players to follow.
+**Decided: round-robin.** A provider's ship serves its requesters in turn, skipping a requester that wants nothing the provider's input warehouses hold. It is the simplest rule to build and for players to follow.
 
 - **Loading:** the provider loads for the requester whose turn it is; the ship sails there, returns, and the turn passes on.
 - **Assignment:** several providers can still serve one requester, so each provider's plan must subtract every ship already bound for that requester (aboard, waiting there, being carried), or two providers fill the same deficit. Today one partner makes this simple.
@@ -167,7 +167,7 @@ Rough scope: about 30 of the generated BP_MapLoad functions change. **Each fdgen
 | Pairing input | `PairAtCursor`, `ReadPairKey`, `PairKeyTick`, `RegisterOptions` (pairing key option) | Removed; memberships are edited in the panel. `PairKeyTick` also runs `StandInClick` and `PanelTick`, which move to a new tick |
 | Routes | `PlanRoute`, `FindPath`, `RouteCurve`, `DropRouteCurve`, `MakeCourse`, `BuildRouteLine`, `ShowRouteLine`, `DrawRoute`, `PreviewCourse`, `RouteStillClear`, `ScanRouteStep` | Key routes by provider–requester pair instead of source dock. Rescans replan every pair touching changed cells |
 | Voyages | `FreightTick`, `StartVoyage`, `VoyageTick`, `VoyageArrive`, `WaitHeading`, `StandInClick` | Choose a destination per departure; voyage state records it |
-| Loading | `UpdateRequest` (already calls `BPL_FDLoad.Plan`), `DeficitsFor`, `TransferFrom`, `DeliverSelected`, `IsFreightDock` | Demand of the requester whose turn it is; subtract every ship bound for it; load only from "Pick up from" warehouses; "paired" becomes "has a membership" |
+| Loading | `UpdateRequest` (already calls `BPL_FDLoad.Plan`), `DeficitsFor`, `TransferFrom`, `DeliverSelected`, `IsFreightDock` | Demand of the requester whose turn it is; subtract every ship bound for it; load only from input warehouses; "paired" becomes "has a membership" |
 | Arcs | `DrawArcs`, `PairArcs` | Draw the selected dock's networks in their colours |
 | Panel | `WBP_FDPanel` (Loom) | Memberships, picker, minimap, dispatch explanations, copy/paste hook |
 
@@ -188,7 +188,7 @@ Rough scope: about 30 of the generated BP_MapLoad functions change. **Each fdgen
 Decided:
 
 1. **Dispatch:** round-robin among the requesters that want something the provider's sources hold.
-2. **Providing** requires at least one "Pick up from" warehouse.
+2. **Providing** requires at least one input warehouse.
 3. **F5 pairing** is removed.
 4. **Colours:** a fixed palette, one per network ID, always shown with the number.
 5. **Minimap:** terrain only, refreshed about every 10 minutes.
@@ -212,6 +212,16 @@ Still to find out:
 - **Pairing:** `PartnerOf` (the single other member, or a 1.x partner before migration), `Unpair` (the dock and the other members leave its networks), `Pair` (both leave their networks, then share the lowest free one), `IsPaired`, `Emptied`.
 - **Migration:** `Migrate` turns each 1.x pair into the lowest free network with both docks in the role "both"; a 1.x value whose partner is gone becomes -1. A converted save can't be read by mod 1.x.
 - **Tests:** `Tools/FreightDock/loom_test.py` runs 36 cases of the encoding functions with Loom's test commandlet, against a Python model of the encoding. The queries and `Migrate` need a loaded colony, so they are tested in game.
+
+## Destinations and dispatch (built, step 5)
+
+- **Routes stay keyed by dock,** to the dock's current destination, and are replanned when it changes (at most once per round trip). Every route function already asks `PartnerOf` where to go, so none of them changed. This replaces the "routes per provider-requester pair" plan under Costs; caching one route per pair can come later if replanning ever shows up as slow.
+- **Round-robin** (`BPL_FDNet.ChooseDest`, run at the start of each loading plan for a berthed dock): `NetDest` holds each dock's destination, `NetUsed` whether a trip has started since it was chosen. Once idle again after a trip, the turn passes to the next requester (dock ID order) that wants something the dock's input warehouses hold (`Wants`); an idle dock whose destination wants nothing it can load passes it on the same way; with no candidate, the destination stays. A change replans the route and logs "Dock A now delivers to B (i of n)".
+- **`PartnerOf`** returns the destination (else the first requester; a dock that only requests gets its first provider).
+- **Loading plan** (`BPL_FDLoad.Plan`): providing requires input warehouses (none set: nothing is loaded); a requester's need also leaves out what other providers' ships bound for it carry or are loading (`OthersBringing`).
+- **Panel:** "Delivering to: Freight Dock N (i of n)", or "Supplied by: ..." for a dock that only requests; a provider without input warehouses says it loads nothing.
+- **F5 until the picker:** selecting a dock and then another puts them on a shared network: if either is a member, the other joins its network as "both" (the first's network wins); else they get a new one. F5 with nothing under the cursor takes only the selected dock out of its networks.
+- **Library layering:** Loom refuses Blueprints that use each other, so `BPL_FDNet` is the base (it now holds `DockId` and `SourceStock`); `BPL_FDLoad`, `BPL_FDPairing` and the panel use it, never the other way round.
 
 ## If resumed
 
