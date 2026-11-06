@@ -1,10 +1,10 @@
 blueprint WBP_FDPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDPanel
 
 // The Freight Dock panel: while a freight dock is selected, it stands to the left of the dock's window
-// (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the partner, the dock's freight
+// (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the target, the dock's freight
 // networks (Edit opens the network GUI, WBP_FDNetPanel, to its left), the ship, the
-// goods waiting at this dock to be unloaded (while there are any), a table of what the partner wants (WBP_FDWantRow),
-// the partner's output and this dock's input warehouses (links that pan the camera there; input warehouses with
+// job's manifest (WBP_FDWantRow), the goods waiting at this dock to be unloaded (while there are any),
+// the target's output and this dock's input warehouses (links that pan the camera there; input warehouses with
 // what they hold), and Deliver now.
 // It sits in the game's rounded frame over the dock window's own background, borrows the window's fonts, and
 // hides the window's "Load resources onto ship" bar and its supported-actions frames, giving them back their
@@ -15,11 +15,11 @@ var MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C
 var ShownId: int = -1
 var NextRefresh: float = 0.0
 var RowsKey: string = ""
-var PartnerRows: array<WBP_FDLinkRow>
+var TargetRows: array<WBP_FDLinkRow>
 var DestRows: array<WBP_FDLinkRow>
 var SrcRows: array<WBP_FDLinkRow>
 var SrcIds: array<int>
-var ReqRows: array<WBP_FDWantRow>
+var ManifestRows: array<WBP_FDWantRow>
 var Window: Details_WorkDock_Generic
 var Kept: array<Widget>
 var KeptWas: array<ESlateVisibility>
@@ -69,19 +69,17 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 widget DivNet: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 widget ShipHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 // the job: "Delivery to <requester>", clickable (pans there); collapsed without one
-                widget PartnerBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                widget TargetBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 widget ShipText: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
-                widget TripIcons: ResourceCollectionAsRowOfIcons slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                // the job's manifest (WBP_FDWantRow rows), part of the ship section; collapsed without a job
+                widget ManifestHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff") slot(Padding: Margin(Left: 0, Top: 8, Right: 0, Bottom: 0))
+                widget ManifestBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
                 widget Div2: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 widget UnloadBox: VerticalBox {
                     widget UnloadHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                     widget UnloadIcons: ResourceCollectionAsRowOfIcons slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                     widget DivUnload: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 }
-                widget ReqHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
-                widget ReqBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
-                widget ReqNone: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
-                widget Div3: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 widget DestHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 widget DestBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
                 widget SrcHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
@@ -108,9 +106,8 @@ fn Labels() {
     NetHead.SetText(text(BPL_FDText.T("freightdock.panel.networks")))
     ShipHead.SetText(text(BPL_FDText.T("freightdock.panel.ship")))
     UnloadHead.SetText(text(BPL_FDText.T("freightdock.panel.waitingToUnload")))
-    ReqHead.SetText(text(BPL_FDText.T("freightdock.panel.partnerWants")))
-    ReqNone.SetText(text(BPL_FDText.T("freightdock.panel.nothing")))
-    DestHead.SetText(text(BPL_FDText.T("freightdock.panel.partnerOutput")))
+    ManifestHead.SetText(text(BPL_FDText.T("freightdock.panel.manifest")))
+    DestHead.SetText(text(BPL_FDText.T("freightdock.panel.targetOutput")))
     SrcHead.SetText(text(BPL_FDText.T("freightdock.panel.thisInput")))
     Deliver.SetLabelText(BPL_FDText.T("freightdock.panel.deliverNow"))
     EditBtn.SetLabelText(BPL_FDText.T(if Editing { "freightdock.panel.close" } else { "freightdock.panel.edit" }))
@@ -564,11 +561,10 @@ fn TakeFonts() {
     UnloadHead.SetFont(HeadFont)
     NetHead.SetFont(HeadFont)
     NetSummary.SetFont(BodyFont)
-    ReqHead.SetFont(HeadFont)
+    ManifestHead.SetFont(HeadFont)
     DestHead.SetFont(HeadFont)
     SrcHead.SetFont(HeadFont)
     ShipText.SetFont(BodyFont)
-    ReqNone.SetFont(BodyFont)
     RowsKey = ""
     // the NETWORKS labels are made with the font they have then: make them again
     NetEntriesKey = ""
@@ -615,14 +611,14 @@ fn BuildingName(Building: Actor) -> string {
 
 fn Refresh(Dock: WorkDock) {
     let id = DockId(Dock)
-    let partner = MapLoad.PartnerOf(Dock).Partner
-    let pid = if partner == none { -1 } else { DockId(partner) }
+    let target = MapLoad.TargetOf(Dock).Target
+    let pid = if target == none { -1 } else { DockId(target) }
     Labels()
     Title.SetText(text(KismetStringLibrary.ToUpper(BPL_FDNet.DockName(MapLoad, Dock))))
 
     let destIds: array<int> = []
-    if partner != none {
-        let plinker = cast(partner.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if target != none {
+        let plinker = cast(target.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
         if plinker != none {
             for d in plinker.m_destStockpileIds {
                 destIds.Add(d)
@@ -637,7 +633,7 @@ fn Refresh(Dock: WorkDock) {
         }
     }
     // the job, shown in the ship section: where the ship delivers
-    let caption = if partner == none { "" } else { BPL_FDText.T1("freightdock.ship.deliveryTo", "dock", BPL_FDNet.DockName(MapLoad, partner)) }
+    let caption = if target == none { "" } else { BPL_FDText.T1("freightdock.ship.deliveryTo", "dock", BPL_FDNet.DockName(MapLoad, target)) }
     let provides = BPL_FDNet.RequestersOf(MapLoad, Dock).Length() > 0
     let key = caption + "|"
     for d in destIds {
@@ -649,36 +645,25 @@ fn Refresh(Dock: WorkDock) {
     }
     if key != RowsKey {
         RowsKey = key
-        BuildRows(partner, caption, destIds, srcIds)
+        BuildRows(target, caption, destIds, srcIds)
     }
 
-    let line = ShipLine(Dock, id, partner != none)
-    if partner == none {
+    let line = ShipLine(Dock, id, target != none)
+    if target == none {
         // no job: why the ship is idle (ShipLine then has only the hold, or nothing without a ship)
         let why = MapLoad.IdleWhy.Find(id)
         let idle = if !provides { BPL_FDText.T1("freightdock.ship.idleWhy", "why", BPL_FDText.T("freightdock.idle.notProviding")) } else if why.ReturnValue { BPL_FDText.T1("freightdock.ship.idleWhy", "why", why.Value) } else { BPL_FDText.T("freightdock.ship.idle") }
         line = if line == "" { idle } else { idle + "\n" + line }
     }
     ShipText.SetText(text(line))
-    // the trip's manifest, as icons with counts
-    let manifest = BPL_FDNet.Manifest(MapLoad, id)
-    if partner != none && manifest.Length() > 0 {
-        TripIcons.SetData(ResourceCollection(counts: manifest))
-        TripIcons.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    } else {
-        TripIcons.SetVisibility(ESlateVisibility.Collapsed)
-    }
     FillNetworks(Dock)
     FillUnload(Dock)
-    FillWants(Dock, partner)
-    // the partner's sections only while it has one
-    let hasPartner = if partner == none { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible }
-    let partnerParts: array<Widget> = [ReqHead, ReqBox, Div3, DestHead, DestBox, Deliver]
-    for w in partnerParts {
-        w.SetVisibility(hasPartner)
-    }
-    if partner == none {
-        ReqNone.SetVisibility(ESlateVisibility.Collapsed)
+    FillManifest(Dock, id, target != none)
+    // the target's sections only while it has one
+    let hasTarget = if target == none { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible }
+    let targetParts: array<Widget> = [DestHead, DestBox, Deliver]
+    for w in targetParts {
+        w.SetVisibility(hasTarget)
     }
     let i = 0
     for row in SrcRows {
@@ -700,21 +685,21 @@ fn Row(Box: VerticalBox, Caption: string, Where: Vector, CanPan: bool) -> WBP_FD
     return r
 }
 
-// Partner, output and input link rows; rebuilt only when the set of buildings changes.
-fn BuildRows(Partner: WorkDock, Caption: string, DestIds: array<int>, Src: array<int>) {
-    PartnerBox.ClearChildren()
+// Target, output and input link rows; rebuilt only when the set of buildings changes.
+fn BuildRows(Target: WorkDock, Caption: string, DestIds: array<int>, Src: array<int>) {
+    TargetBox.ClearChildren()
     DestBox.ClearChildren()
     SrcBox.ClearChildren()
-    PartnerRows = []
+    TargetRows = []
     DestRows = []
     SrcRows = []
     SrcIds = Src
     let nowhere = Vector(X: 0.0, Y: 0.0, Z: 0.0)
-    if Partner == none {
-        PartnerBox.SetVisibility(ESlateVisibility.Collapsed)
+    if Target == none {
+        TargetBox.SetVisibility(ESlateVisibility.Collapsed)
     } else {
-        PartnerRows.Add(Row(PartnerBox, Caption, Partner.GetOwner().K2_GetActorLocation(), true))
-        PartnerBox.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+        TargetRows.Add(Row(TargetBox, Caption, Target.GetOwner().K2_GetActorLocation(), true))
+        TargetBox.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     }
     for d in DestIds {
         let b = MapLoad.BuildingById(d).Building
@@ -885,7 +870,7 @@ fn HoverStep() {
     }
 }
 
-// What the partner's ship left at this dock (its goods-from-sea store) and haulers haven't picked up yet; the
+// What the target's ship left at this dock (its goods-from-sea store) and haulers haven't picked up yet; the
 // section is hidden while the store is empty.
 fn FillUnload(Dock: WorkDock) {
     let pile = Dock.m_stockpile_goodsFromSea
@@ -901,39 +886,43 @@ fn FillUnload(Dock: WorkDock) {
     }
 }
 
-// A table row per resource the partner wants (WBP_FDWantRow): aboard (hold + waiting at the dock), being carried,
-// unloaded at the partner, still to fetch (this dock's request, a total to have aboard, less what is aboard, at the dock or being carried) and wanted
-// (the partner's deficit).
-fn FillWants(Dock: WorkDock, Partner: WorkDock) {
+// The job's manifest, a row per good (WBP_FDWantRow), in the order goods move: free in this dock's input warehouses,
+// still to fetch (the job's amount less what is being carried and aboard), being carried here, aboard, and the job's
+// amount. Collapsed without a job.
+fn FillManifest(Dock: WorkDock, Id: int, HasJob: bool) {
     let n = 0
-    if Partner != none {
-        let want = MapLoad.DeficitsFor(Partner).Want
+    if HasJob {
         let ship = MapLoad.ShipAtDock(Dock).Ship
-        let aboard: map<name, int> = {}
+        let hold: map<name, int> = {}
         if ship != none {
-            aboard = MapLoad.HoldCounts(ship).Counts
+            hold = MapLoad.HoldCounts(ship).Counts
         }
-        for res, deficit in want.counts {
-            let flying = Dock.m_inputStockpile.Slots[res].reservedSpaceForDropoff
-            let atDock = Dock.m_inputStockpile.Slots[res].count
-            let waiting = Partner.m_stockpile_goodsFromSea.Slots[res].count
-            let asked = Dock.m_requiredEmbarkSupplies_dockSpecific.counts[res]
-            let toFetch = KismetMathLibrary.Max(asked - aboard[res] - atDock - flying, 0)
-            if n >= ReqRows.Length() {
+        let free = BPL_FDNet.SourceStock(MapLoad, Dock).Stock
+        for res, units in BPL_FDNet.Manifest(MapLoad, Id) {
+            let h = hold.Find(res)
+            let aboard = if h.ReturnValue { h.Value } else { 0 }
+            let slot = Dock.m_inputStockpile.Slots.Find(res)
+            let carried = if slot.ReturnValue { slot.Value.reservedSpaceForDropoff } else { 0 }
+            let f = free.Find(res)
+            let available = if f.ReturnValue { f.Value } else { 0 }
+            let reserved = KismetMathLibrary.Max(units - carried - aboard, 0)
+            if n >= ManifestRows.Length() {
                 let made = create_widget(WBP_FDWantRow)
-                ReqBox.AddChildToVerticalBox(made)
-                ReqRows.Add(made)
+                ManifestBox.AddChildToVerticalBox(made)
+                ManifestRows.Add(made)
             }
-            let row = ReqRows[n]
+            let row = ManifestRows[n]
             row.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-            row.Show(res, aboard[res] + atDock, flying, waiting, toFetch, deficit, 0, BodyFont)
+            row.Show(res, available, reserved, carried, aboard, units, BodyFont)
             n += 1
         }
     }
     let i = n
-    while i < ReqRows.Length() {
-        ReqRows[i].SetVisibility(ESlateVisibility.Collapsed)
+    while i < ManifestRows.Length() {
+        ManifestRows[i].SetVisibility(ESlateVisibility.Collapsed)
         i += 1
     }
-    ReqNone.SetVisibility(if n == 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
+    let shown = if n > 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed }
+    ManifestHead.SetVisibility(shown)
+    ManifestBox.SetVisibility(shown)
 }

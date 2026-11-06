@@ -675,13 +675,13 @@ def scan_route_step():
 
     # this dock
     dock = arr_item(g, "Dock", ("GetDocks", "Docks"), ("GetIdx", "ScanIdx"), OBJ(WORKDOCK), 250, 900)
-    user_call(g, "Partner", "PartnerOf", 250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Partner", OBJ(WORKDOCK))])
-    g.link(("BrDone", "else"), ("Partner", "execute"))
-    g.link(dock, ("Partner", "Dock"))
+    user_call(g, "Target", "TargetOf", 250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Target", OBJ(WORKDOCK))])
+    g.link(("BrDone", "else"), ("Target", "execute"))
+    g.link(dock, ("Target", "Dock"))
     is_valid(g, "Paired", WORKDOCK, 500, 300)
-    g.link(("Partner", "Partner"), ("Paired", "Object"))
+    g.link(("Target", "Target"), ("Paired", "Object"))
     branch(g, "BrPaired", 500, 0)
-    g.link(("Partner", "then"), ("BrPaired", "execute"))
+    g.link(("Target", "then"), ("BrPaired", "execute"))
     g.link(("Paired", "ReturnValue"), ("BrPaired", "Condition"))
     user_call(g, "Check", "RouteStillClear", 750, 0, ins=[("Id", INT)], outs=[("Ok", BOOL)])
     g.link(("BrPaired", "then"), ("Check", "execute"))

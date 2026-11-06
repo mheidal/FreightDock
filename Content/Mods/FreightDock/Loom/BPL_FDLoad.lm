@@ -64,7 +64,8 @@ fn BoardParked(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
     }
 }
 
-fn Plan(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Partner: WorkDock, Ship: NauticalShip, NoMore: bool, out Request: map<name, int>, out Remaining: int, out InFlight: int, out Space: int, out Detail: string) {
+// Target (the job's requester) isn't read here: the manifest already says what it gets.
+fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Target: WorkDock, Ship: NauticalShip, NoMore: bool, out Request: map<name, int>, out Remaining: int, out InFlight: int, out Space: int, out Detail: string) {
     if Ship == none || Dock == none {
         return
     }
@@ -103,10 +104,10 @@ fn Plan(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock,
         }
         MapLoad.PickupSeen[key] = got
         MapLoad.PickupSince[key] = sinceT
-        let target = units
+        let goal = units
         let cut = false
         if got < units && now - sinceT > Stall() {
-            target = got
+            goal = got
             cut = true
             MapLoad.JobGoods[BPL_FDNet.JobKey(id, res)] = got
             MapLoad.PickupSince[key] = now
@@ -117,8 +118,8 @@ fn Plan(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock,
 
         // the manifest, or what is aboard when more (left as it is); what waits in the input slot or is carried
         // doesn't raise it, so hauls don't feed on themselves
-        if !NoMore && target > 0 {
-            Request[res] = KismetMathLibrary.Max(target, inHold)
+        if !NoMore && goal > 0 {
+            Request[res] = KismetMathLibrary.Max(goal, inHold)
         }
         // waiting to leave (NoMore): only what is already on its way stays requested, so those haulers aren't
         // turned away
@@ -126,9 +127,9 @@ fn Plan(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock,
             Request[res] = inHold + carried
         }
         if !NoMore {
-            Remaining += KismetMathLibrary.Max(target - got, 0)
+            Remaining += KismetMathLibrary.Max(goal - got, 0)
         }
-        Detail += string(res) + ": " + string(got) + " of " + string(target) + " (at dock " + string(atDock) + ", in flight " + string(carried) + (if cut { ", cut: stalled" } else { "" }) + "); "
+        Detail += string(res) + ": " + string(got) + " of " + string(goal) + " (at dock " + string(atDock) + ", in flight " + string(carried) + (if cut { ", cut: stalled" } else { "" }) + "); "
     }
     Space = 0
     if !NoMore {

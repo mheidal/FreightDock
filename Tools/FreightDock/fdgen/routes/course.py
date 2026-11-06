@@ -353,9 +353,9 @@ def turn_arc():
 
 
 def wait_heading():
-    """WaitHeading(Id, HomeFwd) -> Fwd: the heading dock Id's stand-in waits in at the partner's stand-off point -
-    the partner berth's out-direction turned by the same angle as from Id's berth out-direction to its berthed ship's
-    bow (HomeFwd), i.e. as a ship berthed at the partner would face. The partner is found by pairing (PartnerOf), so
+    """WaitHeading(Id, HomeFwd) -> Fwd: the heading dock Id's stand-in waits in at the target's stand-off point -
+    the target berth's out-direction turned by the same angle as from Id's berth out-direction to its berthed ship's
+    bow (HomeFwd), i.e. as a ship berthed at the target would face. The target is found by pairing (TargetOf), so
     this works between voyages too. Wire LookUp.then -> Return, Turned -> Fwd."""
     g = Graph()
     F = "WaitHeading"
@@ -364,11 +364,11 @@ def wait_heading():
     outs = {}
     user_call(g, "HomeDock", "DockById", 0, 0, ins=[("Id", INT)], outs=[("Dock", OBJ(WORKDOCK))])
     g.link(("GetId", "Id"), ("HomeDock", "Id"))
-    user_call(g, "AwayDock", "PartnerOf", 500, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Partner", OBJ(WORKDOCK))])
+    user_call(g, "AwayDock", "TargetOf", 500, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Target", OBJ(WORKDOCK))])
     g.link(("HomeDock", "Dock"), ("AwayDock", "Dock"))
     g.link(("HomeDock", "then"), ("AwayDock", "execute"))
     prev = "AwayDock"
-    for i, (who, dock_src) in enumerate((("Home", ("HomeDock", "Dock")), ("Away", ("AwayDock", "Partner")))):
+    for i, (who, dock_src) in enumerate((("Home", ("HomeDock", "Dock")), ("Away", ("AwayDock", "Target")))):
         x = 500 * i
         user_call(g, who + "Berth", "NauticalDockAt", x + 750, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Best", OBJ(NDOCK))])
         g.link(dock_src, (who + "Berth", "Dock"))
@@ -467,7 +467,7 @@ def smooth_tangents():
 
 def make_course():
     """MakeCourse(Id, Ship, ToHome) -> Course: a new spline for dock Id's stand-in. It runs from a start pose to an
-    end pose - the home berth (position and berthed ship's heading) and the partner's stand-off point (WaitHeading),
+    end pose - the home berth (position and berthed ship's heading) and the target's stand-off point (WaitHeading),
     swapped when homeward - through the planned route's points between them (or straight when there is no route).
     It leaves the start pose and reaches the end pose along TurnArc circles, so the heading never jumps; each turn
     is aimed at the farthest route point in straight sight of its pose (at least 2 x TurnRadius away, so the turns
@@ -546,7 +546,7 @@ def make_course():
     end_pos = vsel("EndPos", home, away, to_home, 1750, 2600)
     end_fwd = vsel("EndFwd", ("Fwd", "ReturnValue"), ("Wait", "Fwd"), to_home, 1750, 2750)
 
-    # Mid: the route points between the two ends - the route minus its last point (the partner's stand-off point, an
+    # Mid: the route points between the two ends - the route minus its last point (the target's stand-off point, an
     # end pose) and its first (the home berth's stand-off point: beside the berthed ship, too near to turn towards);
     # reversed when homeward. The home stand-off point is only used when the home end turns in place (below).
     for n_, arr, x in (("ClearRaw", raw, 0), ("ClearMid", mid, 250)):

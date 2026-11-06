@@ -1,8 +1,9 @@
 blueprint WBP_FDWantRow : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDWantRow
 
-// One row of the Freight Dock panel's "Partner wants" table (WBP_FDPanel): a resource's icon and name, then
-// aboard, being carried, unloaded at the partner, still to fetch, and wanted. No header: each cell explains
-// itself on hover.
+// One row of the dock GUI's manifest table (WBP_FDPanel.FillManifest): a good's icon and name, then, in the order
+// goods move through them: available to load (free in this dock's input warehouses), reserved with no hauler yet
+// (still to fetch), on the way here, on the ship, and the job's amount. No header: each cell explains itself on
+// hover.
 
 widget Row: HorizontalBox {
     widget IconBox: SizeBox(WidthOverride: 26.0, HeightOverride: 26.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
@@ -11,27 +12,27 @@ widget Row: HorizontalBox {
     widget NameBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 6, Top: 0, Right: 0, Bottom: 0)) {
         widget ResName: LocTextBlock(ColorAndOpacity: "#ddd3bcff")
     }
-    widget AboardBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
-        widget Aboard: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
+    widget AvailableBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Available: TextBlock(Text: "0", ColorAndOpacity: "#9c917cff", Justification: ETextJustify.Center)
+    }
+    widget ReservedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Reserved: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
     }
     widget CarriedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
         widget Carried: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
     }
-    widget UnloadedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
-        widget Unloaded: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
+    widget AboardBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Aboard: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
     }
-    widget FetchBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
-        widget Fetch: TextBlock(Text: "0", ColorAndOpacity: "#9c917cff", Justification: ETextJustify.Center)
-    }
-    widget WantedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
-        widget Wanted: TextBlock(Text: "0", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+    widget RequestedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Requested: TextBlock(Text: "0", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
     }
 }
 
 var Tips: array<WBP_FDTip>
 
 // Each cell's tooltip: a WBP_FDTip in the table's font. Made on the first Show and set again on every Show, since
-// the panel may not have the window's fonts yet the first time.
+// the panel may not have the window's fonts yet the first time (and the language may change).
 fn Tip(Index: int, Cell: Widget, Msg: string, Font: SlateFontInfo) {
     if Tips.Length() <= Index {
         let t = create_widget(WBP_FDTip)
@@ -41,32 +42,22 @@ fn Tip(Index: int, Cell: Widget, Msg: string, Font: SlateFontInfo) {
     Tips[Index].Setup(Msg, Font)
 }
 
-// StallLeft: seconds until a stalled resource (none picked up lately, so its space went to others) is asked for
-// again; 0 when not stalled.
-fn Show(Res: name, InAboard: int, InCarried: int, InUnloaded: int, InFetch: int, InWanted: int, StallLeft: int, Font: SlateFontInfo) {
+fn Show(Res: name, InAvailable: int, InReserved: int, InCarried: int, InAboard: int, InRequested: int, Font: SlateFontInfo) {
     let def = ArcoGameInstance.GetResourceDefCopy(self, Res)
     Icon.SetBrushFromTexture(def.Icon, false)
     ResName.SetKey(def.stringKey)
-    let stalled = StallLeft > 0
-    let fetchTip = BPL_FDText.T("freightdock.want.fetch")
-    if stalled {
-        fetchTip += "\n" + BPL_FDText.T1("freightdock.want.paused", "n", string(StallLeft))
+    Tip(0, AvailableBox, BPL_FDText.T("freightdock.manifest.available"), Font)
+    Tip(1, ReservedBox, BPL_FDText.T("freightdock.manifest.reserved"), Font)
+    Tip(2, CarriedBox, BPL_FDText.T("freightdock.manifest.carried"), Font)
+    Tip(3, AboardBox, BPL_FDText.T("freightdock.manifest.aboard"), Font)
+    Tip(4, RequestedBox, BPL_FDText.T("freightdock.manifest.requested"), Font)
+    let cells: array<TextBlock> = [ResName, Available, Reserved, Carried, Aboard, Requested]
+    for c in cells {
+        c.SetFont(Font)
     }
-    Tip(0, AboardBox, BPL_FDText.T("freightdock.want.aboard"), Font)
-    Tip(1, CarriedBox, BPL_FDText.T("freightdock.want.carried"), Font)
-    Tip(2, UnloadedBox, BPL_FDText.T("freightdock.want.unloaded"), Font)
-    Tip(3, FetchBox, fetchTip, Font)
-    Tip(4, WantedBox, BPL_FDText.T("freightdock.want.wanted"), Font)
-    Fetch.SetColorAndOpacity(SlateColor(SpecifiedColor: if stalled { LinearColor(R: 0.85, G: 0.35, B: 0.25, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 1.0) }))
-    ResName.SetFont(Font)
-    Aboard.SetFont(Font)
-    Carried.SetFont(Font)
-    Unloaded.SetFont(Font)
-    Fetch.SetFont(Font)
-    Wanted.SetFont(Font)
-    Aboard.SetText(text(string(InAboard)))
+    Available.SetText(text(string(InAvailable)))
+    Reserved.SetText(text(string(InReserved)))
     Carried.SetText(text(string(InCarried)))
-    Unloaded.SetText(text(string(InUnloaded)))
-    Fetch.SetText(text(string(InFetch)))
-    Wanted.SetText(text(string(InWanted)))
+    Aboard.SetText(text(string(InAboard)))
+    Requested.SetText(text(string(InRequested)))
 }

@@ -18,7 +18,7 @@ from fdgen.routes.course import corner_leg
 
 def draw_route():
     """DrawRoute(Id, PC): show the course of dock Id's own ship by leaving it in WantCurve for ShowRouteLine - while
-    sailing out or home, the voyage spline; while berthed, the outbound course; while waiting at the partner, the
+    sailing out or home, the voyage spline; while berthed, the outbound course; while waiting at the target, the
     homeward course (both PreviewCourse; RouteCurve if the dock has no ship); or queue the straight
     RouteStart -> RouteEnd arc when it has no route. Called from DrawArcs in place of its single route arc.
     Local: Curve (Spline Component)."""

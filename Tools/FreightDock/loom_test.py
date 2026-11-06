@@ -67,7 +67,7 @@ def net_cases():
         nets, roles, full, is_new, old = unpack(stored)
         cases.append({"name": name, "call": "Unpack", "args": {"Stored": str(stored)},
                       "expect": {"Nets": arr(nets), "Roles": arr(roles), "Full": b(full),
-                                 "IsNew": b(is_new), "OldPartner": str(old)}})
+                                 "IsNew": b(is_new), "OldTarget": str(old)}})
 
     pack_case("pack one", [1], [3])
     pack_case("pack four", [3, 7, 31, 12], [1, 2, 3, 1])

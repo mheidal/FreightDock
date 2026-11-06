@@ -169,6 +169,67 @@
   "returnValues": [],
   "returns": []
  },
+ "FreightCounts": {
+  "entry": [
+   "ZeroSum",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   },
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Target",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Hold",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   },
+   {
+    "default": "",
+    "name": "Sum",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Want",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Freight",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetSumForReturn",
+    "Sum",
+    "Freight"
+   ]
+  ],
+  "returns": [
+   [
+    "ForKeys",
+    "Completed"
+   ]
+  ]
+ },
  "FreightTick": {
   "entry": [
    "Refresh",
@@ -178,7 +239,7 @@
   "locals": [
    {
     "default": "",
-    "name": "Partner",
+    "name": "Target",
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    },
    {
@@ -299,6 +360,34 @@
    {
     "default": "",
     "name": "Text",
+    "type": "(PinCategory=\"string\")"
+   }
+  ],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "LogLinks": {
+  "entry": [
+   "ForDocks",
+   "Exec"
+  ],
+  "inputs": [],
+  "locals": [
+   {
+    "default": "",
+    "name": "Linker",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.StockpileLinker'\")"
+   },
+   {
+    "default": "",
+    "name": "Src",
+    "type": "(PinCategory=\"string\")"
+   },
+   {
+    "default": "",
+    "name": "Dst",
     "type": "(PinCategory=\"string\")"
    }
   ],
@@ -471,41 +560,6 @@
   "pure": false,
   "returnValues": [],
   "returns": []
- },
- "PartnerOf": {
-  "entry": [
-   "Call",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Dock",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   }
-  ],
-  "locals": [],
-  "outputs": [
-   {
-    "default": "",
-    "name": "Partner",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   }
-  ],
-  "pure": false,
-  "returnValues": [
-   [
-    "Call",
-    "ReturnValue",
-    "Partner"
-   ]
-  ],
-  "returns": [
-   [
-    "Call",
-    "then"
-   ]
-  ]
  },
  "PlanRoute": {
   "entry": [
@@ -1163,7 +1217,7 @@
    },
    {
     "default": "",
-    "name": "Partner",
+    "name": "Target",
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    },
    {
@@ -1185,7 +1239,7 @@
    },
    {
     "default": "",
-    "name": "Target",
+    "name": "BerthTo",
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalDock'\")"
    }
   ],
@@ -1211,6 +1265,122 @@
   "pure": false,
   "returnValues": [],
   "returns": []
+ },
+ "TargetOf": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Target",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Call",
+    "ReturnValue",
+    "Target"
+   ]
+  ],
+  "returns": [
+   [
+    "Call",
+    "then"
+   ]
+  ]
+ },
+ "TransferFrom": {
+  "entry": [
+   "ZeroMoved",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   },
+   {
+    "default": "",
+    "name": "Target",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [
+   {
+    "default": "",
+    "name": "Ship",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
+   },
+   {
+    "default": "",
+    "name": "ShipState",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/NauticalKit.NauticalShipState'\")"
+   },
+   {
+    "default": "",
+    "name": "Items",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/NauticalKit.NauticalCargoItem'\"))"
+   },
+   {
+    "default": "",
+    "name": "OutSlots",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\"))"
+   },
+   {
+    "default": "",
+    "name": "Slot",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\")"
+   },
+   {
+    "default": "",
+    "name": "Q",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Moved",
+    "type": "(PinCategory=\"int\")"
+   },
+   {
+    "default": "",
+    "name": "Want",
+    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
+   }
+  ],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Total",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "GetMovedForReturn",
+    "Moved",
+    "Total"
+   ]
+  ],
+  "returns": [
+   [
+    "SeaSet",
+    "then"
+   ]
+  ]
  },
  "TurnArc": {
   "entry": [
@@ -1316,7 +1486,7 @@
    },
    {
     "default": "",
-    "name": "Partner",
+    "name": "Target",
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    },
    {
@@ -1387,7 +1557,7 @@
    },
    {
     "default": "",
-    "name": "Partner",
+    "name": "Target",
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    }
   ],

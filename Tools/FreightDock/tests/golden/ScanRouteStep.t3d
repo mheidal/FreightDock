@@ -61,7 +61,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrDone"
    CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="execute",PinType.PinCategory="exec",)
    CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(AllDone 00000000000000000000000000000010,),)
    CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Idle 00000000000000000000000000000015,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Partner 00000000000000000000000000000017,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Target 00000000000000000000000000000017,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="Idle"
    VariableReference=(MemberName="ScanPhase",bSelfContext=True)
@@ -307,11 +307,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_GetArrayItem Name="Dock"
    NodeGuid=00000000000000000000000000000063
    CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="Array",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",PinType.ContainerType=Array,LinkedTo=(GetDocks 00000000000000000000000000000005,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="Dimension 1",PinType.PinCategory="int",LinkedTo=(GetIdx 00000000000000000000000000000009,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000064,PinName="Output",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Partner 00000000000000000000000000000065,DockId 00000000000000000000000000000066,Replan 00000000000000000000000000000067,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000064,PinName="Output",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Target 00000000000000000000000000000065,DockId 00000000000000000000000000000066,Replan 00000000000000000000000000000067,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Partner"
-   FunctionReference=(MemberName="PartnerOf",bSelfContext=True)
-   NodeComment="Partner"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Target"
+   FunctionReference=(MemberName="TargetOf",bSelfContext=True)
+   NodeComment="Target"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=250
@@ -320,7 +320,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Partner"
    CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrDone 00000000000000000000000000000016,),)
    CustomProperties Pin (PinId=00000000000000000000000000000069,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrPaired 0000000000000000000000000000006A,),)
    CustomProperties Pin (PinId=00000000000000000000000000000065,PinName="Dock",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Dock 00000000000000000000000000000064,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000006B,PinName="Partner",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Paired 0000000000000000000000000000006C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000006B,PinName="Target",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Paired 0000000000000000000000000000006C,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Paired"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -330,7 +330,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Paired"
    NodePosX=500
    NodePosY=300
    NodeGuid=0000000000000000000000000000006D
-   CustomProperties Pin (PinId=0000000000000000000000000000006C,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Partner 0000000000000000000000000000006B,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000006C,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Target 0000000000000000000000000000006B,),)
    CustomProperties Pin (PinId=0000000000000000000000000000006E,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrPaired 0000000000000000000000000000006F,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrPaired"
@@ -340,7 +340,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrPaired"
    NodePosX=500
    NodePosY=0
    NodeGuid=00000000000000000000000000000070
-   CustomProperties Pin (PinId=0000000000000000000000000000006A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Partner 00000000000000000000000000000069,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000006A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Target 00000000000000000000000000000069,),)
    CustomProperties Pin (PinId=0000000000000000000000000000006F,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Paired 0000000000000000000000000000006E,),)
    CustomProperties Pin (PinId=00000000000000000000000000000071,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Check 00000000000000000000000000000072,),)
    CustomProperties Pin (PinId=00000000000000000000000000000073,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(NextIdx 00000000000000000000000000000074,),)

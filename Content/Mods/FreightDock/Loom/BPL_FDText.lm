@@ -20,7 +20,7 @@ pure fn Strings() -> map<name, string> {
         "setting.FreightDock-freightdock.departAfter.name": "Freight Dock: depart partly loaded after",
         "setting.FreightDock-freightdock.departAfter.description": "How long a freight ship waits, from its first cargo loaded, before it sails with what it has. Never: it waits until full or nothing more is wanted.",
         "setting.FreightDock-freightdock.minLoad.name": "Freight Dock: minimum load",
-        "setting.FreightDock-freightdock.minLoad.description": "Smallest trip a freight ship is sent on, as a share of its hold. A dock that wants less than that in all is still served in full, and so is one whose request has waited longer than the depart-after time.",
+        "setting.FreightDock-freightdock.minLoad.description": "Smallest share of its hold a ship sets out with; smaller requests, and ones waiting past the depart-after time, are still served",
 
         // messages
         "freightdock.toast.maxNetworks": "Dock can be in at most 4 networks",
@@ -33,9 +33,8 @@ pure fn Strings() -> map<name, string> {
         "freightdock.panel.networks": "NETWORKS",
         "freightdock.panel.ship": "SHIP",
         "freightdock.panel.waitingToUnload": "WAITING TO UNLOAD",
-        "freightdock.panel.partnerWants": "PARTNER WANTS",
-        "freightdock.panel.nothing": "Nothing",
-        "freightdock.panel.partnerOutput": "PARTNER'S OUTPUT",
+        "freightdock.panel.manifest": "MANIFEST",
+        "freightdock.panel.targetOutput": "TARGET'S OUTPUT",
         "freightdock.panel.thisInput": "THIS DOCK'S INPUT",
         "freightdock.panel.deliverNow": "Deliver now",
         "freightdock.panel.edit": "Edit",
@@ -69,13 +68,12 @@ pure fn Strings() -> map<name, string> {
         "freightdock.ship.hold": "Hold {n} / {max}",
         "freightdock.ship.trip": "One-way trip about {time}",
 
-        // dock GUI, partner wants table (WBP_FDWantRow)
-        "freightdock.want.aboard": "On the ship",
-        "freightdock.want.carried": "On the way here",
-        "freightdock.want.unloaded": "At the partner, not yet stored",
-        "freightdock.want.fetch": "Asked for, no hauler yet",
-        "freightdock.want.paused": "Paused: none picked up lately, retrying in {n} s",
-        "freightdock.want.wanted": "Partner's warehouses still want",
+        // dock GUI, the job's manifest table (WBP_FDWantRow), in the order goods move through it
+        "freightdock.manifest.available": "Available to load",
+        "freightdock.manifest.reserved": "Reserved, no hauler yet",
+        "freightdock.manifest.carried": "On the way here",
+        "freightdock.manifest.aboard": "On the ship",
+        "freightdock.manifest.requested": "Amount requested",
 
         // network GUI (WBP_FDNetPanel, WBP_FDNetRow, WBP_FDNetTip) and the members tooltip (WBP_FDMembersTip)
         "freightdock.net.title": "FREIGHT NETWORKS",

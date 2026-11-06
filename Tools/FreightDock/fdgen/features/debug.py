@@ -228,8 +228,8 @@ def log_links():
     # shared parts of both log lines
     display_name(g, "OwnerName", ACTOR, 500, 500)
     g.link(("Owner", "ReturnValue"), ("OwnerName", "Object"))
-    get_member(g, "PartnerId", WORKDOCK, "activeTradePartnerId", INT, 500, 650)
-    g.link(("ForDocks", "Array Element"), ("PartnerId", "self"))
+    get_member(g, "TargetId", WORKDOCK, "activeTradePartnerId", INT, 500, 650)
+    g.link(("ForDocks", "Array Element"), ("TargetId", "self"))
 
     # linker found: resolve both id sets
     get_member(g, "SrcIds", LINKER, "m_sourceStockpileIds", INT_SET, 1050, 300)
@@ -256,10 +256,10 @@ def log_links():
 
     get_local(g, "GetSrc", F, "Src", STR, 1800, 300)
     get_local(g, "GetDst", F, "Dst", STR, 1800, 400)
-    s = fmt_to_string(g, "FmtLinks", "Dock {i} [{owner}] partnerId: {p} | pick up from: {src} | deliver to: {dst}",
+    s = fmt_to_string(g, "FmtLinks", "Dock {i} [{owner}] targetId: {p} | pick up from: {src} | deliver to: {dst}",
                       [("i", INT), ("owner", STR), ("p", INT), ("src", STR), ("dst", STR)], 2050, 250)
     for arg, src in (("i", ("ForDocks", "Array Index")), ("owner", ("OwnerName", "ReturnValue")),
-                     ("p", ("PartnerId", "activeTradePartnerId")), ("src", ("GetSrc", "Src")),
+                     ("p", ("TargetId", "activeTradePartnerId")), ("src", ("GetSrc", "Src")),
                      ("dst", ("GetDst", "Dst"))):
         g.link(src, ("FmtLinks", arg))
     log_msg(g, "LogLinksLine", "GetModAPI", 2550, 0)
@@ -267,11 +267,11 @@ def log_links():
     g.link((s, "ReturnValue"), ("LogLinksLine", "Msg"))
 
     # no linker
-    s2 = fmt_to_string(g, "FmtNoLinker", "Dock {i} [{owner}] partnerId: {p} | no StockpileLinker component",
+    s2 = fmt_to_string(g, "FmtNoLinker", "Dock {i} [{owner}] targetId: {p} | no StockpileLinker component",
                        [("i", INT), ("owner", STR), ("p", INT)], 1050, 550)
     g.link(("ForDocks", "Array Index"), ("FmtNoLinker", "i"))
     g.link(("OwnerName", "ReturnValue"), ("FmtNoLinker", "owner"))
-    g.link(("PartnerId", "activeTradePartnerId"), ("FmtNoLinker", "p"))
+    g.link(("TargetId", "activeTradePartnerId"), ("FmtNoLinker", "p"))
     log_msg(g, "LogNoLinker", "GetModAPI", 1550, 550)
     g.link(("BrLinker", "else"), ("LogNoLinker", "execute"))
     g.link((s2, "ReturnValue"), ("LogNoLinker", "Msg"))
@@ -612,6 +612,7 @@ def log_nautical_docks():
 
 
 SPECS = {
+    "LogLinks": fn_spec(("ForDocks", "Exec"), locals_=[("Linker", OBJ(LINKER)), ("Src", STR), ("Dst", STR)]),
     "DebugCells": fn_spec(("BrToggled", "execute"), locals_=[("Centre", INT)]),
     "DebugSetup": fn_spec(("Cmd0", "execute")),
     "Stamp": fn_spec(("Pass", "execute"), outputs=[("Result", STR)], returns=[("Pass", "then_0")],

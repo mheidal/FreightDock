@@ -8,7 +8,7 @@ fn Queue(PC: PlayerController_Play, A: Vector, B: Vector, Tint: Color, Width: fl
 }
 
 // Every frame (Event Tick, also while paused): the selected paired dock's route, and each voyage's arc (stand-in to
-// where it's heading) while the stand-in is hovered or its dock or partner is selected; while hovered, also one to
+// where it's heading) while the stand-in is hovered or its dock or target is selected; while hovered, also one to
 // its home dock and its course as the route line. Then the selected pair's arc (PairArcs).
 fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let pc = GameplayStatics.GetPlayerController(0)
@@ -21,23 +21,23 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let sea = KismetMathLibrary.LinePlaneIntersection_OriginNormal(ray.WorldLocation, rayEnd, Vector(X: 0.0, Y: 0.0, Z: 0.0), Vector(X: 0.0, Y: 0.0, Z: 1.0))
     let cursor = sea.Intersection
 
-    // the selected dock and its partner (-999 with nothing selected, -1 with no partner)
+    // the selected dock and its target (-999 with nothing selected, -1 with no target)
     let selId = -999
-    let selPartnerId = -999
-    let partner: WorkDock = none
+    let selTargetId = -999
+    let target: WorkDock = none
     if sel != none {
         selId = BPL_FDNet.DockId(sel)
-        partner = BPL_FDNet.PartnerOf(MapLoad, sel)
-        selPartnerId = if partner == none { -1 } else { BPL_FDNet.DockId(partner) }
+        target = BPL_FDNet.TargetOf(MapLoad, sel)
+        selTargetId = if target == none { -1 } else { BPL_FDNet.DockId(target) }
     }
 
     // the route arc, worked out again only when the selection changes
     if selId != MapLoad.RouteSelId {
         MapLoad.RouteSelId = selId
         MapLoad.RouteValid = false
-        if sel != none && partner != none {
+        if sel != none && target != none {
             MapLoad.RouteStart = sel.GetOwner().K2_GetActorLocation()
-            MapLoad.RouteEnd = partner.GetOwner().K2_GetActorLocation()
+            MapLoad.RouteEnd = target.GetOwner().K2_GetActorLocation()
             MapLoad.RouteValid = true
         }
     }
@@ -54,7 +54,7 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             let away = MapLoad.VoyageTarget.Find(id)
             let dest = if phase.Value >= 2 { home.Value } else { away.Value }
             let hovered = KismetMathLibrary.Vector_Distance2D(cursor, pos) <= MapLoad.HoverRadius
-            if hovered || id == selId || id == selPartnerId {
+            if hovered || id == selId || id == selTargetId {
                 Queue(play, pos, dest, MapLoad.ArcColor, MapLoad.ArcWidth, MapLoad.ArcHeight)
                 if hovered {
                     Queue(play, pos, home.Value, MapLoad.ArcColor, MapLoad.ArcWidth, MapLoad.ArcHeight)

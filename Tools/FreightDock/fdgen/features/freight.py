@@ -1,4 +1,4 @@
-"""Loading: what the partner island needs (DeficitsFor, RequestFor), what is held and requested, moving goods from
+"""Loading: what the target island needs (DeficitsFor, RequestFor), what is held and requested, moving goods from
 a stockpile into the ship (TransferFrom), and FreightTick, which decides when a loaded ship departs.
 """
 from fdgen.core.graph import Graph, local_var
@@ -178,13 +178,13 @@ def request_for():
 
 
 def transfer_from():
-    """Move this dock's freight (dock-specific resources) from its docked ship's hold to the partner's dock cargo."""
+    """Move this dock's freight (dock-specific resources) from its docked ship's hold to the target's dock cargo."""
     g = Graph()
     F = "TransferFrom"
     MAP_SLOTS = MAP_NAME_TO(SLOT)
     MAP_ITEMS = MAP_NAME_TO(ITEM)
     get_local(g, "GetDock", F, "Dock", OBJ(WORKDOCK), 0, 300)
-    get_local(g, "GetPartner", F, "Partner", OBJ(WORKDOCK), 0, 400)
+    get_local(g, "GetTarget", F, "Target", OBJ(WORKDOCK), 0, 400)
     get_local(g, "GetShip", F, "Ship", OBJ(SHIP), 0, 500)
     get_local(g, "GetShipState", F, "ShipState", STRUCT(SHIPSTATE), 0, 600)
     get_local(g, "GetItems", F, "Items", MAP_ITEMS, 0, 700)
@@ -223,7 +223,7 @@ def transfer_from():
     g.link(("HoldCargo", "Items"), ("SetItems", "Items"))
 
     get_member(g, "SeaGet", WORKDOCK, "m_stockpile_goodsFromSea", STRUCT(STOCKPILE), 1500, 400)
-    g.link(("GetPartner", "Partner"), ("SeaGet", "self"))
+    g.link(("GetTarget", "Target"), ("SeaGet", "self"))
     break_struct(g, "SeaBreak", STOCKPILE, [("Slots", MAP_SLOTS)], 1750, 400)
     g.link(("SeaGet", "m_stockpile_goodsFromSea"), ("SeaBreak", "Stockpile"))
     set_local(g, "SetOutSlots", F, "OutSlots", MAP_SLOTS, 1500, 0)
@@ -234,7 +234,7 @@ def transfer_from():
     map_keys(g, "HoldKeys", ("GetItems", "Items"), MAP_ITEMS, 1750, 0)
     user_call(g, "Deficits", "DeficitsFor", 1750, -250, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Want", STRUCT(RESCOLL))])
     g.link(("SetOutSlots", "then"), ("Deficits", "execute"))
-    g.link(("GetPartner", "Partner"), ("Deficits", "Dock"))
+    g.link(("GetTarget", "Target"), ("Deficits", "Dock"))
     break_struct(g, "BreakWant", RESCOLL, [("counts", MAP_NAME_INT)], 2000, -150)
     g.link(("Deficits", "Want"), ("BreakWant", "ResourceCollection"))
     set_local(g, "SetWant", F, "Want", MAP_NAME_INT, 2000, -250)
@@ -264,12 +264,12 @@ def transfer_from():
            [("TargetSet", "in", STR_SET, None), ("ItemToFind", "in", STR, None), ("ReturnValue", "out", BOOL, None)])
     g.link(("GetRequested", "Requested"), ("Wanted", "TargetSet"))
     g.link(k, ("Wanted", "ItemToFind"))
-    partner_want = map_contains(g, "PartnerWants", ("GetWant", "Want"), ("ForKeys", "Array Element"), MAP_NAME_INT,
+    target_want = map_contains(g, "TargetWants", ("GetWant", "Want"), ("ForKeys", "Array Element"), MAP_NAME_INT,
                                 3500, 600, key_type=NAME)
     g.call("FreightKey", MATHLIB, "BooleanOR", 3750, 500,
            [("A", "in", BOOL, None), ("B", "in", BOOL, None), ("ReturnValue", "out", BOOL, None)])
     g.link(("Wanted", "ReturnValue"), ("FreightKey", "A"))
-    g.link(partner_want, ("FreightKey", "B"))
+    g.link(target_want, ("FreightKey", "B"))
     wanted = ("FreightKey", "ReturnValue")
     g.call("QAndWanted", MATHLIB, "BooleanAND", 2750, 200,
            [("A", "in", BOOL, None), ("B", "in", BOOL, None), ("ReturnValue", "out", BOOL, None)])
@@ -314,7 +314,7 @@ def transfer_from():
     g.link(("AddNew", "then"), ("AddMoved", "execute"))
     g.link(moved, ("AddMoved", "Moved"))
 
-    # after the loop: write the hold and the partner's dock cargo back
+    # after the loop: write the hold and the target's dock cargo back
     make_struct(g, "MakeCargo", CARGO, [("Items", MAP_ITEMS)], 2250, -400)
     g.link(("GetItems", "Items"), ("MakeCargo", "Items"))
     set_fields(g, "StateCargo", SHIPSTATE, "cargo", STRUCT(CARGO), 2500, -300)
@@ -329,7 +329,7 @@ def transfer_from():
     g.link(("GetOutSlots", "OutSlots"), ("MakeSea", "Slots"))
     set_member(g, "SeaSet", WORKDOCK, "m_stockpile_goodsFromSea", STRUCT(STOCKPILE), 3000, -300)
     g.link(("ShipSetState", "then"), ("SeaSet", "execute"))
-    g.link(("GetPartner", "Partner"), ("SeaSet", "self"))
+    g.link(("GetTarget", "Target"), ("SeaSet", "self"))
     g.link(("MakeSea", "Stockpile"), ("SeaSet", "m_stockpile_goodsFromSea"))
     get_local(g, "GetMovedForReturn", F, "Moved", INT, 3000, -550)
     return g.render()
@@ -395,7 +395,7 @@ def update_request():
     When the request changes, the log line lists every resource's parts and the free space."""
     g = Graph()
     get_local(g, "GetDock", "UpdateRequest", "Dock", OBJ(WORKDOCK), 0, 300)
-    get_local(g, "GetPartner", "UpdateRequest", "Partner", OBJ(WORKDOCK), 0, 400)
+    get_local(g, "GetTarget", "UpdateRequest", "Target", OBJ(WORKDOCK), 0, 400)
     get_local(g, "GetShip", "UpdateRequest", "Ship", OBJ(SHIP), 0, 500)
     get_local(g, "GetNoMore", "UpdateRequest", "NoMore", BOOL, 0, 600)
     get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 700)
@@ -403,12 +403,12 @@ def update_request():
     g.call("Plan", LOAD_LIB, "Plan", 250, 0,
            [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
             ("MapLoad", "in", OBJ(MAPLOAD_C), None), ("Dock", "in", OBJ(WORKDOCK), None),
-            ("Partner", "in", OBJ(WORKDOCK), None), ("Ship", "in", OBJ(SHIP), None), ("NoMore", "in", BOOL, None),
+            ("Target", "in", OBJ(WORKDOCK), None), ("Ship", "in", OBJ(SHIP), None), ("NoMore", "in", BOOL, None),
             ("Request", "out", MAP_NAME_INT, None), ("Remaining", "out", INT, None), ("InFlight", "out", INT, None),
             ("Space", "out", INT, None), ("Detail", "out", STR, None)])
     g.link(("Self", "self"), ("Plan", "MapLoad"))
     g.link(("GetDock", "Dock"), ("Plan", "Dock"))
-    g.link(("GetPartner", "Partner"), ("Plan", "Partner"))
+    g.link(("GetTarget", "Target"), ("Plan", "Target"))
     g.link(("GetShip", "Ship"), ("Plan", "Ship"))
     g.link(("GetNoMore", "NoMore"), ("Plan", "NoMore"))
 
@@ -466,7 +466,7 @@ def freight_tick():
     get_self(g, "GetSince", "LoadingSince", MAP_INT_DOUBLE, 0, 600)
     get_self(g, "GetTrip", "TripSeconds", DOUBLE, 0, 700)
     get_self(g, "GetMaxWait", "MaxWaitSeconds", DOUBLE, 0, 800)
-    get_local(g, "GetPartner", F, "Partner", OBJ(WORKDOCK), 0, 900)
+    get_local(g, "GetTarget", F, "Target", OBJ(WORKDOCK), 0, 900)
     get_local(g, "GetId", F, "Id", INT, 0, 1000)
     get_local(g, "GetShip", F, "Ship", OBJ(SHIP), 0, 1100)
     get_local(g, "GetRemaining", F, "Remaining", INT, 0, 1200)
@@ -488,17 +488,17 @@ def freight_tick():
     g.link(("SetNow", "then"), ("ForDocks", "Exec"))
     g.link(("GetDocks", "Docks"), ("ForDocks", "Array"))
 
-    user_call(g, "FindPartner", "PartnerOf", 800, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Partner", OBJ(WORKDOCK))])
-    g.link(("ForDocks", "LoopBody"), ("FindPartner", "execute"))
-    g.link(dock, ("FindPartner", "Dock"))
-    set_local(g, "SetPartner", F, "Partner", OBJ(WORKDOCK), 1050, 0)
-    g.link(("FindPartner", "then"), ("SetPartner", "execute"))
-    g.link(("FindPartner", "Partner"), ("SetPartner", "Partner"))
-    is_valid(g, "PartnerValid", WORKDOCK, 1300, 200)
-    g.link(("GetPartner", "Partner"), ("PartnerValid", "Object"))
+    user_call(g, "FindTarget", "TargetOf", 800, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Target", OBJ(WORKDOCK))])
+    g.link(("ForDocks", "LoopBody"), ("FindTarget", "execute"))
+    g.link(dock, ("FindTarget", "Dock"))
+    set_local(g, "SetTarget", F, "Target", OBJ(WORKDOCK), 1050, 0)
+    g.link(("FindTarget", "then"), ("SetTarget", "execute"))
+    g.link(("FindTarget", "Target"), ("SetTarget", "Target"))
+    is_valid(g, "TargetValid", WORKDOCK, 1300, 200)
+    g.link(("GetTarget", "Target"), ("TargetValid", "Object"))
     branch(g, "BrPaired", 1300, 0)
-    g.link(("SetPartner", "then"), ("BrPaired", "execute"))
-    g.link(("PartnerValid", "ReturnValue"), ("BrPaired", "Condition"))
+    g.link(("SetTarget", "then"), ("BrPaired", "execute"))
+    g.link(("TargetValid", "ReturnValue"), ("BrPaired", "Condition"))
 
     dock_id = dock_id_call(g, "DockId", dock, 1550, 200)
     set_local(g, "SetId", F, "Id", INT, 1550, 0)
@@ -512,10 +512,10 @@ def freight_tick():
     g.link(("FindShip", "Ship"), ("SetShip", "Ship"))
     pending = map_contains(g, "Pending", DEPARTING, ("GetId", "Id"), MAP_INT_DOUBLE, 2050, 550)
     user_call(g, "Update", "UpdateRequest", 2300, 400,
-              ins=[("Dock", OBJ(WORKDOCK)), ("Partner", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP)), ("NoMore", BOOL)],
+              ins=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP)), ("NoMore", BOOL)],
               outs=[("Remaining", INT), ("InFlight", INT)])
     g.link(dock, ("Update", "Dock"))
-    g.link(("GetPartner", "Partner"), ("Update", "Partner"))
+    g.link(("GetTarget", "Target"), ("Update", "Target"))
     g.link(("GetShip", "Ship"), ("Update", "Ship"))
     g.link(pending, ("Update", "NoMore"))
     set_local(g, "SetRemaining", F, "Remaining", INT, 2550, 400)
@@ -560,10 +560,10 @@ def freight_tick():
     g.link(("BrVoyage", "else"), ("BrArrived", "execute"))
     g.link(("Arrived", "ReturnValue"), ("BrArrived", "Condition"))
     user_call(g, "Deliver", "TransferFrom", 3800, -200,
-              ins=[("Dock", OBJ(WORKDOCK)), ("Partner", OBJ(WORKDOCK))], outs=[("Total", INT)])
+              ins=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK))], outs=[("Total", INT)])
     g.link(("BrArrived", "then"), ("Deliver", "execute"))
     g.link(dock, ("Deliver", "Dock"))
-    g.link(("GetPartner", "Partner"), ("Deliver", "Partner"))
+    g.link(("GetTarget", "Target"), ("Deliver", "Target"))
     for i, (src_map, label) in enumerate(((DEPARTED, "ForgetDeparted"), (SINCE, "ForgetSince"))):
         g.call(label, MAPLIB, "Map_Remove", 4050 + 250 * i, -200,
                [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
@@ -572,11 +572,11 @@ def freight_tick():
         g.link(("GetId", "Id"), (label, "Key"))
     g.link(("Deliver", "then"), ("ForgetDeparted", "execute"))
     g.link(("ForgetDeparted", "then"), ("ForgetSince", "execute"))
-    partner_id = dock_id_call(g, "PartnerId", ("GetPartner", "Partner"), 4050, -450)
-    s_arr = fmt_to_string(g, "FmtArrived", "Dock {d} freight arrived at partner {p}: delivered {n}",
+    target_id = dock_id_call(g, "TargetId", ("GetTarget", "Target"), 4050, -450)
+    s_arr = fmt_to_string(g, "FmtArrived", "Dock {d} freight arrived at target {p}: delivered {n}",
                           [("d", INT), ("p", INT), ("n", INT)], 4300, -500)
     g.link(("GetId", "Id"), ("FmtArrived", "d"))
-    g.link(partner_id, ("FmtArrived", "p"))
+    g.link(target_id, ("FmtArrived", "p"))
     g.link(("Deliver", "Total"), ("FmtArrived", "n"))
     log_msg(g, "LogArrived", "GetModAPI", 4550, -200)
     user_call(g, "ClearReq", "ClearRequested", 4550, -350, ins=[("Id", INT)])
@@ -589,11 +589,11 @@ def freight_tick():
     loaded_any = int_op(g, "LoadedAny", "Greater_IntInt", ("GetFreight", "Freight"), None, 3550, 400, b_default="0")
     branch(g, "BrLoaded", 3550, 200)
     user_call(g, "FreightC", "FreightCounts", 3300, 400,
-              ins=[("Ship", OBJ(SHIP)), ("Dock", OBJ(WORKDOCK)), ("Partner", OBJ(WORKDOCK))], outs=[("Freight", INT)])
+              ins=[("Ship", OBJ(SHIP)), ("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK))], outs=[("Freight", INT)])
     g.link(("SetLoaded", "then"), ("FreightC", "execute"))
     g.link(("GetShip", "Ship"), ("FreightC", "Ship"))
     g.link(dock, ("FreightC", "Dock"))
-    g.link(("GetPartner", "Partner"), ("FreightC", "Partner"))
+    g.link(("GetTarget", "Target"), ("FreightC", "Target"))
     set_local(g, "SetFreight", F, "Freight", INT, 3300, 200)
     g.link(("FreightC", "then"), ("SetFreight", "execute"))
     g.link(("FreightC", "Freight"), ("SetFreight", "Freight"))
@@ -686,8 +686,8 @@ def freight_tick():
     g.link(("SetReasonPending", "then"), ("Depart", "execute"))
     map_remove(g, "ForgetPending", DEPARTING, ("GetId", "Id"), MAP_INT_DOUBLE, 5550, 200)
     g.link(("Depart", "then"), ("ForgetPending", "execute"))
-    partner_id2 = dock_id_call(g, "PartnerId2", ("GetPartner", "Partner"), 5550, 0)
-    s_dep = fmt_to_string(g, "FmtDepart", "Dock {d} departs for partner {p} with {n} aboard (still wanted: {r}; {reason})",
+    target_id2 = dock_id_call(g, "TargetId2", ("GetTarget", "Target"), 5550, 0)
+    s_dep = fmt_to_string(g, "FmtDepart", "Dock {d} departs for target {p} with {n} aboard (still wanted: {r}; {reason})",
                           [("d", INT), ("p", INT), ("n", INT), ("r", INT), ("reason", STR)], 5800, 0)
     g.call("RuleAll", MATHLIB, "SelectString", 5050, 950,
            [("A", "in", STR, 'DefaultValue="all wanted aboard"'), ("B", "in", STR, 'DefaultValue="timer"'),
@@ -703,7 +703,7 @@ def freight_tick():
     g.link((to_rule, "ReturnValue"), ("SetReasonRule", "Reason"))
     g.link(("GetReason", "Reason"), ("FmtDepart", "reason"))
     g.link(("GetId", "Id"), ("FmtDepart", "d"))
-    g.link(partner_id2, ("FmtDepart", "p"))
+    g.link(target_id2, ("FmtDepart", "p"))
     g.link(("GetFreight", "Freight"), ("FmtDepart", "n"))
     g.link(("GetRemaining", "Remaining"), ("FmtDepart", "r"))
     log_msg(g, "LogDepart", "GetModAPI", 5800, 200)
@@ -713,10 +713,10 @@ def freight_tick():
     g.link(("LogDepart", "then"), ("Pause", "execute"))
     g.link(dock, ("Pause", "Dock"))
     user_call(g, "Voyage", "StartVoyage", 6300, 200,
-              ins=[("Dock", OBJ(WORKDOCK)), ("Partner", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP))])
+              ins=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP))])
     g.link(("Pause", "then"), ("Voyage", "execute"))
     g.link(dock, ("Voyage", "Dock"))
-    g.link(("GetPartner", "Partner"), ("Voyage", "Partner"))
+    g.link(("GetTarget", "Target"), ("Voyage", "Target"))
     g.link(("GetShip", "Ship"), ("Voyage", "Ship"))
     return g.render()
 
@@ -862,7 +862,7 @@ def freight_counts():
     F = "FreightCounts"
     get_local(g, "GetShip", F, "Ship", OBJ(SHIP), 0, 400)
     get_local(g, "GetDock", F, "Dock", OBJ(WORKDOCK), 0, 500)
-    get_local(g, "GetPartnerIn", F, "Partner", OBJ(WORKDOCK), 0, 550)
+    get_local(g, "GetTargetIn", F, "Target", OBJ(WORKDOCK), 0, 550)
     get_self(g, "GetRequested", "Requested", STR_SET, 0, 600)
     get_local(g, "GetHold", F, "Hold", MAP_NAME_INT, 0, 700)
     get_local(g, "GetSum", F, "Sum", INT, 0, 800)
@@ -871,7 +871,7 @@ def freight_counts():
             ("Sum", "in", INT, 'DefaultValue="0"'), ("Output_Get", "out", INT, None)])
     user_call(g, "Deficits", "DeficitsFor", 250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Want", STRUCT(RESCOLL))])
     g.link(("ZeroSum", "then"), ("Deficits", "execute"))
-    g.link(("GetPartnerIn", "Partner"), ("Deficits", "Dock"))
+    g.link(("GetTargetIn", "Target"), ("Deficits", "Dock"))
     break_struct(g, "BreakWant", RESCOLL, [("counts", MAP_NAME_INT)], 500, 250)
     g.link(("Deficits", "Want"), ("BreakWant", "ResourceCollection"))
     set_local(g, "SetWant", F, "Want", MAP_NAME_INT, 500, 0)
@@ -894,13 +894,13 @@ def freight_counts():
            [("TargetSet", "in", STR_SET, None), ("ItemToFind", "in", STR, None), ("ReturnValue", "out", BOOL, None)])
     g.link(("GetRequested", "Requested"), ("Wanted", "TargetSet"))
     g.link(k, ("Wanted", "ItemToFind"))
-    # ... or currently wanted by the partner (recognises freight again after a reload)
+    # ... or currently wanted by the target (recognises freight again after a reload)
     get_local(g, "GetWant", F, "Want", MAP_NAME_INT, 0, 1000)
-    partner_want = map_contains(g, "PartnerWants", ("GetWant", "Want"), key, MAP_NAME_INT, 2500, 400, key_type=NAME)
+    target_want = map_contains(g, "TargetWants", ("GetWant", "Want"), key, MAP_NAME_INT, 2500, 400, key_type=NAME)
     g.call("FreightKey", MATHLIB, "BooleanOR", 2750, 300,
            [("A", "in", BOOL, None), ("B", "in", BOOL, None), ("ReturnValue", "out", BOOL, None)])
     g.link(("Wanted", "ReturnValue"), ("FreightKey", "A"))
-    g.link(partner_want, ("FreightKey", "B"))
+    g.link(target_want, ("FreightKey", "B"))
     wanted = ("FreightKey", "ReturnValue")
     branch(g, "BrWanted", 1800, 0)
     g.link(("ForKeys", "LoopBody"), ("BrWanted", "execute"))
@@ -925,15 +925,25 @@ SPECS = {
                                           ("Slots", MAP_NAME_TO(SLOT)), ("Need", INT)],
                                  returns=[("ForKeys", "Completed")], values=[("GetResultForReturn", "Result", "Deficit")]),
     "RequestFor": fn_spec(("Call", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Want", STRUCT(RESCOLL))]),
+    "TransferFrom": fn_spec(("ZeroMoved", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK))],
+                            outputs=[("Total", INT)],
+                            locals_=[("Ship", OBJ(SHIP)), ("ShipState", STRUCT(SHIPSTATE)), ("Items", MAP_NAME_TO(ITEM)),
+                                     ("OutSlots", MAP_NAME_TO(SLOT)), ("Slot", STRUCT(SLOT)), ("Q", INT), ("Moved", INT),
+                                     ("Want", MAP_NAME_INT)],
+                            returns=[("SeaSet", "then")], values=[("GetMovedForReturn", "Moved", "Total")]),
+    "FreightCounts": fn_spec(("ZeroSum", "execute"),
+                             inputs=[("Ship", OBJ(SHIP)), ("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK))],
+                             outputs=[("Freight", INT)], locals_=[("Hold", MAP_NAME_INT), ("Sum", INT), ("Want", MAP_NAME_INT)],
+                             returns=[("ForKeys", "Completed")], values=[("GetSumForReturn", "Sum", "Freight")]),
     "UpdateRequest": fn_spec(("Plan", "execute"),
-                             inputs=[("Dock", OBJ(WORKDOCK)), ("Partner", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP)),
+                             inputs=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP)),
                                      ("NoMore", BOOL)],
                              outputs=[("Remaining", INT), ("InFlight", INT)],
                              locals_=[],
                              returns=[("LogReq", "then"), ("BrChanged", "else")],
                              values=[("Plan", "Remaining", "Remaining"), ("Plan", "InFlight", "InFlight")]),
     "FreightTick": fn_spec(("Refresh", "execute"),
-                           locals_=[("Partner", OBJ(WORKDOCK)), ("Id", INT), ("Ship", OBJ(SHIP)), ("Remaining", INT),
+                           locals_=[("Target", OBJ(WORKDOCK)), ("Id", INT), ("Ship", OBJ(SHIP)), ("Remaining", INT),
                                     ("Loaded", INT), ("Now", DOUBLE), ("Freight", INT), ("InFlight", INT),
                                     ("Reason", STR)]),
 }

@@ -2,8 +2,9 @@ blueprint BPL_FDDispatch : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Lo
 
 // The global dispatcher: gives provider docks jobs (one ship trip: a requester and a manifest), from every
 // requester's demand and every idle provider's supply. See Docs/FreightDock/Many-to-many links.md, "Dispatch".
-// Runs every TickSeconds of game time (Tick, from BPL_FDPairing.Tick). Jobs live in BP_MapLoad: JobTo, JobGoods
-// (BPL_FDNet.JobKey / ParkKey), JobSailed; DemandSince ages demand; IdleWhy says why a provider has no job.
+// Runs every TickSeconds of game time (Tick, from BPL_FDPairing.Tick). Jobs live in BP_MapLoad: JobTo (provider ->
+// target), JobGoods (BPL_FDNet.JobKey / ParkKey), JobSailed; DemandSince ages demand; IdleWhy says why a provider has
+// no job.
 //
 // A pass: upkeep (jobs back home complete, their undelivered goods parked; jobs whose provider and requester no
 // longer share a network are cancelled), shrinking loading jobs to what their requesters still want, demand, growth of jobs still loading, then new jobs, greedily: the

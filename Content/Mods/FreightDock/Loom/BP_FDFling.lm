@@ -1,8 +1,8 @@
 blueprint BP_FDFling : Actor at /Game/Mods/FreightDock/Loom/BP_FDFling
 
-// Goods flying in an arc from a freight ship to the partner dock when it unloads, as the game's own resource
+// Goods flying in an arc from a freight ship to the target dock when it unloads, as the game's own resource
 // toss does (that one is native and can't be called). VoyageArrive spawns one at the stand-in ship, calls Before
-// with the partner, moves the cargo into the partner's dock store, then calls Launch with the partner: what the
+// with the target, moves the cargo into the target's dock store, then calls Launch with the target: what the
 // store gained is shown as pieces (each resource's haul mesh), one per PerPiece() units, at least one of each and
 // MaxPieces() in all, taking off one after another. The actor removes itself once the
 // last has landed. Runs on game time, so it pauses with the game.
@@ -78,18 +78,18 @@ on ReceiveBeginPlay {
     }
 }
 
-// What the partner's dock store holds before the cargo goes in.
-fn Before(Partner: WorkDock) {
-    for res, slot in Partner.m_stockpile_goodsFromSea.Slots {
+// What the target's dock store holds before the cargo goes in.
+fn Before(Target: WorkDock) {
+    for res, slot in Target.m_stockpile_goodsFromSea.Slots {
         Had[res] = slot.count
     }
 }
 
-// Flies what the store gained since Before, from here to the partner dock.
-fn Launch(Partner: WorkDock) {
+// Flies what the store gained since Before, from here to the target dock.
+fn Launch(Target: WorkDock) {
     let names: array<name> = []
     let amounts: array<int> = []
-    for res, slot in Partner.m_stockpile_goodsFromSea.Slots {
+    for res, slot in Target.m_stockpile_goodsFromSea.Slots {
         let h = Had.Find(res)
         let gained = slot.count - (if h.ReturnValue { h.Value } else { 0 })
         if gained > 0 {
@@ -150,7 +150,7 @@ fn Launch(Partner: WorkDock) {
     }
 
     From = K2_GetActorLocation()
-    To = Partner.GetOwner().K2_GetActorLocation()
+    To = Target.GetOwner().K2_GetActorLocation()
     let dx = To.X - From.X
     let dy = To.Y - From.Y
     Height = KismetMathLibrary.FClamp(KismetMathLibrary.Sqrt(dx * dx + dy * dy) * 0.35, 150.0, 1000.0)

@@ -1,4 +1,4 @@
-"""A* over route cells (FindPath) and PlanRoute, which plans one dock's route to its partner.
+"""A* over route cells (FindPath) and PlanRoute, which plans one dock's route to its target.
 """
 from fdgen.core.graph import Graph
 from fdgen.core.types import BOOL, EXEC, INT, INT_ARRAY, INT_SET, MAP_INT_INT, MAP_INT_VECTOR, OBJ, STRUCT, VEC_ARRAY
@@ -217,7 +217,7 @@ def find_path():
 
 
 def plan_route():
-    """PlanRoute(Dock): water route from Dock's stand-off point to its partner's, stored as RoutePts[Id*1000+i]
+    """PlanRoute(Dock): water route from Dock's stand-off point to its target's, stored as RoutePts[Id*1000+i]
     and RouteLen[Id], and logged. Straight if the direct line is clear.
     Locals: Start, Goal, Anchor, Prev (Vector); Pts (Vector array); Id (Integer)."""
     g = Graph()
@@ -238,20 +238,20 @@ def plan_route():
 
     set_local(g, "SetId", F, "Id", INT, 0, 0)
     g.link(dock_id_call(g, "DockId", ("GetDock", "Dock"), 0, 300), ("SetId", "Id"))
-    user_call(g, "Partner", "PartnerOf", 250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Partner", OBJ(WORKDOCK))])
-    g.link(("GetDock", "Dock"), ("Partner", "Dock"))
-    is_valid(g, "PartnerOk", WORKDOCK, 500, 300)
-    g.link(("Partner", "Partner"), ("PartnerOk", "Object"))
-    branch(g, "BrPartner", 500, 0)
-    g.link(("PartnerOk", "ReturnValue"), ("BrPartner", "Condition"))
-    log_msg(g, "LogNoPartner", "GetModAPI", 750, 300, literal="PlanRoute: the selected dock has no partner")
-    g.link(("BrPartner", "else"), ("LogNoPartner", "execute"))
+    user_call(g, "Target", "TargetOf", 250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Target", OBJ(WORKDOCK))])
+    g.link(("GetDock", "Dock"), ("Target", "Dock"))
+    is_valid(g, "TargetOk", WORKDOCK, 500, 300)
+    g.link(("Target", "Target"), ("TargetOk", "Object"))
+    branch(g, "BrTarget", 500, 0)
+    g.link(("TargetOk", "ReturnValue"), ("BrTarget", "Condition"))
+    log_msg(g, "LogNoTarget", "GetModAPI", 750, 300, literal="PlanRoute: the selected dock has no target")
+    g.link(("BrTarget", "else"), ("LogNoTarget", "execute"))
     user_call(g, "HomeStand", "StandOffPoint", 750, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Pos", STRUCT(VECTOR))])
     g.link(("GetDock", "Dock"), ("HomeStand", "Dock"))
     set_local(g, "SetStart", F, "Start", STRUCT(VECTOR), 1000, 0)
     g.link(("HomeStand", "Pos"), ("SetStart", "Start"))
     user_call(g, "AwayStand", "StandOffPoint", 1250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Pos", STRUCT(VECTOR))])
-    g.link(("Partner", "Partner"), ("AwayStand", "Dock"))
+    g.link(("Target", "Target"), ("AwayStand", "Dock"))
     set_local(g, "SetGoal", F, "Goal", STRUCT(VECTOR), 1500, 0)
     g.link(("AwayStand", "Pos"), ("SetGoal", "Goal"))
     arrfn(g, "ClearPts", "Array_Clear", 1750, 0,
@@ -270,8 +270,8 @@ def plan_route():
         return name
 
     add_pt("AddStart", ("GetStart", "Start"), 2250, 0)
-    chain(g, "SetId", "Partner", "BrPartner")
-    g.link(("BrPartner", "then"), ("HomeStand", "execute"))
+    chain(g, "SetId", "Target", "BrTarget")
+    g.link(("BrTarget", "then"), ("HomeStand", "execute"))
     # the ends, for the near-dock clearance exemption in ClearLine / FindPath
     set_self(g, "SetPlanStart", "PlanStart", STRUCT(VECTOR), 1600, -200)
     g.link(("GetStart", "Start"), ("SetPlanStart", "PlanStart"))

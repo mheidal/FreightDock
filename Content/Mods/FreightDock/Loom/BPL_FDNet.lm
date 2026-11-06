@@ -7,8 +7,8 @@ blueprint BPL_FDNet : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BP
 //   packed bits:  30 format | 29 reserved (clear) | 28 depart only when full | 27..21, 20..14, 13..7, 6..0 memberships
 //   membership (7 bits): 6..5 role (1 provide, 2 request, 3 both) | 4..0 network ID (1..31; 0 = empty)
 //
-// Older values (mod 1.x, one-to-one pairs) are -2 - partnerDockId: no format bit. -1 (or anything above -2) is
-// "no partner", as the game uses it. Nothing is cached: queries decode every freight dock's value each time.
+// Older values (mod 1.x, one-to-one pairs) are -2 - targetDockId: no format bit. -1 (or anything above -2) is
+// "no target", as the game uses it. Nothing is cached: queries decode every freight dock's value each time.
 
 pure fn DockId(Dock: WorkDock) -> int {
     let grid = cast(Dock.GetOwner(), GridActor)
@@ -100,14 +100,14 @@ pure fn Place(Index: int) -> int {
     return p
 }
 
-// The stored value decoded. IsNew: in the network format. OldPartner: the partner's dock ID of a 1.x pair, else -1.
+// The stored value decoded. IsNew: in the network format. OldTarget: the target's dock ID of a 1.x pair, else -1.
 // Nets and Roles always have Slots() entries; an empty membership is net 0, role 0.
-pure fn Unpack(Stored: int, out Nets: array<int>, out Roles: array<int>, out Full: bool, out IsNew: bool, out OldPartner: int) {
+pure fn Unpack(Stored: int, out Nets: array<int>, out Roles: array<int>, out Full: bool, out IsNew: bool, out OldTarget: int) {
     Nets = []
     Roles = []
     Full = false
     IsNew = false
-    OldPartner = -1
+    OldTarget = -1
     let packed = -1
     if Stored <= -2 {
         packed = 0 - Stored - 2
@@ -116,7 +116,7 @@ pure fn Unpack(Stored: int, out Nets: array<int>, out Roles: array<int>, out Ful
         IsNew = true
         Full = (packed & FullBit()) != 0
     } else if packed >= 0 {
-        OldPartner = packed
+        OldTarget = packed
     }
     let i = 0
     while i < Slots() {
@@ -341,21 +341,21 @@ fn ProvidersOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
 }
 
 // Converts every 1.x pair (A <-> B) into a network of its own, the lowest free ID, with both docks in the role
-// "both"; a 1.x value whose partner is gone becomes -1. Returns the number of networks made. Once converted, a
+// "both"; a 1.x value whose target is gone becomes -1. Returns the number of networks made. Once converted, a
 // save can't be read by mod 1.x.
 fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
     let made = 0
     let docks = FreightDocks(MapLoad)
     for d in docks {
         let u = Unpack(d.activeTradePartnerId)
-        if !u.IsNew && u.OldPartner >= 0 {
-            let partner: WorkDock = none
+        if !u.IsNew && u.OldTarget >= 0 {
+            let target: WorkDock = none
             for p in docks {
-                if DockId(p) == u.OldPartner && p != d {
-                    partner = p
+                if DockId(p) == u.OldTarget && p != d {
+                    target = p
                 }
             }
-            if partner == none {
+            if target == none {
                 d.activeTradePartnerId = -1
             } else {
                 let free = InUse(MapLoad).NextFree
@@ -365,13 +365,13 @@ fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
                 }
                 let both = Both()
                 d.activeTradePartnerId = Pack([free], [both], false)
-                let pu = Unpack(partner.activeTradePartnerId)
+                let pu = Unpack(target.activeTradePartnerId)
                 if pu.IsNew {
-                    let w = With(partner.activeTradePartnerId, free, both)
-                    partner.activeTradePartnerId = w.ReturnValue
+                    let w = With(target.activeTradePartnerId, free, both)
+                    target.activeTradePartnerId = w.ReturnValue
                 } else {
-                    // the partner's own value (its pair with d, or with another dock) is replaced
-                    partner.activeTradePartnerId = Pack([free], [both], false)
+                    // the target's own value (its pair with d, or with another dock) is replaced
+                    target.activeTradePartnerId = Pack([free], [both], false)
                 }
                 made += 1
             }
@@ -394,15 +394,15 @@ fn DockIn(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> W
 }
 
 // The dock it delivers to: its job's requester (JobTo, given out by BPL_FDDispatch), or none when it has no job. A
-// 1.x value gives its old partner, until Migrate has run.
-fn PartnerOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> WorkDock {
+// 1.x value gives its old target, until Migrate has run.
+fn TargetOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> WorkDock {
     if Dock == none {
         return none
     }
     let u = Unpack(Dock.activeTradePartnerId)
     if !u.IsNew {
-        if u.OldPartner >= 0 {
-            return DockIn(MapLoad, u.OldPartner)
+        if u.OldTarget >= 0 {
+            return DockIn(MapLoad, u.OldTarget)
         }
         return none
     }
@@ -423,7 +423,7 @@ pure fn Emptied(Stored: int) -> int {
 // Whether the dock is paired: in a network, or holding a 1.x pair.
 pure fn IsPaired(Stored: int) -> bool {
     let u = Unpack(Stored)
-    return IsMember(Stored) || u.OldPartner >= 0
+    return IsMember(Stored) || u.OldTarget >= 0
 }
 
 // What a network's requesters ask for, for the panel's picker: per resource, the request levels (minHold) set in

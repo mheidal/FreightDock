@@ -8,15 +8,15 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetDock"
    NodeGuid=00000000000000000000000000000001
    CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="Dock",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Plan 00000000000000000000000000000003,SpecGet 00000000000000000000000000000004,Request 00000000000000000000000000000005,DockId 00000000000000000000000000000006,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPartner"
-   VariableReference=(MemberScope="UpdateRequest",MemberName="Partner")
-   NodeComment="GetPartner"
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetTarget"
+   VariableReference=(MemberScope="UpdateRequest",MemberName="Target")
+   NodeComment="GetTarget"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=0
    NodePosY=400
    NodeGuid=00000000000000000000000000000007
-   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="Partner",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Plan 00000000000000000000000000000009,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="Target",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Plan 00000000000000000000000000000009,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetShip"
    VariableReference=(MemberScope="UpdateRequest",MemberName="Ship")
@@ -69,7 +69,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Plan"
    CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrChanged 00000000000000000000000000000019,),)
    CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="MapLoad",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C'",LinkedTo=(Self 00000000000000000000000000000014,),)
    CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="Dock",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetDock 00000000000000000000000000000002,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="Partner",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetPartner 00000000000000000000000000000008,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="Target",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetTarget 00000000000000000000000000000008,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="Ship",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'",LinkedTo=(GetShip 0000000000000000000000000000000B,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="NoMore",PinType.PinCategory="bool",LinkedTo=(GetNoMore 0000000000000000000000000000000E,),)
    CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="Request",Direction="EGPD_Output",PinType.PinCategory="name",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="int"),LinkedTo=(MakeResult 0000000000000000000000000000001B,),)

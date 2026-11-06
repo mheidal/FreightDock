@@ -6,7 +6,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetModAPI"
    NodePosX=0
    NodePosY=1500
    NodeGuid=00000000000000000000000000000001
-   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="ModAPI",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(LogNoPartner 00000000000000000000000000000003,LogNoRoute 00000000000000000000000000000004,LogRoute 00000000000000000000000000000005,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="ModAPI",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(LogNoTarget 00000000000000000000000000000003,LogNoRoute 00000000000000000000000000000004,LogRoute 00000000000000000000000000000005,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetDock"
    VariableReference=(MemberScope="PlanRoute",MemberName="Dock")
@@ -16,7 +16,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetDock"
    NodePosX=0
    NodePosY=600
    NodeGuid=00000000000000000000000000000006
-   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="Dock",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(DockId 00000000000000000000000000000008,Partner 00000000000000000000000000000009,HomeStand 0000000000000000000000000000000A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="Dock",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(DockId 00000000000000000000000000000008,Target 00000000000000000000000000000009,HomeStand 0000000000000000000000000000000A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetStart"
    VariableReference=(MemberScope="PlanRoute",MemberName="Start")
@@ -117,7 +117,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="SetId"
    NodePosY=0
    NodeGuid=0000000000000000000000000000003D
    CustomProperties Pin (PinId=0000000000000000000000000000003E,PinName="execute",PinType.PinCategory="exec",)
-   CustomProperties Pin (PinId=0000000000000000000000000000003F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Partner 00000000000000000000000000000040,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Target 00000000000000000000000000000040,),)
    CustomProperties Pin (PinId=00000000000000000000000000000041,PinName="Id",PinType.PinCategory="int",LinkedTo=(DockId 00000000000000000000000000000042,),)
    CustomProperties Pin (PinId=00000000000000000000000000000043,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="int",)
 End Object
@@ -132,77 +132,77 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DockId"
    CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="Dock",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetDock 00000000000000000000000000000007,),)
    CustomProperties Pin (PinId=00000000000000000000000000000042,PinName="Id",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(SetId 00000000000000000000000000000041,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Partner"
-   FunctionReference=(MemberName="PartnerOf",bSelfContext=True)
-   NodeComment="Partner"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Target"
+   FunctionReference=(MemberName="TargetOf",bSelfContext=True)
+   NodeComment="Target"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=250
    NodePosY=0
    NodeGuid=00000000000000000000000000000045
    CustomProperties Pin (PinId=00000000000000000000000000000040,PinName="execute",PinType.PinCategory="exec",LinkedTo=(SetId 0000000000000000000000000000003F,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000046,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrPartner 00000000000000000000000000000047,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000046,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrTarget 00000000000000000000000000000047,),)
    CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="Dock",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetDock 00000000000000000000000000000007,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000048,PinName="Partner",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(PartnerOk 00000000000000000000000000000049,AwayStand 0000000000000000000000000000004A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000048,PinName="Target",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(TargetOk 00000000000000000000000000000049,AwayStand 0000000000000000000000000000004A,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PartnerOk"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="TargetOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
-   NodeComment="PartnerOk"
+   NodeComment="TargetOk"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=500
    NodePosY=300
    NodeGuid=0000000000000000000000000000004B
-   CustomProperties Pin (PinId=00000000000000000000000000000049,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Partner 00000000000000000000000000000048,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000004C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrPartner 0000000000000000000000000000004D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000049,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Target 00000000000000000000000000000048,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrTarget 0000000000000000000000000000004D,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrPartner"
-   NodeComment="BrPartner"
+Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrTarget"
+   NodeComment="BrTarget"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=500
    NodePosY=0
    NodeGuid=0000000000000000000000000000004E
-   CustomProperties Pin (PinId=00000000000000000000000000000047,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Partner 00000000000000000000000000000046,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000004D,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(PartnerOk 0000000000000000000000000000004C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000047,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Target 00000000000000000000000000000046,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004D,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(TargetOk 0000000000000000000000000000004C,),)
    CustomProperties Pin (PinId=0000000000000000000000000000004F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(HomeStand 00000000000000000000000000000050,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000051,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LogNoPartner 00000000000000000000000000000052,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000051,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LogNoTarget 00000000000000000000000000000052,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogNoPartner"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogNoTarget"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",MemberName="LogMessage")
-   NodeComment="LogNoPartner"
+   NodeComment="LogNoTarget"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=750
    NodePosY=300
    NodeGuid=00000000000000000000000000000053
-   CustomProperties Pin (PinId=00000000000000000000000000000052,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrPartner 00000000000000000000000000000051,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000052,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrTarget 00000000000000000000000000000051,),)
    CustomProperties Pin (PinId=00000000000000000000000000000054,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
    CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'",LinkedTo=(GetModAPI 00000000000000000000000000000002,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000055,PinName="Msg",PinType.PinCategory="string",LinkedTo=(LogNoPartner_Cat 00000000000000000000000000000056,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000055,PinName="Msg",PinType.PinCategory="string",LinkedTo=(LogNoTarget_Cat 00000000000000000000000000000056,),)
    CustomProperties Pin (PinId=00000000000000000000000000000057,PinName="doPrependDate",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogNoPartner_Stamp"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogNoTarget_Stamp"
    FunctionReference=(MemberName="Stamp",bSelfContext=True)
-   NodeComment="LogNoPartner_Stamp"
+   NodeComment="LogNoTarget_Stamp"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=500
    NodePosY=500
    NodeGuid=00000000000000000000000000000058
-   CustomProperties Pin (PinId=00000000000000000000000000000059,PinName="Result",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogNoPartner_Cat 0000000000000000000000000000005A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000059,PinName="Result",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogNoTarget_Cat 0000000000000000000000000000005A,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogNoPartner_Cat"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LogNoTarget_Cat"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetStringLibrary'",MemberName="Concat_StrStr")
-   NodeComment="LogNoPartner_Cat"
+   NodeComment="LogNoTarget_Cat"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
    NodePosX=750
    NodePosY=500
    NodeGuid=0000000000000000000000000000005B
-   CustomProperties Pin (PinId=0000000000000000000000000000005A,PinName="A",PinType.PinCategory="string",LinkedTo=(LogNoPartner_Stamp 00000000000000000000000000000059,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000005C,PinName="B",PinType.PinCategory="string",DefaultValue="PlanRoute: the selected dock has no partner",)
-   CustomProperties Pin (PinId=00000000000000000000000000000056,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogNoPartner 00000000000000000000000000000055,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000005A,PinName="A",PinType.PinCategory="string",LinkedTo=(LogNoTarget_Stamp 00000000000000000000000000000059,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000005C,PinName="B",PinType.PinCategory="string",DefaultValue="PlanRoute: the selected dock has no target",)
+   CustomProperties Pin (PinId=00000000000000000000000000000056,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="string",LinkedTo=(LogNoTarget 00000000000000000000000000000055,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="HomeStand"
    FunctionReference=(MemberName="StandOffPoint",bSelfContext=True)
@@ -212,7 +212,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="HomeStand"
    NodePosX=750
    NodePosY=0
    NodeGuid=0000000000000000000000000000005D
-   CustomProperties Pin (PinId=00000000000000000000000000000050,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrPartner 0000000000000000000000000000004F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000050,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrTarget 0000000000000000000000000000004F,),)
    CustomProperties Pin (PinId=0000000000000000000000000000005E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(SetStart 0000000000000000000000000000005F,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="Dock",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(GetDock 00000000000000000000000000000007,),)
    CustomProperties Pin (PinId=00000000000000000000000000000060,PinName="Pos",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(SetStart 00000000000000000000000000000061,),)
@@ -240,7 +240,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="AwayStand"
    NodeGuid=00000000000000000000000000000066
    CustomProperties Pin (PinId=00000000000000000000000000000064,PinName="execute",PinType.PinCategory="exec",LinkedTo=(SetStart 00000000000000000000000000000063,),)
    CustomProperties Pin (PinId=00000000000000000000000000000067,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(SetGoal 00000000000000000000000000000068,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000004A,PinName="Dock",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Partner 00000000000000000000000000000048,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004A,PinName="Dock",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'",LinkedTo=(Target 00000000000000000000000000000048,),)
    CustomProperties Pin (PinId=00000000000000000000000000000069,PinName="Pos",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(SetGoal 0000000000000000000000000000006A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="SetGoal"

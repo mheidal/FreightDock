@@ -40,7 +40,7 @@ def draw_arcs():
 
 
 def pair_arcs():
-    """PairArcs(PC): while a paired dock is selected, an arc in PairArcColor / PairArcHeight from it to its partner
+    """PairArcs(PC): while a paired dock is selected, an arc in PairArcColor / PairArcHeight from it to its target
     (RouteStart -> RouteEnd, kept by DrawArcs)."""
     g = Graph()
     F = "PairArcs"
