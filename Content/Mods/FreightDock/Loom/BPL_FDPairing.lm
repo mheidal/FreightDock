@@ -1,83 +1,6 @@
 blueprint BPL_FDPairing : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDPairing
 
-// The pairing key and the arcs, ported from fdgen (BP_MapLoad's PairAtCursor and DrawArcs now just call these).
-// Pairs are stored as networks (BPL_FDNet): each pair is a network of its own, both docks in the role "both".
-
-fn Log(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Msg: string) {
-    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + Msg, false)
-}
-
-// The pairing key (F5 by default), until the network picker replaces it: select a freight dock, then another. If
-// either is in a network, the other joins it (as "both"; the first's network wins); else the two get a new network
-// of their own. The
-// same dock again cancels. With no dock under the cursor, the waiting dock leaves its networks (the others stay).
-fn PairAtCursor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
-    let target = MapLoad.FindDockUnderCursor().Dock
-    let pending = MapLoad.PendingDock
-    if target == none {
-        if pending == none {
-            MapLoad.Toast("Select a dock first")
-            return
-        }
-        if BPL_FDNet.Leave(MapLoad, pending) {
-            Log(MapLoad, "Dock " + string(BPL_FDNet.DockId(pending)) + " left its networks")
-            MapLoad.Toast("Left its networks")
-        } else {
-            MapLoad.Toast("Pairing cancelled")
-        }
-        MapLoad.PendingDock = none
-        return
-    }
-    if !MapLoad.IsFreightDock(target).Result {
-        MapLoad.Toast("Only freight docks can be paired")
-        MapLoad.PendingDock = none
-        return
-    }
-    if pending == none {
-        MapLoad.PendingDock = target
-        let key = string(KismetInputLibrary.Key_GetDisplayName(MapLoad.PairKey, true))
-        MapLoad.Toast("Dock selected - select its partner and press " + key)
-        return
-    }
-    if pending == target {
-        MapLoad.Toast("Pairing cancelled")
-        MapLoad.PendingDock = none
-        return
-    }
-    let a = string(BPL_FDNet.DockId(pending))
-    let b = string(BPL_FDNet.DockId(target))
-    let msg = ""
-    let net = 0
-    if BPL_FDNet.IsMember(pending.activeTradePartnerId) {
-        net = BPL_FDNet.Join(MapLoad, pending, target)
-        msg = "Dock " + b + " joined network " + string(net) + " (with dock " + a + ")"
-        if net == 0 {
-            msg = "Dock " + b + " can't join: it is already in 4 networks"
-        }
-    } else if BPL_FDNet.IsMember(target.activeTradePartnerId) {
-        // the waiting dock joins the target's network instead of breaking it up
-        net = BPL_FDNet.Join(MapLoad, target, pending)
-        msg = "Dock " + a + " joined network " + string(net) + " (with dock " + b + ")"
-        if net == 0 {
-            msg = "Dock " + a + " can't join: it is already in 4 networks"
-        }
-    } else {
-        net = BPL_FDNet.Pair(MapLoad, pending, target)
-        msg = "Paired docks " + a + " and " + b + " (network " + string(net) + ")"
-        if net == 0 {
-            msg = "No free network left"
-        }
-    }
-    MapLoad.Toast(msg)
-    Log(MapLoad, msg)
-    if net == 0 {
-        MapLoad.PendingDock = none
-        return
-    }
-    MapLoad.PlanRoute(pending)
-    MapLoad.PlanRoute(target)
-    MapLoad.PendingDock = none
-}
+// The arcs and the per-frame hook, ported from fdgen (BP_MapLoad's DrawArcs and PairKeyTick just call these).
 
 // An arc from A to B for this frame.
 fn Queue(PC: PlayerController_Play, A: Vector, B: Vector, Tint: Color, Width: float, Height: float) {
@@ -141,5 +64,135 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             }
         }
     }
-    MapLoad.PairArcs(play)
+    // a hovered network configuration replaces the selected dock's own links, so each arc shows once
+    if MapLoad.HiFrom.Length() == 0 && MapLoad.HiPts.Length() == 0 {
+        NetworkArcs(MapLoad, play, sel)
+    }
+    Highlights(MapLoad, play)
+}
+
+// Sideways shift for the Slot-th of a dock's networks, so a pair linked on several networks gets one arc each.
+pure fn Shift(A: Vector, B: Vector, Slot: int) -> Vector {
+    let dx = B.X - A.X
+    let dy = B.Y - A.Y
+    let len = KismetMathLibrary.FMax(KismetMathLibrary.Sqrt(dx * dx + dy * dy), 1.0)
+    let k = (float(Slot) - 1.5) * 60.0 / len
+    return Vector(X: 0.0 - dy * k, Y: dx * k, Z: 0.0)
+}
+
+fn Where(Dock: WorkDock) -> Vector {
+    return Dock.GetOwner().K2_GetActorLocation()
+}
+
+// The selected freight dock's links: an arc to each dock it provides to and from each dock that provides to it, in
+// the network's colour, offset per network.
+fn NetworkArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Play: PlayerController_Play, Sel: WorkDock) {
+    if Sel == none {
+        return
+    }
+    let u = BPL_FDNet.Unpack(Sel.activeTradePartnerId)
+    if !u.IsNew {
+        return
+    }
+    let here = Where(Sel)
+    let i = 0
+    while i < BPL_FDNet.Slots() {
+        let net = u.Nets[i]
+        if net > 0 {
+            let m = BPL_FDNet.Members(MapLoad, net)
+            let tint = BPL_FDNet.NetColor(net)
+            if (u.Roles[i] & BPL_FDNet.Provide()) != 0 {
+                for r in m.Requesters {
+                    if r != Sel {
+                        let there = Where(r)
+                        let off = Shift(here, there, i)
+                        Queue(Play, KismetMathLibrary.Add_VectorVector(here, off), KismetMathLibrary.Add_VectorVector(there, off), tint, MapLoad.ArcWidth, MapLoad.ArcHeight)
+                    }
+                }
+            }
+            if (u.Roles[i] & BPL_FDNet.Request()) != 0 {
+                for p in m.Providers {
+                    if p != Sel {
+                        let from = Where(p)
+                        let off2 = Shift(from, here, i)
+                        Queue(Play, KismetMathLibrary.Add_VectorVector(from, off2), KismetMathLibrary.Add_VectorVector(here, off2), tint, MapLoad.ArcWidth, MapLoad.ArcHeight)
+                    }
+                }
+            }
+        }
+        i += 1
+    }
+}
+
+// What the panels highlight while hovered (Highlight fills the lists): arcs and pointers.
+fn Highlights(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Play: PlayerController_Play) {
+    let i = 0
+    while i < MapLoad.HiFrom.Length() {
+        Queue(Play, MapLoad.HiFrom[i], MapLoad.HiTo[i], MapLoad.HiArcColor[i], MapLoad.ArcWidth, MapLoad.ArcHeight)
+        i += 1
+    }
+    let k = 0
+    while k < MapLoad.HiPts.Length() {
+        let foot = MapLoad.HiPts[k]
+        // a pointer: a straight line up from the dock (an arc of no height)
+        Queue(Play, foot, Vector(X: foot.X, Y: foot.Y, Z: foot.Z + 6000.0), MapLoad.HiPtColor[k], MapLoad.ArcWidth, 0.0)
+        k += 1
+    }
+}
+
+// Fills the highlight lists for a hovered panel part. Kind: 0 nothing, 1 the network (arcs from each provider to
+// each requester, pointers on every member), 2 its providers, 3 its requesters, 4 Good (pointers on the providers
+// whose inputs can supply it and the requesters asking for it). Pointers are red for providers and blue for
+// requesters; a dock that is both gets two, side by side.
+fn Highlight(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, Kind: int, Good: name) {
+    MapLoad.HiFrom.Clear()
+    MapLoad.HiTo.Clear()
+    MapLoad.HiArcColor.Clear()
+    MapLoad.HiPts.Clear()
+    MapLoad.HiPtColor.Clear()
+    if Net <= 0 || Kind <= 0 {
+        return
+    }
+    let m = BPL_FDNet.Members(MapLoad, Net)
+    if Kind == 1 {
+        for p in m.Providers {
+            for r in m.Requesters {
+                if r != p {
+                    MapLoad.HiFrom.Add(Where(p))
+                    MapLoad.HiTo.Add(Where(r))
+                    MapLoad.HiArcColor.Add(BPL_FDNet.NetColor(Net))
+                }
+            }
+        }
+    }
+    for p in m.Providers {
+        let show = Kind == 1 || Kind == 2
+        if Kind == 4 {
+            show = BPL_FDNet.SuppliesGood(MapLoad, p, Good)
+        }
+        if show {
+            let at = Where(p)
+            MapLoad.HiPts.Add(Vector(X: at.X - 40.0, Y: at.Y, Z: at.Z))
+            MapLoad.HiPtColor.Add(BPL_FDNet.ProviderColor())
+        }
+    }
+    for r in m.Requesters {
+        let shown = Kind == 1 || Kind == 3
+        if Kind == 4 {
+            shown = BPL_FDNet.AsksForGood(MapLoad, r, Good)
+        }
+        if shown {
+            let at2 = Where(r)
+            MapLoad.HiPts.Add(Vector(X: at2.X + 40.0, Y: at2.Y, Z: at2.Z))
+            MapLoad.HiPtColor.Add(BPL_FDNet.RequesterColor())
+        }
+    }
+}
+
+// Every frame (BP_MapLoad.PairKeyTick, from Event Tick, also while paused; the name is kept from the pairing key,
+// which the panel's network picker replaced): the dispatcher (BPL_FDDispatch), stand-in clicks, then the panel.
+fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    BPL_FDDispatch.Tick(MapLoad)
+    MapLoad.StandInClick()
+    MapLoad.PanelTick()
 }

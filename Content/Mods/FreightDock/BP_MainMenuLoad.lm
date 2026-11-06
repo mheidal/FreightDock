@@ -1,0 +1,18 @@
+blueprint BP_MainMenuLoad : Actor at /Game/Mods/FreightDock/BP_MainMenuLoad
+
+// Spawned by the game whenever the main menu loads (also after leaving a colony): registers the Mod Options with
+// their names and descriptions in the player's language (BPL_FDOptions.RegisterOptions), and again whenever the
+// language changes. As Docs/Localization.md has it, after a short wait: mods load alphabetically, so a language
+// mod may add its strings after this one starts.
+
+fn OptionChanged(optionId: string, Value: string) {
+    if optionId == "settings.language" {
+        BPL_FDOptions.RegisterOptions(ModAPI.GetModAPI())
+    }
+}
+
+on ReceiveBeginPlay {
+    ModAPI.GetModAPI().onOptionChanged.bind(OptionChanged)
+    KismetSystemLibrary.Delay(0.2)
+    BPL_FDOptions.RegisterOptions(ModAPI.GetModAPI())
+}

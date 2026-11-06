@@ -1,0 +1,67 @@
+blueprint BPL_FDOptions : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDOptions
+
+// Mod Options (Settings > Mod Options): how long a partly loaded ship waits before it sails ("Depart after"), and the
+// smallest trip the dispatcher gives out ("Minimum load", BPL_FDDispatch).
+// Registered by BP_MainMenuLoad (RegisterOptions, in the player's language), read back by BP_MapLoad (ReadPairKey, on BeginPlay and whenever an
+// option changes; the name is kept from when it also read the pairing key, which networks replaced).
+
+pure fn DepartOption() -> string {
+    return "freightdock.departAfter"
+}
+
+pure fn DepartDefault() -> string {
+    return "120 s"
+}
+
+// "Never" is stored as 1e9 seconds.
+pure fn DepartSeconds(Value: string) -> float {
+    if Value == "180 s" {
+        return 180.0
+    }
+    if Value == "240 s" {
+        return 240.0
+    }
+    if Value == "Never" {
+        return 1000000000.0
+    }
+    return 120.0
+}
+
+pure fn MinLoadOption() -> string {
+    return "freightdock.minLoad"
+}
+
+// Share of the hold a job must fill (see BPL_FDDispatch).
+pure fn MinLoadShare(Value: string) -> float {
+    if Value == "25 %" {
+        return 0.25
+    }
+    if Value == "50 %" {
+        return 0.5
+    }
+    if Value == "75 %" {
+        return 0.75
+    }
+    if Value == "90 %" {
+        return 0.9
+    }
+    return 0.0
+}
+
+// An option's name or description in the player's language (BPL_FDText; Part: "name" or "description").
+pure fn OptionText(Option: string, Part: string) -> string {
+    return BPL_FDText.T(name("setting.FreightDock-" + Option + "." + Part))
+}
+
+// The values stay as they are: they are what is saved, and the code reads them back.
+fn RegisterOptions(Api: ModAPI) {
+    let values = ["120 s", "180 s", "240 s", "Never"]
+    Api.RegisterModOptions(DepartOption(), OptionText(DepartOption(), "name"), values, DepartDefault(), OptionText(DepartOption(), "description"))
+    let shares = ["None", "25 %", "50 %", "75 %", "90 %"]
+    Api.RegisterModOptions(MinLoadOption(), OptionText(MinLoadOption(), "name"), shares, "None", OptionText(MinLoadOption(), "description"))
+}
+
+fn ReadOptions(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    MapLoad.MaxWaitSeconds = DepartSeconds(MapLoad.ModAPI.ReadModOptionValue(DepartOption(), DepartDefault()))
+    MapLoad.MinLoad = MinLoadShare(MapLoad.ModAPI.ReadModOptionValue(MinLoadOption(), "None"))
+}

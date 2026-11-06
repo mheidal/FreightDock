@@ -1,0 +1,128 @@
+blueprint BPL_FDText : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDText
+
+// All of FreightDock's player-facing text, in English: the one place it is written (see Docs/Localization.md).
+// Register (BP_Startup) adds it to the game's "en" strings, so a language mod can translate any key. T looks a key up
+// in the player's language, falling back to the English here when the game has nothing for it. Placeholders in
+// braces ({dock}, {n}, ...) are filled with Fill. Mod Options use the game's keys for them:
+// setting.FreightDock-<option id>.name / .description (BPL_FDOptions). Modlog lines stay in code (players don't see
+// them). Tools/FreightDock/text_hook.py (a Claude Code hook) lists every entry an edit here writes, for review, and
+// flags text written straight into other sources.
+
+pure fn Strings() -> map<name, string> {
+    return {
+        // the building and the worker modifier
+        "freightdock.building.freightDock": "Freight Dock",
+        "freightdock.building.freightDock.desc": "Crew a ship that carries goods your paired freight dock's island needs, then returns",
+        "freightdock.stevedore": "Stevedore",
+        "freightdock.stevedore.desc": "+10 carry capacity while working at a freight dock",
+
+        // Mod Options
+        "setting.FreightDock-freightdock.departAfter.name": "Freight Dock: depart partly loaded after",
+        "setting.FreightDock-freightdock.departAfter.description": "How long a freight ship waits, from its first cargo loaded, before it sails with what it has. Never: it waits until full or nothing more is wanted.",
+        "setting.FreightDock-freightdock.minLoad.name": "Freight Dock: minimum load",
+        "setting.FreightDock-freightdock.minLoad.description": "Smallest trip a freight ship is sent on, as a share of its hold. A dock that wants less than that in all is still served in full, and so is one whose request has waited longer than the depart-after time.",
+
+        // messages
+        "freightdock.toast.maxNetworks": "Dock can be in at most 4 networks",
+        "freightdock.toast.underWay": "Already under way",
+        "freightdock.toast.nothingLoaded": "Nothing loaded yet",
+
+        // dock GUI (WBP_FDPanel)
+        "freightdock.dock.unnamed": "Freight Dock {id}",
+        "freightdock.panel.title": "FREIGHT DOCK",
+        "freightdock.panel.networks": "NETWORKS",
+        "freightdock.panel.ship": "SHIP",
+        "freightdock.panel.waitingToUnload": "WAITING TO UNLOAD",
+        "freightdock.panel.partnerWants": "PARTNER WANTS",
+        "freightdock.panel.nothing": "Nothing",
+        "freightdock.panel.partnerOutput": "PARTNER'S OUTPUT",
+        "freightdock.panel.thisInput": "THIS DOCK'S INPUT",
+        "freightdock.panel.deliverNow": "Deliver now",
+        "freightdock.panel.edit": "Edit",
+        "freightdock.panel.close": "Close",
+        "freightdock.panel.notInNetwork": "Not in a network",
+        "freightdock.panel.membership": "{net}: {role}",
+        "freightdock.role.provide": "provide",
+        "freightdock.role.request": "request",
+        "freightdock.role.both": "both",
+        "freightdock.panel.buildingGone": "Building {id} (gone)",
+        "freightdock.panel.keepEmpty": "Keep empty",
+        "freightdock.panel.none": "None",
+
+        // dock GUI, ship section
+        "freightdock.ship.deliveryTo": "Delivery to {dock}",
+        "freightdock.ship.idle": "Idle",
+        "freightdock.ship.idleWhy": "Idle: {why}",
+        "freightdock.idle.notProviding": "not providing",
+        "freightdock.idle.noShip": "no ship at dock",
+        "freightdock.idle.noRequests": "no requests for its inputs",
+        "freightdock.idle.noInputs": "no input warehouses",
+        "freightdock.idle.belowMinimum": "below minimum load ({n} for {dock})",
+        "freightdock.ship.onTheWay": "On the way",
+        "freightdock.ship.unloading": "Unloading",
+        "freightdock.ship.returning": "Returning",
+        "freightdock.ship.noShip": "No ship at dock",
+        "freightdock.ship.leaving": "Waiting for final cargo",
+        "freightdock.ship.loading": "Loading {time}",
+        "freightdock.ship.loadingOf": "Loading {time} of {limit}",
+        "freightdock.ship.waiting": "Waiting for cargo",
+        "freightdock.ship.hold": "Hold {n} / {max}",
+        "freightdock.ship.trip": "One-way trip about {time}",
+
+        // dock GUI, partner wants table (WBP_FDWantRow)
+        "freightdock.want.aboard": "On the ship",
+        "freightdock.want.carried": "On the way here",
+        "freightdock.want.unloaded": "At the partner, not yet stored",
+        "freightdock.want.fetch": "Asked for, no hauler yet",
+        "freightdock.want.paused": "Paused: none picked up lately, retrying in {n} s",
+        "freightdock.want.wanted": "Partner's warehouses still want",
+
+        // network GUI (WBP_FDNetPanel, WBP_FDNetRow, WBP_FDNetTip) and the members tooltip (WBP_FDMembersTip)
+        "freightdock.net.title": "FREIGHT NETWORKS",
+        "freightdock.net.id": "Network ID",
+        "freightdock.net.provide": "Provide",
+        "freightdock.net.request": "Request",
+        "freightdock.net.goods": "Requested goods",
+        "freightdock.net.provideTip": "Let this dock provide goods to network\n(n): providers",
+        "freightdock.net.requestTip": "Let this dock request goods from network\n(n): requesters",
+        "freightdock.net.goodsTip": "All goods requested on this network",
+        "freightdock.members.provider": "Provider: {names}",
+        "freightdock.members.providers": "Providers: {names}",
+        "freightdock.members.requester": "Requester: {names}",
+        "freightdock.members.requesters": "Requesters: {names}",
+        "freightdock.members.none": "none",
+        "freightdock.good.amounts": "Requested {req}, stocked {stock}",
+        "freightdock.good.noProvider": "No provider on this network"
+    }
+}
+
+// Adds the strings to the game's English (BP_Startup, once: each call rebuilds every widget in the game). Only "en":
+// "dev" would override every language's translation.
+fn Register(Api: ModAPI) {
+    Api.AddNewStrings("en", Strings())
+}
+
+// Key in the player's language; the English here when the game has none (or the key itself, if it isn't here).
+pure fn T(Key: name) -> string {
+    let word = LocManager.GetWordFromKey(Key)
+    if word != "" {
+        return word
+    }
+    let own = Strings().Find(Key)
+    return if own.ReturnValue { own.Value } else { string(Key) }
+}
+
+// S with "{Slot}" replaced by Value.
+pure fn Fill(S: string, Slot: string, Value: string) -> string {
+    return KismetStringLibrary.Replace(S, "{" + Slot + "}", Value, ESearchCase.CaseSensitive)
+}
+
+// T(Key) with one placeholder filled.
+pure fn T1(Key: name, Slot: string, Value: string) -> string {
+    return Fill(T(Key), Slot, Value)
+}
+
+// T(Key) with two placeholders filled.
+pure fn T2(Key: name, Slot1: string, Value1: string, Slot2: string, Value2: string) -> string {
+    return Fill(Fill(T(Key), Slot1, Value1), Slot2, Value2)
+}

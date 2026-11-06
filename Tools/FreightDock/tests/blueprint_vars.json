@@ -4,7 +4,6 @@
   "ModAPI": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "Docks": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
   "FerryDocks": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.NauticalRaftDock'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
-  "PendingDock": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "TickSeconds": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "TripSeconds": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "MaxWaitSeconds": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
@@ -72,7 +71,6 @@
   "RouteLineWidth": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "RouteLineHeight": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "RouteLineColor": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
-  "PairKey": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/InputCore.Key'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "TurnRadius": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "VoyageEndFwd": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\"),ContainerType=Map)",
   "PreviewCourses": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"object\",TerminalSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\"),ContainerType=Map)",
@@ -101,8 +99,19 @@
   "FDPanel": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/UMG.WidgetBlueprintGeneratedClass'/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "PickupSeen": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)",
   "PickupSince": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"real\",TerminalSubCategory=\"double\"),ContainerType=Map)",
-  "NetDest": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)",
-  "NetUsed": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"bool\"),ContainerType=Map)"
+  "JobTo": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)",
+  "JobGoods": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)",
+  "JobSailed": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"bool\"),ContainerType=Map)",
+  "DemandSince": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"real\",TerminalSubCategory=\"double\"),ContainerType=Map)",
+  "IdleWhy": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"string\"),ContainerType=Map)",
+  "NextDispatch": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
+  "MinLoad": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
+  "HiFrom": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
+  "HiTo": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
+  "HiArcColor": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Color'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
+  "HiPts": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
+  "HiPtColor": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Color'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
+  "CutStock": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)"
  },
  "BP_Startup": {
   "ModAPI": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())"

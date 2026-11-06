@@ -136,21 +136,67 @@ For FreightDock:
 - **Terrain only:** buildings aren't drawn into the map, so building and demolishing need no redraw. Docks and warehouses are icon widgets over the image, placed from their world positions.
 - **Refresh:** a fresh pass every 10 minutes or so, for terraforming.
 
-## Dispatch (the hardest part)
+## Dispatch: global jobs (decided 2026-11-05)
 
-**Decided: round-robin.** A provider's ship serves its requesters in turn, skipping a requester that wants nothing the provider's input warehouses hold. It is the simplest rule to build and for players to follow.
+Replaces round-robin (step 5, see "Destinations and dispatch" below), which had each provider decide alone from a guess about the others: it could ship to the same requester twice, sit on a requester another ship already covered, and lose track of cargo across a reload. A central dispatcher hands out **jobs** instead.
 
-- **Loading:** the provider loads for the requester whose turn it is; the ship sails there, returns, and the turn passes on.
-- **Assignment:** several providers can still serve one requester, so each provider's plan must subtract every ship already bound for that requester (aboard, waiting there, being carried), or two providers fill the same deficit. Today one partner makes this simple.
-- **Explaining it:** the panel must show which requester the ship is loading for, and why one is skipped (nothing it wants at the sources, another provider already covering it, paused after a stall). This is as much work as the rule itself, and simpler with round-robin than with a demand-based rule.
-- **Return trips:** ships return home after each delivery, as now. The home dock acts as the depot.
-- **Not planned:** ships roaming between docks (C → A → B), and more than one ship per dock. The game ties one ship to one dock, and the stand-ins rely on that; the answer to "more ships" is another dock beside the first.
+### Jobs
+
+- **A job** is one ship's next trip: provider P, requester R, and a **manifest** (per good, how many). Each provider has at most one job (one ship per dock).
+- **Single source of truth:** loading, departure, the voyage (target, course home, arrival), the panel and the arcs all read the job. Nothing reads a dock's "current partner" any more.
+- **Lifetime:** from assignment to delivery. Leaving the network, demolition, or the ship being reassigned cancels it: loading is paused, the dock's per-trip state cleared, and the job's goods already aboard move to the dock's delivered-goods store (as leftovers after a trip). A job already at sea still delivers.
+- **Request-only docks** get no jobs. A dock's ship only ever carries goods on networks where the dock provides.
+- **Return trips:** ships return home after each delivery; the home dock is the depot. No roaming between docks, no second ship per dock.
+
+### Demand and supply
+
+- **Demand,** per requester R and good: R's output warehouses' unmet requests, minus what is already unloaded at R, minus everything existing jobs carry to R (counted from assignment, so two providers never plan for the same units).
+- **Demand age,** per requester and good: how long that demand has been unserved (since it last became positive with no job covering it).
+- **Supply,** per idle provider P and good: what P's input warehouses hold free, plus what sits in P's own delivered-goods store that P's own output warehouses don't want (leftovers, below), minus what P's own job already claims.
+
+### Choosing jobs
+
+One pass per dispatcher tick, greedy and global:
+
+1. Score every (idle provider P, requester R) pair sharing a network: **score = Σ over goods (units carried × (1 + age ÷ τ)) ÷ round-trip time**. Units carried, per good, is the smaller of demand and supply, together capped by P's free hold space. Round-trip time comes from the route length and ship speed.
+2. Assign the best pair, subtract its manifest from demand and supply, and repeat until no pair scores above zero.
+
+The score is goods delivered per unit of time, weighted by how long the demand has waited: it minimises age-weighted item-seconds of unmet demand. Fresh demand is ranked purely by throughput; old demand gains weight until it wins, so nothing starves. τ (how fast waiting gains weight; first guess 10 game minutes, a demand that has waited τ counts double) is a tuning constant.
+
+### Minimum load (Mod Option)
+
+- **"Minimum load":** None / 25 % / 50 % / 75 % / 90 % (global).
+- **When it applies:** at assignment. A job must reach that share of the smaller of P's free hold space and everything R wants that P can supply. A requester wanting only 10 of something can therefore always be served by a job of 10.
+- **Waived** once R's demand has waited longer than the "Depart after" time, so a requester with a trickle of demand isn't starved.
+
+### Loading and departure
+
+- **Loading** loads the manifest (the request is still a total to have aboard).
+- **Growing manifests:** while loading, the manifest grows when R's demand grows, the hold has room, and P's supply can cover the growth; the growth is claimed at once.
+- **Stalls:** a good no hauler picks up for 20 s is cut from the manifest; its demand returns to the pool. That provider isn't offered the good again until its input warehouses' free stock of it changes (`CutStock`), so a cut good isn't added straight back. Growing a job restarts the good's 20 s clock.
+- **Departure:** when the manifest is aboard, the hold is full, the "Depart after" timer runs out (from first freight aboard), or Deliver now.
+
+### Leftovers
+
+Freight that no job delivered (a cancelled voyage, a reload mid-voyage, a requester that no longer wants it on arrival):
+
+- **On arrival home,** goods aboard that no job wants are moved from the hold into the home dock's delivered-goods store (unreserved units only). They show as a pile at the dock and in the panel's "Waiting to unload".
+- **As supply:** goods in a dock's delivered-goods store count as that dock's supply where its own output warehouses don't want them. (A dock's own output warehouses get first claim, so a "both" dock's real deliveries are never shipped onward. No separate record of parked goods is kept.)
+- **Reuse:** a job that takes them moves the claimed amount from the delivered-goods store straight into the ship's hold (the game loads only what haulers carry aboard, never from the dock's input slot). Only unreserved units are moved.
+
+### Explaining it
+
+The dock GUI shows the job ("Delivering 30 flax, 20 stone to Schoolhouse"), or why the dock is idle: no requester wants what its inputs hold, other ships already cover it, the minimum load isn't reached yet.
+
+### What it settles
+
+From the 2026-11-05 edge-case review: request-only docks shipping (1), leaving a network mid-load (2), the turn not passing (3), stalling on a covered requester (4), double delivery (5), cargo stranded by a reload (6), the course home drifting (7), switch-and-depart in one tick (8), leftovers pinning the destination (9), cargo rerouted mid-load (10), flip-flopping (13). Performance (14): one dispatcher pass per tick can look up each building once and reuse it for the pass.
 
 ### Reference: Factorio's LTN mod
 
 LTN (Logistic Train Network) uses the same idea: a network ID as a 32-bit mask. Its answers are worth borrowing:
 
-- **Destination:** demand-driven (FreightDock chose round-robin instead, above). A requester places a request when its stock falls below a per-stop threshold; a central dispatcher pairs it with a provider on a shared network that has enough, and sends one vehicle with exactly that delivery.
+- **Destination:** demand-driven (FreightDock's job dispatcher, above, is similar). A requester places a request when its stock falls below a per-stop threshold; a central dispatcher pairs it with a provider on a shared network that has enough, and sends one vehicle with exactly that delivery.
 - **Depots:** vehicles return to a depot after every delivery, and only idle vehicles are used.
 - **Thresholds:** deliveries below a per-stop threshold aren't dispatched, which stops wasteful small trips. FreightDock's nearest equivalents are "Depart after", Deliver now, and the per-dock "depart only when full" bit.
 
@@ -187,7 +233,7 @@ Rough scope: about 30 of the generated BP_MapLoad functions change. **Each fdgen
 
 Decided:
 
-1. **Dispatch:** round-robin among the requesters that want something the provider's sources hold.
+1. **Dispatch:** global jobs (see Dispatch), replacing round-robin.
 2. **Providing** requires at least one input warehouse.
 3. **F5 pairing** is removed.
 4. **Colours:** a fixed palette, one per network ID, always shown with the number.
@@ -213,15 +259,47 @@ Still to find out:
 - **Migration:** `Migrate` turns each 1.x pair into the lowest free network with both docks in the role "both"; a 1.x value whose partner is gone becomes -1. A converted save can't be read by mod 1.x.
 - **Tests:** `Tools/FreightDock/loom_test.py` runs 36 cases of the encoding functions with Loom's test commandlet, against a Python model of the encoding. The queries and `Migrate` need a loaded colony, so they are tested in game.
 
-## Destinations and dispatch (built, step 5)
+## Destinations and dispatch (built, step 5; round-robin superseded by global jobs)
 
 - **Routes stay keyed by dock,** to the dock's current destination, and are replanned when it changes (at most once per round trip). Every route function already asks `PartnerOf` where to go, so none of them changed. This replaces the "routes per provider-requester pair" plan under Costs; caching one route per pair can come later if replanning ever shows up as slow.
 - **Round-robin** (`BPL_FDNet.ChooseDest`, run at the start of each loading plan for a berthed dock): `NetDest` holds each dock's destination, `NetUsed` whether a trip has started since it was chosen. Once idle again after a trip, the turn passes to the next requester (dock ID order) that wants something the dock's input warehouses hold (`Wants`); an idle dock whose destination wants nothing it can load passes it on the same way; with no candidate, the destination stays. A change replans the route and logs "Dock A now delivers to B (i of n)".
 - **`PartnerOf`** returns the destination (else the first requester; a dock that only requests gets its first provider).
 - **Loading plan** (`BPL_FDLoad.Plan`): providing requires input warehouses (none set: nothing is loaded); a requester's need also leaves out what other providers' ships bound for it carry or are loading (`OthersBringing`).
 - **Panel:** "Delivering to: Freight Dock N (i of n)", or "Supplied by: ..." for a dock that only requests; a provider without input warehouses says it loads nothing.
-- **F5 until the picker:** selecting a dock and then another puts them on a shared network: if either is a member, the other joins its network as "both" (the first's network wins); else they get a new one. F5 with nothing under the cursor takes only the selected dock out of its networks.
+- **F5 until the picker:** (removed in step 6) selecting a dock and then another put them on a shared network.
 - **Library layering:** Loom refuses Blueprints that use each other, so `BPL_FDNet` is the base (it now holds `DockId` and `SourceStock`); `BPL_FDLoad`, `BPL_FDPairing` and the panel use it, never the other way round.
+
+## Network picker (built, step 6)
+
+- **The panel shows for every freight dock,** member of a network or not. A dock with no partner shows its networks, ship, unloading and input; the partner's sections and Deliver now are hidden.
+- **NETWORKS (dock GUI):** the dock's memberships in ascending network order ("1: provide   3: both", or "Not in a network") and an Edit button.
+- **Network GUI** (`WBP_FDNetPanel`): Edit opens it to the dock GUI's left, bottoms aligned, in the same frame, background and fonts (the dock GUI passes its brush and fonts: `SetLook`); Edit, now "Close", closes it, as does selecting something else. A table of networks 1 to the highest in use plus one, gaps included, columns Network ID | Provide | Request | Requested goods; each header but the first explains itself on hover. Rows (`WBP_FDNetRow`): the game's tick-box icons (`icons8-tick-box(-unchecked)-96`, tinted gold / muted) as checkboxes for the selected dock (both ticked: "both"), each followed by the network's number of providers / requesters in parentheses, the tooltip naming them; requested goods as icons (`BPL_FDNet.NetRequests`: request levels, `minHold`, whether met or not), dimmed when no provider on the network has the good whitelisted in an input warehouse (`ProvidedGoods`; a warehouse with no whitelist in use, `m_whiteListReceiving` false, counts as providing everything); each good's tooltip (`WBP_FDNetTip`): icon, name, requested and stocked amounts. Rows alternate a faint band and highlight on hover. A checkbox applies at once (`With`); a fifth membership is refused with a toast; a dock left in no network gets -1 back (`Emptied`).
+- **Dock names** (`BPL_FDNet.DockName`): a sign whose text starts with `[fd]`, within one tile of the tile in front of a freight dock's door (`m_entranceExternalCell` against the sign's `liveFootprint.rootPosition`), names it ("[fd] North quay" -> "North quay"); else "Freight Dock <id>". Used in the dock GUI's title and destination line and in the network GUI's provider / requester tooltips; logs keep IDs. The text of a `[fd]` sign is hidden except while the cursor is over the sign's tile or one next to it (the dock GUI looks for such signs every half second).
+- **F5 is gone:** `PairAtCursor` and `Unpair` were deleted (fdgen, BP_MapLoad, Loom), with the `PairKey` and `PendingDock` variables and the pairing-key Mod Option. `PairKeyTick` (stand-in clicks, the panel) and `ReadPairKey` ("Depart after") keep their names, since the hand-built Event Graph calls them, and call `BPL_FDPairing.Tick` and `BPL_FDOptions.ReadOptions`; `RegisterOptions` (BP_Startup) calls `BPL_FDOptions.RegisterOptions`.
+
+## Global dispatch (built, step 7)
+
+- **`Loom/BPL_FDDispatch.lm`,** run every `TickSeconds` of game time from `BPL_FDPairing.Tick` (`Tick` -> `Pass`): `Upkeep` (a job seen sailing is marked `JobSailed`; back home it `Complete`s: manifest goods still aboard move to the dock's delivered-goods store; a job whose provider and requester no longer share a network, or are gone, is `Cancel`led: `PauseLoading`, `ClearRequested`, loading clocks cleared, manifest goods aboard parked (`Park`)), `Demand` (per "<requester>|<good>": output deficits less goods unloaded there less every undelivered job's manifest; `DemandSince` ages it), `Grow` (jobs still loading), `Assign` (greedy best score; input warehouse stock is pooled per warehouse, so docks sharing one can't both be given the same units; idle reasons are logged when they change; `Give` writes the job, plans the route, logs "Dispatch: dock P -> R: good=n ... (score s)").
+- **Job storage** on BP_MapLoad: `JobTo` (provider -> requester), `JobGoods` ("<provider>|<good>" manifest units, "<provider>|<good>|park" units still to move from parked leftovers), `JobSailed`, `DemandSince`, `IdleWhy` (shown in the dock GUI), `NextDispatch`, `MinLoad`. Not saved: after a reload there are no jobs, goods aboard count as supply, and demand ages restart.
+- **Jobs live in BP_MapLoad, not a dispatcher object:** `BPL_FDNet.PartnerOf` must read them, and a dispatcher object using `BPL_FDNet` would make a cycle, which Loom refuses.
+- **Supply** (`Supply`): free stock in the input warehouses, everything aboard, and unreserved goods in the dock's delivered-goods store that its own outputs don't want.
+- **Trip time** is estimated: 2 x straight-line distance / `ShipSpeed` + `Overhead()` (60 s). The real route is planned only when a job is given.
+- **`PartnerOf`** returns the job's requester (`BPL_FDNet.DockIn`, a lookup over `MapLoad.Docks`), else none: a dock without a job is skipped by `FreightTick`, so no fdgen graph changed.
+- **Loading plan** (`BPL_FDLoad.Plan`): loads the manifest (got = in the hold + being carried; request = the manifest, or the hold when more; goods outside the manifest leave the request); `RequestFor` (Loom) writes it with each input slot's capacity = request less the hold; `Remaining` = manifest not yet got; a good not picked up for 20 s is cut to what is got; parked leftovers the job takes board directly (`BoardParked`). A ship holds only its job's freight: anything else aboard (beyond the manifest, provisions aside) is parked each plan (`BPL_FDNet.ParkStray`), and at completion or cancel everything but provisions is.
+- **Shrinking** (`BPL_FDDispatch.Shrink`, each pass after upkeep): a loading job keeps at most what its requester still wants of each good (its unmet requests less what is unloaded there, shared first with jobs under way). The rest leaves the manifest and what of it is aboard is parked; a job left empty is cancelled.
+- **"Minimum load" Mod Option** (`BPL_FDOptions`, `freightdock.minLoad`): None / 25 / 50 / 75 / 90 %; `BPL_FDDispatch.MeetsMinimum`.
+- **Dock GUI:** "Delivering to: <name>" with the manifest as icons, "Supplied by: ..." for a dock that only requests, "Idle: <reason>" for a provider without a job.
+- **Removed:** round-robin (`ChooseDest`, `Wants`, `Turn`, `OthersBringing`, `NetDest`, `NetUsed`) and the 60 s pause (`StallLeft`, `Retry`).
+- **Tests:** `loom_test.py` adds `BPL_FDDispatch` cases (`GoodValue`, `MeetsMinimum`, `GoodOf`) and `JobKey` / `ParkKey`.
+
+## Network arcs and pointers (built, step 8)
+
+- **Colours** (`BPL_FDNet.NetColor`): a fixed palette of ten, repeating by network ID, with red and blue left out; the network's number is drawn in its colour in the network GUI and the dock GUI's NETWORKS labels. Pointers: providers red (#E9594D), requesters blue (#71D0EA), after Factorio's provider / requester markings.
+- **Selected freight dock** (`BPL_FDPairing.NetworkArcs`, every frame): an arc to each dock it provides to and from each dock that provides to it, in the network's colour; a pair linked on several networks gets one arc per network, offset sideways by the network's membership slot (`Shift`). This replaces the single lavender pair arc (`PairArcs` is no longer called); the job's route line stays.
+- **Hover highlights** (`BPL_FDPairing.Highlight`, worked out by the dock GUI's `HoverStep` only when what is hovered changes, kept in BP_MapLoad's `HiFrom` / `HiTo` / `HiArcColor` / `HiPts` / `HiPtColor` and drawn every frame by `Highlights`): a NETWORKS label in the dock GUI or a network ID in the network GUI shows that network's arcs (every provider to every requester) and pointers on all its members; the Provide cell, pointers on its providers; the Request cell, its requesters; a good's icon, the providers whose inputs can supply it (`SuppliesGood`) and the requesters asking for it (`AsksForGood`). A dock that is both gets two pointers, side by side.
+- **Pointers** are arcs of no height from a dock straight up (6000 units). Untested: if the arc renderer can't draw them vertically, a thin vertical strip using the route line's material is the fallback.
+- **Long lists:** requested goods wrap onto more lines in their cell (`WrapBox`), so a row grows taller, not wider; the table's rows scroll once they would take more than 60% of the screen's height (`RowsMax`, set in `Place`), the header staying put. The dock GUI's NETWORKS labels wrap between entries.
+- **Buttons don't take keyboard focus** (`IsFocusable: false` on the checkboxes and warehouse links), so Space still pauses the game after a click.
 
 ## If resumed
 

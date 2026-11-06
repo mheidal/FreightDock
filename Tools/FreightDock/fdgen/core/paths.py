@@ -107,6 +107,10 @@ FD_PANEL_CLASS = "/Game/Mods/FreightDock/UI/WBP_FDPanel.WBP_FDPanel_C"
 MAPLOAD_C = "/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C"
 NET_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDNet.BPL_FDNet_C'"
 PAIRING_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDPairing.BPL_FDPairing_C'"
+OPTIONS_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDOptions.BPL_FDOptions_C'"
+SETUP_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDSetup.BPL_FDSetup_C'"
+TEXT_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDText.BPL_FDText_C'"
+LOAD_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDLoad.BPL_FDLoad_C'"
 # Loom-built (Content/Mods/FreightDock/Loom/BP_FDFling.lm): goods flying from the ship to the dock on unloading
 FD_FLING_CLASS = "/Game/Mods/FreightDock/Loom/BP_FDFling.BP_FDFling_C"
 

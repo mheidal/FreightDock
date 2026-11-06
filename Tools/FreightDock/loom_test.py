@@ -119,12 +119,53 @@ def net_cases():
     cases.append({"name": "emptied is -1", "call": "Emptied", "args": {"Stored": str(s)}, "expect": {"return": "-1"}})
     cases.append({"name": "emptied keeps full", "call": "Emptied", "args": {"Stored": str(pack([3], [1], True))},
                   "expect": {"return": str(pack([], [], True))}})
+    cases.append({"name": "job key", "call": "JobKey", "args": {"Id": "12207", "Res": "flax"}, "expect": {"return": "12207|flax"}})
+    cases.append({"name": "park key", "call": "ParkKey", "args": {"Id": "12207", "Res": "flax"}, "expect": {"return": "12207|flax|park"}})
     cases.append({"name": "with full", "call": "WithFull", "args": {"Stored": str(s), "Full": "True"},
                   "expect": {"return": str(pack([3, 7], [1, 2], True))}})
     return cases
 
 
-SUITES = {"BPL_FDNet": ("/Game/Mods/FreightDock/Loom/BPL_FDNet", net_cases)}
+# --- reference model of BPL_FDDispatch's scoring and minimum load
+TAU = 600.0
+
+
+def good_value(units, age):
+    return units * (1.0 + age / TAU)
+
+
+def meets_minimum(units, share, hold, want_total, oldest, max_wait):
+    if units <= 0:
+        return False
+    if oldest >= max_wait:
+        return True
+    return units >= share * min(hold, want_total) - 0.001
+
+
+def dispatch_cases():
+    cases = []
+    for units, age in ((30, 0.0), (30, 600.0), (10, 300.0), (0, 1000.0)):
+        cases.append({"name": f"good value {units} aged {age}", "call": "GoodValue",
+                      "args": {"Units": str(units), "Age": str(age)},
+                      "expect": {"return": f"{good_value(units, age):.6f}"}})
+    for name, args in (("no minimum", (5, 0.0, 89, 300, 0.0, 120.0)),
+                       ("quarter met", (23, 0.25, 89, 300, 0.0, 120.0)),
+                       ("quarter missed", (22, 0.25, 89, 300, 0.0, 120.0)),
+                       ("small request served in full", (10, 0.9, 89, 10, 0.0, 120.0)),
+                       ("small request partly", (9, 0.9, 89, 10, 0.0, 120.0)),
+                       ("waived after waiting", (3, 0.9, 89, 300, 120.0, 120.0)),
+                       ("nothing to carry", (0, 0.0, 89, 300, 500.0, 120.0))):
+        u, sh, h, w, o, mw = args
+        cases.append({"name": f"minimum: {name}", "call": "MeetsMinimum",
+                      "args": {"Units": str(u), "Share": str(sh), "Hold": str(h), "WantTotal": str(w),
+                               "OldestAge": str(o), "MaxWait": str(mw)},
+                      "expect": {"return": b(meets_minimum(u, sh, h, w, o, mw))}})
+    cases.append({"name": "good of a key", "call": "GoodOf", "args": {"Key": "12207|flax"}, "expect": {"return": "flax"}})
+    return cases
+
+
+SUITES = {"BPL_FDNet": ("/Game/Mods/FreightDock/Loom/BPL_FDNet", net_cases),
+          "BPL_FDDispatch": ("/Game/Mods/FreightDock/Loom/BPL_FDDispatch", dispatch_cases)}
 
 
 def main():

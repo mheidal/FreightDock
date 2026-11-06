@@ -1,0 +1,100 @@
+blueprint BPL_FDSetup : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDSetup
+
+// BP_Startup's data-table rows, ported from fdgen (BP_Startup's RegisterFreightDock and RegisterExtras just call
+// these): the freight dock building, its icon and unlock, and the Stevedore worker modifier. Their text keys are in
+// BPL_FDText, which registers all of the mod's strings at once.
+
+pure fn TradeRow() -> name {
+    return "navaltradeDock"
+}
+
+pure fn FreightRow() -> name {
+    return "freightDock"
+}
+
+pure fn FreightUnlock() -> name {
+    return "unlock.freightDock"
+}
+
+// GridActors (GridactorDefs_Sync) columns, copied from the trade dock unless FreightValue overrides them.
+pure fn GridActorColumns() -> array<name> {
+    return ["Description", "GridActor", "Icon", "Quality", "SupportedImprovements", "TooltipTags", "Variants", "asHouseTier", "asIndustryDef", "catalyst", "constructionTime", "cost1", "cost2", "cost3", "cost4", "ct1", "ct2", "ct3", "ct4", "customBuildCue", "decorType", "detailCue", "guildSpecialty", "hardLabor", "industrialLabor", "isDraggableWall", "limitOne", "maxAgents_contextual", "maxHealth", "minMaintenanceInterval", "norefund", "randomlyRotate", "refundRule", "requiresConstruction", "stringKey", "structureType", "supportedIndustryRecipes", "toolbarGroup", "toolbarGroupSort", "unlockPrerequisite", "useCustomIcon", "workerColor"]
+}
+
+// The freight dock's own GridActors values (the rest are the trade dock's).
+pure fn FreightValues() -> map<name, string> {
+    return {
+        "GridActor": "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/navaldock_freight.navaldock_freight_C'",
+        "stringKey": "freightdock.building.freightDock",
+        "Description": "freightdock.building.freightDock.desc",
+        "toolbarGroupSort": "36",
+        "unlockPrerequisite": "unlock.freightDock"
+    }
+}
+
+// unlocks columns, copied from the trade dock's unlock unless UnlockValues overrides them.
+pure fn UnlockColumns() -> array<name> {
+    return ["useGridActorForLoc", "Title", "Description", "demoLocked", "IsHidden", "subCategory", "giftableInDemo", "giftable", "giftPool", "researchable", "scienceCost", "researchTier", "unlockedByDefault", "childUnlocks", "associatedGridActor", "prerequisiteUnlocks", "tierSortOrder", "associatedRecipe", "isQuestRelated", "showMailEvenAsChildUnlock", "secretPrerequisite"]
+}
+
+// Researchable on its own in the trade dock's tier, sorted just after it (30; the storage dock is 40).
+pure fn UnlockValues() -> map<name, string> {
+    return {
+        "associatedGridActor": "freightDock",
+        "prerequisiteUnlocks": "()",
+        "tierSortOrder": "35"
+    }
+}
+
+// Copies Columns of Table from row From to row To, Values overriding.
+fn CopyRow(Api: ModAPI, Table: name, From: name, To: name, Columns: array<name>, Values: map<name, string>) {
+    for col in Columns {
+        let v = Values.Find(col)
+        let value = if v.ReturnValue { v.Value } else { Api.ReadDataTableValue(Table, From, col) }
+        Api.WriteDataTableValue(Table, To, col, value)
+    }
+}
+
+// The freight dock building (a copy of the trade dock's rows), its icon and its unlock.
+fn RegisterFreightDock(Api: ModAPI) {
+    let trade = Api.ReadDataTableValue("GridActors", TradeRow(), "GridActor")
+    let added = Api.AddDataTableRow("GridActors", FreightRow())
+    CopyRow(Api, "GridActors", TradeRow(), FreightRow(), GridActorColumns(), FreightValues())
+    Api.AddDataTableRow("BuildingIcons", FreightRow())
+    let noValues: map<name, string> = {}
+    CopyRow(Api, "BuildingIcons", TradeRow(), FreightRow(), ["Icon"], noValues)
+    let unlocked = Api.AddDataTableRow("unlocks", FreightUnlock())
+    CopyRow(Api, "unlocks", "unlock.navaltradeDock", FreightUnlock(), UnlockColumns(), UnlockValues())
+    // what the new rows ended up with
+    let msg = "[FreightDock] Freight dock registered: trade GridActor=" + trade + ", added row " + string(added)
+    msg += ", GridActor=" + Api.ReadDataTableValue("GridActors", FreightRow(), "GridActor")
+    msg += ", Icon=" + Api.ReadDataTableValue("BuildingIcons", FreightRow(), "Icon")
+    msg += ", added unlock " + string(unlocked)
+    msg += ", unlock building=" + Api.ReadDataTableValue("unlocks", FreightUnlock(), "associatedGridActor")
+    msg += ", tier=" + Api.ReadDataTableValue("unlocks", FreightUnlock(), "researchTier")
+    // BP_Startup has no Stamp(): let ModAPI prepend the date
+    Api.LogMessage(msg, true)
+}
+
+// The Stevedore worker modifier: a copy of mod.constructionyardWorker's AgentModifiers row, carry +10, no expiry.
+fn RegisterExtras(Api: ModAPI) {
+    let row: name = "mod.stevedore"
+    let added = Api.AddDataTableRow("AgentModifiers", row)
+    let cols: array<name> = ["Icon", "Category", "severity_mastersync", "useResourceData"]
+    let values: map<name, string> = {
+        "DisplayName": "freightdock.stevedore",
+        "Description": "freightdock.stevedore.desc",
+        "carryMod": "10",
+        "productivityMod": "0",
+        "speedMod": "0",
+        "additionalStacks": "0",
+        "canStack": "False",
+        "expires": "False",
+        "hiddenMod": "False"
+    }
+    for key, v in values {
+        cols.Add(key)
+    }
+    CopyRow(Api, "AgentModifiers", "mod.constructionyardWorker", row, cols, values)
+    Api.LogMessage("[FreightDock] Stevedore modifier added: " + string(added), true)
+}

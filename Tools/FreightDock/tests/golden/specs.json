@@ -100,7 +100,7 @@
  },
  "DeliverSelected": {
   "entry": [
-   "FindSel",
+   "Call",
    "execute"
   ],
   "inputs": [],
@@ -448,21 +448,9 @@
   "returnValues": [],
   "returns": []
  },
- "PairAtCursor": {
-  "entry": [
-   "Call",
-   "execute"
-  ],
-  "inputs": [],
-  "locals": [],
-  "outputs": [],
-  "pure": false,
-  "returnValues": [],
-  "returns": []
- },
  "PairKeyTick": {
   "entry": [
-   "BrPressed",
+   "Call",
    "execute"
   ],
   "inputs": [],
@@ -722,7 +710,7 @@
  },
  "ReadPairKey": {
   "entry": [
-   "Read",
+   "Call",
    "execute"
   ],
   "inputs": [],
@@ -734,7 +722,7 @@
  },
  "RegisterExtras": {
   "entry": [
-   "AddMod",
+   "Call",
    "execute"
   ],
   "inputs": [],
@@ -746,7 +734,7 @@
  },
  "RegisterFreightDock": {
   "entry": [
-   "CheckTrade",
+   "Call",
    "execute"
   ],
   "inputs": [],
@@ -758,7 +746,7 @@
  },
  "RegisterOptions": {
   "entry": [
-   "PairKey",
+   "Call",
    "execute"
   ],
   "inputs": [],
@@ -770,7 +758,7 @@
  },
  "RequestFor": {
   "entry": [
-   "SetOld",
+   "Call",
    "execute"
   ],
   "inputs": [
@@ -785,28 +773,7 @@
     "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceCollection'\")"
    }
   ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Live",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
-   },
-   {
-    "default": "",
-    "name": "Slots",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\"))"
-   },
-   {
-    "default": "",
-    "name": "Slot",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\")"
-   },
-   {
-    "default": "",
-    "name": "Old",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
-   }
-  ],
+  "locals": [],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -1335,24 +1302,6 @@
     "then_0"
    ]
   ]
- },
- "Unpair": {
-  "entry": [
-   "Call",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Dock",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   }
-  ],
-  "locals": [],
-  "outputs": [],
-  "pure": false,
-  "returnValues": [],
-  "returns": []
  },
  "UpdateRequest": {
   "entry": [

@@ -1,0 +1,161 @@
+blueprint WBP_FDNetRow : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDNetRow
+
+// One row of the network table (WBP_FDNetPanel): the network's number, Provide and Request checkboxes for the
+// selected dock (both ticked: the role "both"), each with the network's number of providers / requesters in
+// parentheses (the tooltip names them), and the goods its requesters ask for, dimmed when no provider on the network
+// has them whitelisted (each good's tooltip: WBP_FDNetTip). A checkbox broadcasts Toggled; the network panel
+// applies it. Column widths match the header in WBP_FDNetPanel: 96, 110, 110, then the goods.
+
+dispatcher Toggled(Net: int, Bit: int)
+
+var Net: int = 0
+var Odd: bool = false
+var TickOn: soft<Texture2D> = /Game/Assets/Icons/icons8-tick-box-96.icons8-tick-box-96
+var TickOff: soft<Texture2D> = /Game/Assets/Icons/icons8-tick-box-unchecked-96.icons8-tick-box-unchecked-96
+var GoodIcons: array<Image>
+var GoodTips: array<WBP_FDNetTip>
+var GoodNames: array<name>
+var ProvTip: WBP_FDTip
+var ReqTip: WBP_FDTip
+
+widget Root: Overlay {
+    widget Band: Image(ColorAndOpacity: "#ffffff00") slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill)
+    widget Line: HorizontalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 4)) {
+        widget IdBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+            widget NetId: TextBlock(Text: "1", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+        }
+        widget ProvideBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+            widget ProvideCell: HorizontalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                widget ProvideBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                    widget ProvideTick: Image
+                }
+                widget ProvideCount: TextBlock(Text: "(0)", ColorAndOpacity: "#9c917cff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 2, Top: 0, Right: 0, Bottom: 0))
+            }
+        }
+        widget RequestBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+            widget RequestCell: HorizontalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                widget RequestBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                    widget RequestTick: Image
+                }
+                widget RequestCount: TextBlock(Text: "(0)", ColorAndOpacity: "#9c917cff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 2, Top: 0, Right: 0, Bottom: 0))
+            }
+        }
+        // wraps onto more lines when the goods don't fit, so the row grows taller rather than wider
+        widget GoodsBox: WrapBox slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 8, Top: 0, Right: 0, Bottom: 0), Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+    }
+}
+
+on Construct {
+    ProvideBtn.OnClicked.bind(ProvideClicked)
+    RequestBtn.OnClicked.bind(RequestClicked)
+    let size = Vector2D(X: 22.0, Y: 22.0)
+    ProvideTick.SetDesiredSizeOverride(size)
+    RequestTick.SetDesiredSizeOverride(size)
+}
+
+on OnMouseEnter(MyGeometry: Geometry, MouseEvent: PointerEvent) {
+    Band.SetColorAndOpacity(LinearColor(R: 1.0, G: 1.0, B: 1.0, A: 0.06))
+}
+
+on OnMouseLeave(MouseEvent: PointerEvent) {
+    Shade()
+}
+
+// Every other row a faint band, so the eye can follow a row across.
+fn Shade() {
+    Band.SetColorAndOpacity(LinearColor(R: 1.0, G: 1.0, B: 1.0, A: if Odd { 0.025 } else { 0.0 }))
+}
+
+// What the cursor is over, for the arcs and pointers it shows (BPL_FDPairing.Highlight): Kind 1 the network ID, 2
+// the Provide cell, 3 the Request cell, 4 a good (Good), 0 none.
+fn HoverInfo(out Kind: int, out Good: name) {
+    Kind = 0
+    if IdBox.IsHovered() {
+        Kind = 1
+    } else if ProvideBox.IsHovered() {
+        Kind = 2
+    } else if RequestBox.IsHovered() {
+        Kind = 3
+    } else {
+        let i = 0
+        while i < GoodIcons.Length() && i < GoodNames.Length() {
+            if GoodIcons[i].IsVisible() && GoodIcons[i].IsHovered() {
+                Kind = 4
+                Good = GoodNames[i]
+            }
+            i += 1
+        }
+    }
+}
+
+fn ProvideClicked() {
+    Toggled.broadcast(Net, 1)
+}
+
+fn RequestClicked() {
+    Toggled.broadcast(Net, 2)
+}
+
+fn SetTick(Tick: Image, On: bool) {
+    Tick.SetBrushFromTexture(if On { TickOn.load() } else { TickOff.load() }, false)
+    Tick.SetColorAndOpacity(if On { LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 0.85) })
+}
+
+// Role: the selected dock's role on InNet (0 none, 1 provide, 2 request, 3 both). Goods: what the network's
+// requesters ask for, with Wanted / Stocked amounts; a good is dimmed unless AllProvided or it is in Provided.
+fn Show(InNet: int, Role: int, ProviderNames: array<string>, RequesterNames: array<string>, Goods: array<name>, Wanted: map<name, int>, Stocked: map<name, int>, AllProvided: bool, Provided: array<name>, InOdd: bool, Font: SlateFontInfo, Small: SlateFontInfo) {
+    Net = InNet
+    Odd = InOdd
+    Shade()
+    NetId.SetText(text(string(InNet)))
+    NetId.SetColorAndOpacity(SlateColor(SpecifiedColor: BPL_FDNet.NetLinear(InNet)))
+    SetTick(ProvideTick, (Role & 1) != 0)
+    SetTick(RequestTick, (Role & 2) != 0)
+    ProvideCount.SetText(text("(" + string(ProviderNames.Length()) + ")"))
+    RequestCount.SetText(text("(" + string(RequesterNames.Length()) + ")"))
+    if ProvTip == none {
+        ProvTip = create_widget(WBP_FDTip)
+        ProvideCount.SetToolTip(ProvTip)
+        ReqTip = create_widget(WBP_FDTip)
+        RequestCount.SetToolTip(ReqTip)
+    }
+    let noNames = BPL_FDText.T("freightdock.members.none")
+    ProvTip.Setup(BPL_FDText.T1("freightdock.members.providers", "names", if ProviderNames.Length() == 0 { noNames } else { KismetStringLibrary.JoinStringArray(ProviderNames, ", ") }), Small)
+    ReqTip.Setup(BPL_FDText.T1("freightdock.members.requesters", "names", if RequesterNames.Length() == 0 { noNames } else { KismetStringLibrary.JoinStringArray(RequesterNames, ", ") }), Small)
+
+    let i = 0
+    while i < Goods.Length() {
+        if i >= GoodIcons.Length() {
+            let img = construct(Image, self)
+            img.SetDesiredSizeOverride(Vector2D(X: 24.0, Y: 24.0))
+            let slot = GoodsBox.AddChildToWrapBox(img)
+            slot.SetPadding(Margin(Left: 0, Top: 1, Right: 4, Bottom: 1))
+            let tip = create_widget(WBP_FDNetTip)
+            img.SetToolTip(tip)
+            GoodIcons.Add(img)
+            GoodTips.Add(tip)
+        }
+        let res = Goods[i]
+        if i < GoodNames.Length() {
+            GoodNames[i] = res
+        } else {
+            GoodNames.Add(res)
+        }
+        let supplied = AllProvided || Provided.Contains(res)
+        let img = GoodIcons[i]
+        img.SetBrushFromTexture(ArcoGameInstance.GetResourceDefCopy(self, res).Icon, false)
+        img.SetColorAndOpacity(if supplied { LinearColor(R: 1.0, G: 1.0, B: 1.0, A: 1.0) } else { LinearColor(R: 0.55, G: 0.55, B: 0.55, A: 0.35) })
+        img.SetVisibility(ESlateVisibility.Visible)
+        let w = Wanted.Find(res)
+        let s = Stocked.Find(res)
+        GoodTips[i].Setup(res, if w.ReturnValue { w.Value } else { 0 }, if s.ReturnValue { s.Value } else { 0 }, supplied, Small)
+        i += 1
+    }
+    while i < GoodIcons.Length() {
+        GoodIcons[i].SetVisibility(ESlateVisibility.Collapsed)
+        i += 1
+    }
+    NetId.SetFont(Font)
+    ProvideCount.SetFont(Font)
+    RequestCount.SetFont(Font)
+}

@@ -1,0 +1,31 @@
+blueprint WBP_FDNetTip : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDNetTip
+
+// Tooltip of a good in the network table (WBP_FDNetRow): its icon and name, how much the network's requesters'
+// output warehouses ask for and hold, and whether any provider on the network can supply it.
+
+widget Width: SizeBox(MaxDesiredWidth: 320.0) {
+    widget Box: Border(BrushColor: "#0d1520f2", Padding: Margin(Left: 10, Top: 6, Right: 10, Bottom: 7)) {
+        widget Col: VerticalBox {
+            widget Top: HorizontalBox {
+                widget IconBox: SizeBox(WidthOverride: 24.0, HeightOverride: 24.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                    widget Icon: Image
+                }
+                widget GoodName: LocTextBlock(ColorAndOpacity: "#e8c872ff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 7, Top: 0, Right: 0, Bottom: 0))
+            }
+            widget Amounts: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 0, Top: 3, Right: 0, Bottom: 0))
+            widget NoProvider: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#9c917cff") slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
+        }
+    }
+}
+
+fn Setup(Res: name, Requested: int, Stocked: int, Provided: bool, Font: SlateFontInfo) {
+    let def = ArcoGameInstance.GetResourceDefCopy(self, Res)
+    Icon.SetBrushFromTexture(def.Icon, false)
+    GoodName.SetKey(def.stringKey)
+    Amounts.SetText(text(BPL_FDText.T2("freightdock.good.amounts", "req", string(Requested), "stock", string(Stocked))))
+    NoProvider.SetText(text(BPL_FDText.T("freightdock.good.noProvider")))
+    NoProvider.SetVisibility(if Provided { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible })
+    GoodName.SetFont(Font)
+    Amounts.SetFont(Font)
+    NoProvider.SetFont(Font)
+}

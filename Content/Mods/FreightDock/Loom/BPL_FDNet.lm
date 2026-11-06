@@ -380,9 +380,21 @@ fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
     return made
 }
 
-// The dock it delivers to: its current destination (NetDest, chosen by ChooseDest) while that is still one of its
-// requesters, else its first requester. A dock that only requests gets its first provider (for the panel and arcs).
-// A 1.x value gives its old partner, until Migrate has run. none when it has neither.
+// The freight dock with this ID among the known docks (MapLoad.Docks), or none. Cheaper than MapLoad.DockById,
+// which looks through every actor.
+fn DockIn(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> WorkDock {
+    for d in MapLoad.Docks {
+        if d != none {
+            if DockId(d) == Id {
+                return d
+            }
+        }
+    }
+    return none
+}
+
+// The dock it delivers to: its job's requester (JobTo, given out by BPL_FDDispatch), or none when it has no job. A
+// 1.x value gives its old partner, until Migrate has run.
 fn PartnerOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> WorkDock {
     if Dock == none {
         return none
@@ -390,168 +402,15 @@ fn PartnerOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Work
     let u = Unpack(Dock.activeTradePartnerId)
     if !u.IsNew {
         if u.OldPartner >= 0 {
-            return MapLoad.DockById(u.OldPartner).Dock
+            return DockIn(MapLoad, u.OldPartner)
         }
         return none
     }
-    let r = RequestersOf(MapLoad, Dock)
-    if r.Length() > 0 {
-        let cur = MapLoad.NetDest.Find(DockId(Dock))
-        if cur.ReturnValue {
-            for d in r {
-                if DockId(d) == cur.Value {
-                    return d
-                }
-            }
-        }
-        return r[0]
-    }
-    let p = ProvidersOf(MapLoad, Dock)
-    if p.Length() > 0 {
-        return p[0]
+    let job = MapLoad.JobTo.Find(DockId(Dock))
+    if job.ReturnValue {
+        return DockIn(MapLoad, job.Value)
     }
     return none
-}
-
-// Whether Requester wants something Provider can load: a resource its output warehouses lack (beyond what
-// is already unloaded at it) that Provider's input warehouses hold, reserved for pickup or not (stock
-// haulers have reserved is on its way to the dock). A provider without input warehouses can load nothing.
-fn Wants(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Provider: WorkDock, Requester: WorkDock) -> bool {
-    let src = SourceStock(MapLoad, Provider, true)
-    if !src.HasSources {
-        return false
-    }
-    let want = MapLoad.DeficitsFor(Requester).Want
-    for res, deficit in want.counts {
-        let s = Requester.m_stockpile_goodsFromSea.Slots.Find(res)
-        let atPartner = if s.ReturnValue { s.Value.count } else { 0 }
-        let st = src.Stock.Find(res)
-        if deficit - atPartner > 0 && st.ReturnValue && st.Value > 0 {
-            return true
-        }
-    }
-    return false
-}
-
-// Round-robin over a provider's requesters (dock ID order). Called by the loading plan for a berthed dock. While
-// goods are on their way to it or aboard, its destination stays; once freight is aboard (LoadingSince), the
-// destination is marked used (NetUsed): a trip is under way. Once idle again after a trip, the turn passes to the
-// next requester that wants something it can load; while idle, a destination that wants nothing it can load is
-// passed on the same way. With none wanting anything, the destination stays. A change replans the route.
-fn ChooseDest(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) {
-    let id = DockId(Dock)
-    let reqs = RequestersOf(MapLoad, Dock)
-    let n = reqs.Length()
-    if n == 0 {
-        MapLoad.NetDest.Remove(id)
-        MapLoad.NetUsed.Remove(id)
-        return
-    }
-    let cur = MapLoad.NetDest.Find(id)
-    let curIdx = -1
-    if cur.ReturnValue {
-        let i = 0
-        while i < n {
-            if DockId(reqs[i]) == cur.Value {
-                curIdx = i
-            }
-            i += 1
-        }
-    }
-    let busy = MapLoad.LoadingSince.Contains(id) || MapLoad.DepartingSince.Contains(id) || MapLoad.Voyages.Contains(id)
-    for res, slot in Dock.m_inputStockpile.Slots {
-        if slot.count + slot.reservedSpaceForDropoff > 0 {
-            busy = true
-        }
-    }
-    // goods aboard that were requested for this trip keep the destination they were loaded for
-    let ship = ShipAtDock(MapLoad, Dock)
-    if ship != none {
-        for res, held in MapLoad.HoldCounts(ship).Counts {
-            if held > 0 && MapLoad.Requested.Contains(string(id) + "|" + string(res)) {
-                busy = true
-            }
-        }
-    }
-    if busy && curIdx >= 0 {
-        if MapLoad.LoadingSince.Contains(id) {
-            MapLoad.NetUsed[id] = true
-        }
-        return
-    }
-    let u = MapLoad.NetUsed.Find(id)
-    let used = u.ReturnValue && u.Value
-    let start = if curIdx < 0 { 0 } else if used { (curIdx + 1) % n } else { curIdx }
-    let pick = -1
-    let k = 0
-    while k < n && pick < 0 {
-        let i = (start + k) % n
-        if Wants(MapLoad, Dock, reqs[i]) {
-            pick = i
-        }
-        k += 1
-    }
-    if pick < 0 {
-        pick = if curIdx >= 0 { curIdx } else { 0 }
-    }
-    MapLoad.NetUsed[id] = false
-    let newId = DockId(reqs[pick])
-    if !cur.ReturnValue || cur.Value != newId {
-        MapLoad.NetDest[id] = newId
-        MapLoad.PlanRoute(Dock)
-        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(id) + " now delivers to " + string(newId) + " (" + string(pick + 1) + " of " + string(n) + ")", false)
-    }
-}
-
-// Where the dock stands in its round-robin: the current destination's place (1-based) and the number of requesters.
-fn Turn(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, out Place: int, out Count: int) {
-    let reqs = RequestersOf(MapLoad, Dock)
-    Count = reqs.Length()
-    Place = 0
-    let dest = PartnerOf(MapLoad, Dock)
-    let i = 0
-    while i < Count {
-        if reqs[i] == dest {
-            Place = i + 1
-        }
-        i += 1
-    }
-}
-
-// The dock leaves every network it is in; the other members stay. Returns whether it was paired.
-fn Leave(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> bool {
-    if Dock == none || !IsPaired(Dock.activeTradePartnerId) {
-        return false
-    }
-    let u = Unpack(Dock.activeTradePartnerId)
-    if !u.IsNew {
-        Unpair(MapLoad, Dock)
-        return true
-    }
-    Dock.activeTradePartnerId = Emptied(Dock.activeTradePartnerId)
-    MapLoad.NetDest.Remove(DockId(Dock))
-    return true
-}
-
-// Target joins Member's first network as "both". Returns the network, or 0 when Member is in none or Target has no
-// free membership.
-fn Join(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Member: WorkDock, Target: WorkDock) -> int {
-    let u = Unpack(Member.activeTradePartnerId)
-    let net = 0
-    for n in u.Nets {
-        if net == 0 && n > 0 {
-            net = n
-        }
-    }
-    if net == 0 {
-        return 0
-    }
-    let w = With(Target.activeTradePartnerId, net, Both())
-    if !w.Ok {
-        return 0
-    }
-    Target.activeTradePartnerId = w.ReturnValue
-    return net
 }
 
 // The value for a dock left in no network: -1, or an empty network value when it keeps "depart only when full".
@@ -561,57 +420,294 @@ pure fn Emptied(Stored: int) -> int {
     return if u.Full { Pack(none4, none4, true) } else { -1 }
 }
 
-// Takes the dock out of every network, and the other members out of those networks too (as unpairing both docks of
-// a pair does today). A 1.x pair is cleared on both ends.
-fn Unpair(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) {
-    if Dock == none {
-        return
-    }
-    let u = Unpack(Dock.activeTradePartnerId)
-    if !u.IsNew {
-        if u.OldPartner >= 0 {
-            let p = MapLoad.DockById(u.OldPartner).Dock
-            if p != none {
-                p.activeTradePartnerId = -1
-            }
-        }
-        Dock.activeTradePartnerId = -1
-        return
-    }
-    for net in u.Nets {
-        if net > 0 {
-            for d in FreightDocks(MapLoad) {
-                if d != Dock && RoleOn(d.activeTradePartnerId, net) != 0 {
-                    let w = With(d.activeTradePartnerId, net, 0)
-                    d.activeTradePartnerId = if IsMember(w.ReturnValue) { w.ReturnValue } else { Emptied(w.ReturnValue) }
-                }
-            }
-        }
-    }
-    Dock.activeTradePartnerId = Emptied(Dock.activeTradePartnerId)
-}
-
-// Pairs two docks, as F5 does: both leave their networks, then share the lowest free network, both in the role
-// "both". Returns the network, or 0 when all are taken (nothing changes then).
-fn Pair(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, A: WorkDock, B: WorkDock) -> int {
-    if A == none || B == none || A == B {
-        return 0
-    }
-    Unpair(MapLoad, A)
-    Unpair(MapLoad, B)
-    let net = InUse(MapLoad).NextFree
-    if net == 0 {
-        return 0
-    }
-    let wa = With(A.activeTradePartnerId, net, Both())
-    A.activeTradePartnerId = wa.ReturnValue
-    let wb = With(B.activeTradePartnerId, net, Both())
-    B.activeTradePartnerId = wb.ReturnValue
-    return net
-}
-
 // Whether the dock is paired: in a network, or holding a 1.x pair.
 pure fn IsPaired(Stored: int) -> bool {
     let u = Unpack(Stored)
     return IsMember(Stored) || u.OldPartner >= 0
+}
+
+// What a network's requesters ask for, for the panel's picker: per resource, the request levels (minHold) set in
+// their output warehouses, and what those warehouses hold of it. A resource is listed whether or not the request is
+// met, whatever its amount.
+fn NetRequests(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, out Wanted: map<name, int>, out Stocked: map<name, int>) {
+    let m = Members(MapLoad, Net)
+    for r in m.Requesters {
+        let linker = cast(r.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+        if linker != none {
+            for id in linker.m_destStockpileIds {
+                let b = MapLoad.BuildingById(id).Building
+                if b != none {
+                    let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+                    if rb != none {
+                        for res, slot in rb.m_stockpile.Slots {
+                            if slot.minHold > 0 {
+                                let w = Wanted.Find(res)
+                                Wanted[res] = (if w.ReturnValue { w.Value } else { 0 }) + slot.minHold
+                                let h = Stocked.Find(res)
+                                Stocked[res] = (if h.ReturnValue { h.Value } else { 0 }) + slot.count
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The dock's name: the text of a sign starting with "[fd]" (any case) whose tile is within one tile of the tile in
+// front of the dock's door, without the tag ("[fd] North quay" -> "North quay"); else "Freight Dock <id>".
+fn DockName(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> string {
+    let fallback = BPL_FDText.T1("freightdock.dock.unnamed", "id", string(DockId(Dock)))
+    if Dock == none {
+        return fallback
+    }
+    let door = Dock.m_entranceExternalCell
+    for a in GameplayStatics.GetAllActorsOfClass(signPost).OutActors {
+        let s = cast(a, signPost)
+        if s != none {
+            let msg = s.Signpost.shownMessage
+            if KismetStringLibrary.StartsWith(msg, "[fd]", ESearchCase.IgnoreCase) {
+                let at = s.liveFootprint.rootPosition
+                let near = KismetMathLibrary.Abs_Int(at.X - door.X) <= 1 && KismetMathLibrary.Abs_Int(at.Y - door.Y) <= 1
+                if near && KismetMathLibrary.Abs_Int(at.Z - door.Z) <= 1 {
+                    let name = KismetStringLibrary.TrimTrailing(KismetStringLibrary.Trim(KismetStringLibrary.RightChop(msg, 4)))
+                    if name != "" {
+                        return name
+                    }
+                }
+            }
+        }
+    }
+    return fallback
+}
+
+// The goods the network's providers can supply: what their input warehouses whitelist. All is true when any of
+// those warehouses accepts everything (no whitelist in use): then every good counts as provided.
+fn ProvidedGoods(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, out All: bool, out Goods: array<name>) {
+    All = false
+    Goods = []
+    let m = Members(MapLoad, Net)
+    for p in m.Providers {
+        let linker = cast(p.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+        if linker != none {
+            for id in linker.m_sourceStockpileIds {
+                let b = MapLoad.BuildingById(id).Building
+                if b != none {
+                    let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+                    if rb != none {
+                        if !rb.m_whiteListReceiving {
+                            All = true
+                        }
+                        for res in rb.m_whitelist {
+                            Goods.AddUnique(res)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Jobs (BPL_FDDispatch): MapLoad.JobTo[provider id] = requester id; MapLoad.JobGoods["<provider>|<good>"] = units in
+// the manifest, and "<provider>|<good>|park" = units of it still to move from the provider's delivered-goods store
+// (parked leftovers) into its loading store.
+pure fn JobKey(Id: int, Res: name) -> string {
+    return string(Id) + "|" + string(Res)
+}
+
+pure fn ParkKey(Id: int, Res: name) -> string {
+    return string(Id) + "|" + string(Res) + "|park"
+}
+
+// The job's manifest (good -> units), without the parked entries.
+fn Manifest(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> map<name, int> {
+    let out: map<name, int> = {}
+    let prefix = string(Id) + "|"
+    for key, units in MapLoad.JobGoods {
+        if KismetStringLibrary.StartsWith(key, prefix, ESearchCase.CaseSensitive) {
+            let rest = KismetStringLibrary.RightChop(key, KismetStringLibrary.Len(prefix))
+            if !KismetStringLibrary.Contains(rest, "|", true, false) {
+                out[name(rest)] = units
+            }
+        }
+    }
+    return out
+}
+
+// Removes the job and its manifest.
+fn DropJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
+    let prefix = string(Id) + "|"
+    let gone: array<string> = []
+    for key, units in MapLoad.JobGoods {
+        if KismetStringLibrary.StartsWith(key, prefix, ESearchCase.CaseSensitive) {
+            gone.Add(key)
+        }
+    }
+    for key in gone {
+        MapLoad.JobGoods.Remove(key)
+    }
+    MapLoad.JobTo.Remove(Id)
+    MapLoad.JobSailed.Remove(Id)
+}
+
+// Moves up to Units of Res from the hold of the dock's ship to its delivered-goods store. Returns the units moved.
+fn ParkUnits(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Res: name, Units: int) -> int {
+    if Dock == none || Units <= 0 {
+        return 0
+    }
+    let ship = BPL_FDNet.ShipAtDock(MapLoad, Dock)
+    if ship == none {
+        return 0
+    }
+    let state = ship.State
+    let cargo = state.cargo
+    let items = cargo.Items
+    let item = items.Find(Res)
+    if !item.ReturnValue {
+        return 0
+    }
+    let left = item.Value
+    let move = KismetMathLibrary.Min(KismetMathLibrary.FFloor(left.Quantity + 0.001), Units)
+    if move <= 0 {
+        return 0
+    }
+    left.Quantity = left.Quantity - float(move)
+    if left.Quantity < 0.001 {
+        items.Remove(Res)
+    } else {
+        items[Res] = left
+    }
+    cargo.Items = items
+    state.cargo = cargo
+    ship.State = state
+    let pile = Dock.m_stockpile_goodsFromSea
+    let had = pile.Slots.Find(Res)
+    let slot = if had.ReturnValue { had.Value } else { ResourceStockpileSlot(count: 0, capacity: 0) }
+    slot.count = slot.count + move
+    slot.capacity = KismetMathLibrary.Max(slot.capacity, slot.count)
+    pile.Slots[Res] = slot
+    Dock.m_stockpile_goodsFromSea = pile
+    return move
+}
+
+// Goods a ship keeps aboard for itself (the game always asks for them): never unloaded as stray freight.
+pure fn Provisions() -> array<name> {
+    return ["cannedfood"]
+}
+
+// Parks everything in the hold of the dock's ship that isn't in Manifest (beyond the manifest's units) and isn't a
+// provision: a ship carries only its job's freight. Returns " good=units" per good moved.
+fn ParkStray(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Manifest: map<name, int>) -> string {
+    if Dock == none {
+        return ""
+    }
+    let ship = ShipAtDock(MapLoad, Dock)
+    if ship == none {
+        return ""
+    }
+    let out = ""
+    for res, n in MapLoad.HoldCounts(ship).Counts {
+        let m = Manifest.Find(res)
+        let extra = n - (if m.ReturnValue { m.Value } else { 0 })
+        if extra > 0 && !Provisions().Contains(res) {
+            let moved = ParkUnits(MapLoad, Dock, res, extra)
+            if moved > 0 {
+                out += " " + string(res) + "=" + string(moved)
+            }
+        }
+    }
+    return out
+}
+
+// A colour from 0-255 components (sRGB, as the game's arcs take it).
+pure fn Rgb(R: int, G: int, B: int) -> Color {
+    return Color(R: KismetMathLibrary.Conv_IntToByte(R), G: KismetMathLibrary.Conv_IntToByte(G), B: KismetMathLibrary.Conv_IntToByte(B), A: KismetMathLibrary.Conv_IntToByte(255))
+}
+
+// A network's colour, for its arcs and its number in the panels: a fixed palette of ten, repeating, with red and
+// blue left out (they mark providers and requesters).
+pure fn NetColor(Net: int) -> Color {
+    let i = (KismetMathLibrary.Max(Net, 1) - 1) % 10
+    if i == 0 {
+        return Rgb(232, 200, 114)
+    }
+    if i == 1 {
+        return Rgb(111, 207, 123)
+    }
+    if i == 2 {
+        return Rgb(180, 140, 224)
+    }
+    if i == 3 {
+        return Rgb(242, 163, 58)
+    }
+    if i == 4 {
+        return Rgb(224, 122, 192)
+    }
+    if i == 5 {
+        return Rgb(200, 224, 90)
+    }
+    if i == 6 {
+        return Rgb(200, 160, 112)
+    }
+    if i == 7 {
+        return Rgb(159, 224, 176)
+    }
+    if i == 8 {
+        return Rgb(232, 232, 224)
+    }
+    return Rgb(154, 168, 74)
+}
+
+pure fn NetLinear(Net: int) -> LinearColor {
+    return KismetMathLibrary.Conv_ColorToLinearColor(NetColor(Net))
+}
+
+// Pointer colours: providers red, requesters blue.
+pure fn ProviderColor() -> Color {
+    return Rgb(233, 89, 77)
+}
+
+pure fn RequesterColor() -> Color {
+    return Rgb(113, 208, 234)
+}
+
+// Whether a provider's input warehouses can supply Good: one whitelists it, or accepts everything.
+fn SuppliesGood(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Good: name) -> bool {
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return false
+    }
+    for id in linker.m_sourceStockpileIds {
+        let b = MapLoad.BuildingById(id).Building
+        if b != none {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            if rb != none {
+                if !rb.m_whiteListReceiving || rb.m_whitelist.Contains(Good) {
+                    return true
+                }
+            }
+        }
+    }
+    return false
+}
+
+// Whether a requester's output warehouses have a request set for Good (minHold above 0).
+fn AsksForGood(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Good: name) -> bool {
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return false
+    }
+    for id in linker.m_destStockpileIds {
+        let b = MapLoad.BuildingById(id).Building
+        if b != none {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            if rb != none {
+                let slot = rb.m_stockpile.Slots.Find(Good)
+                if slot.ReturnValue && slot.Value.minHold > 0 {
+                    return true
+                }
+            }
+        }
+    }
+    return false
 }

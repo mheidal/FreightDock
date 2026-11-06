@@ -1,0 +1,659 @@
+blueprint BPL_FDDispatch : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDDispatch
+
+// The global dispatcher: gives provider docks jobs (one ship trip: a requester and a manifest), from every
+// requester's demand and every idle provider's supply. See Docs/FreightDock/Many-to-many links.md, "Dispatch".
+// Runs every TickSeconds of game time (Tick, from BPL_FDPairing.Tick). Jobs live in BP_MapLoad: JobTo, JobGoods
+// (BPL_FDNet.JobKey / ParkKey), JobSailed; DemandSince ages demand; IdleWhy says why a provider has no job.
+//
+// A pass: upkeep (jobs back home complete, their undelivered goods parked; jobs whose provider and requester no
+// longer share a network are cancelled), shrinking loading jobs to what their requesters still want, demand, growth of jobs still loading, then new jobs, greedily: the
+// (provider, requester) pair with the best score first, until none scores above zero.
+//
+// score = sum over goods of units x (1 + age / Tau()) / estimated round trip. Units per good: the smaller of the
+// requester's demand and the provider's supply, the goods needing hold space capped by the free hold. The round trip
+// is estimated from the straight-line distance and ShipSpeed, plus Overhead() for loading and unloading.
+
+// How fast waiting demand gains weight: after Tau() game seconds it counts double.
+pure fn Tau() -> float {
+    return 600.0
+}
+
+// Loading and unloading allowance per round trip, game seconds.
+pure fn Overhead() -> float {
+    return 60.0
+}
+
+pure fn GoodValue(Units: int, Age: float) -> float {
+    return float(Units) * (1.0 + Age / Tau())
+}
+
+// Whether a job of Units is big enough: at least Share of the smaller of the hold and all the requester wants, or
+// the requester's oldest demand has waited MaxWait.
+pure fn MeetsMinimum(Units: int, Share: float, Hold: int, WantTotal: int, OldestAge: float, MaxWait: float) -> bool {
+    if Units <= 0 {
+        return false
+    }
+    if OldestAge >= MaxWait {
+        return true
+    }
+    let base = KismetMathLibrary.Min(Hold, WantTotal)
+    return float(Units) >= Share * float(base) - 0.001
+}
+
+pure fn Prefix(Id: int) -> string {
+    return string(Id) + "|"
+}
+
+// The good of a "<id>|<good>" key.
+pure fn GoodOf(Key: string) -> name {
+    let parts = KismetStringLibrary.Split(Key, "|", ESearchCase.CaseSensitive, ESearchDir.FromStart)
+    return name(parts.RightS)
+}
+
+fn AddTo(Counts: ref map<string, int>, Key: string, Units: int) {
+    let had = Counts.Find(Key)
+    let base = if had.ReturnValue { had.Value } else { 0 }
+    Counts[Key] = base + Units
+}
+
+// Msg is made ASCII (dock names come from signs): one other character turns the modlog into UTF-16.
+fn Log(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Msg: string) {
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + Ascii(Msg), false)
+}
+
+// S with every character beyond ASCII replaced by "?".
+pure fn Ascii(S: string) -> string {
+    let out = ""
+    let i = 0
+    while i < KismetStringLibrary.Len(S) {
+        let c = KismetStringLibrary.GetSubstring(S, i, 1)
+        out += if KismetStringLibrary.GetCharacterAsNumber(c, 0) < 128 { c } else { "?" }
+        i += 1
+    }
+    return out
+}
+
+fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let now = GameplayStatics.GetTimeSeconds()
+    if now < MapLoad.NextDispatch {
+        return
+    }
+    MapLoad.NextDispatch = now + KismetMathLibrary.FMax(MapLoad.TickSeconds, 1.0)
+    Pass(MapLoad)
+}
+
+fn Sailing(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> bool {
+    return MapLoad.Voyages.Contains(Id) || MapLoad.DepartedAt.Contains(Id)
+}
+
+fn Pass(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    Upkeep(MapLoad)
+    Shrink(MapLoad)
+    let demand: map<string, int> = {}
+    let oldest: map<int, float> = {}
+    Demand(MapLoad, demand, oldest)
+    Grow(MapLoad, demand)
+    Assign(MapLoad, demand, oldest)
+}
+
+// Jobs back home complete; jobs whose provider and requester no longer share a network (or are gone) are cancelled.
+// A job under way is left to finish its voyage.
+fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let ids: array<int> = []
+    for pid, rid in MapLoad.JobTo {
+        ids.Add(pid)
+    }
+    for id in ids {
+        let dock = BPL_FDNet.DockIn(MapLoad, id)
+        if Sailing(MapLoad, id) {
+            MapLoad.JobSailed[id] = true
+            continue
+        }
+        let s = MapLoad.JobSailed.Find(id)
+        if s.ReturnValue && s.Value {
+            Complete(MapLoad, dock, id)
+            continue
+        }
+        let to = BPL_FDNet.DockIn(MapLoad, MapLoad.JobTo[id])
+        let valid = dock != none && to != none
+        if valid {
+            valid = BPL_FDNet.RequestersOf(MapLoad, dock).Contains(to)
+        }
+        if !valid {
+            Cancel(MapLoad, dock, id)
+        }
+    }
+}
+
+// The ship is back: goods of the manifest still aboard (not delivered) are parked (Park), and the job ends.
+fn Complete(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int) {
+    let parked = Park(MapLoad, Dock, Id)
+    Log(MapLoad, "Dock " + string(Id) + ": job done" + (if parked == "" { "" } else { ", parked undelivered:" + parked }))
+    BPL_FDNet.DropJob(MapLoad, Id)
+}
+
+// Moves the job's manifest goods still in the hold of the dock's ship, and any other freight aboard, to its
+// delivered-goods store, where later jobs can take them (supply) and haulers take what its output warehouses want.
+// Returns " good=units" per good moved.
+fn Park(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int) -> string {
+    // the manifest's goods, then anything else aboard but provisions (a ship holds only its job's freight)
+    let parked = ""
+    for res, units in BPL_FDNet.Manifest(MapLoad, Id) {
+        let moved = BPL_FDNet.ParkUnits(MapLoad, Dock, res, units)
+        if moved > 0 {
+            parked += " " + string(res) + "=" + string(moved)
+        }
+    }
+    let noJob: map<name, int> = {}
+    return parked + BPL_FDNet.ParkStray(MapLoad, Dock, noJob)
+}
+
+
+// The provider and requester no longer share a network (or one is gone): stop loading and clear the trip's state.
+// Goods of the job already aboard are parked (Park), as after a trip.
+fn Cancel(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int) {
+    if Dock != none {
+        MapLoad.PauseLoading(Dock)
+    }
+    MapLoad.ClearRequested(Id)
+    MapLoad.LoadingSince.Remove(Id)
+    MapLoad.DepartingSince.Remove(Id)
+    let parked = Park(MapLoad, Dock, Id)
+    Log(MapLoad, "Dock " + string(Id) + ": job to " + string(MapLoad.JobTo[Id]) + " cancelled" + (if parked == "" { "" } else { ", parked:" + parked }))
+    BPL_FDNet.DropJob(MapLoad, Id)
+    MapLoad.RouteSelId = -999
+}
+
+// Jobs still loading give up what their requester no longer wants: per requester and good, its output warehouses'
+// unmet requests less what is unloaded at it is shared out, first to jobs under way (they can't change), then to
+// loading jobs. A loading job keeps at most its share; the rest leaves the manifest, and what of it is aboard is
+// parked (BPL_FDNet.ParkUnits). A job left with nothing is cancelled.
+fn Shrink(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let allow: map<string, int> = {}
+    let loading: array<int> = []
+    let underway: array<int> = []
+    for pid, rid in MapLoad.JobTo {
+        let ph = MapLoad.VoyagePhase.Find(pid)
+        let delivered = MapLoad.Voyages.Contains(pid) && ph.ReturnValue && ph.Value >= 2
+        if Sailing(MapLoad, pid) {
+            // a job already delivered no longer claims anything (as in Demand)
+            if !delivered {
+                underway.Add(pid)
+            }
+        } else {
+            loading.Add(pid)
+        }
+    }
+    let order: array<int> = []
+    order.Append(underway)
+    order.Append(loading)
+    for id in order {
+        let rid = MapLoad.JobTo[id]
+        let r = BPL_FDNet.DockIn(MapLoad, rid)
+        let fixed = underway.Contains(id)
+        let dock = BPL_FDNet.DockIn(MapLoad, id)
+        let cutLog = ""
+        let kept = 0
+        for res, units in BPL_FDNet.Manifest(MapLoad, id) {
+            let key = BPL_FDNet.JobKey(rid, res)
+            if !allow.Contains(key) {
+                let open = 0
+                if r != none {
+                    let d = MapLoad.DeficitsFor(r).Want.counts.Find(res)
+                    let atR = r.m_stockpile_goodsFromSea.Slots.Find(res)
+                    open = (if d.ReturnValue { d.Value } else { 0 }) - (if atR.ReturnValue { atR.Value.count } else { 0 })
+                }
+                allow[key] = KismetMathLibrary.Max(open, 0)
+            }
+            let share = allow[key]
+            let keep = if fixed { units } else { KismetMathLibrary.Min(units, share) }
+            allow[key] = KismetMathLibrary.Max(share - keep, 0)
+            kept += keep
+            if keep < units {
+                let jk = BPL_FDNet.JobKey(id, res)
+                let pk = BPL_FDNet.ParkKey(id, res)
+                // what is aboard beyond what the job keeps goes back to the delivered-goods store
+                let aboard = 0
+                let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
+                if ship != none {
+                    let hold = MapLoad.HoldCounts(ship).Counts.Find(res)
+                    aboard = if hold.ReturnValue { hold.Value } else { 0 }
+                }
+                let parked = BPL_FDNet.ParkUnits(MapLoad, dock, res, aboard - keep)
+                if keep > 0 {
+                    MapLoad.JobGoods[jk] = keep
+                    let pa = MapLoad.JobGoods.Find(pk)
+                    if pa.ReturnValue {
+                        MapLoad.JobGoods[pk] = KismetMathLibrary.Min(pa.Value, keep)
+                    }
+                } else {
+                    MapLoad.JobGoods.Remove(jk)
+                    MapLoad.JobGoods.Remove(pk)
+                }
+                MapLoad.PickupSeen.Remove(jk)
+                MapLoad.PickupSince.Remove(jk)
+                cutLog += " " + string(res) + " " + string(units) + "->" + string(keep) + (if parked > 0 { " (parked " + string(parked) + ")" } else { "" })
+            }
+        }
+        if cutLog != "" {
+            Log(MapLoad, "Dock " + string(id) + ": job to " + string(rid) + " shrinks, no longer wanted:" + cutLog)
+            if kept == 0 {
+                Cancel(MapLoad, dock, id)
+            }
+        }
+    }
+}
+
+// Per requester and good ("<requester>|<good>"): its output warehouses' unmet requests, less what is unloaded at it,
+// less what every job not yet delivered brings it. Ages it (DemandSince); Oldest[requester] is its oldest demand.
+fn Demand(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>, Oldest: ref map<int, float>) {
+    let now = GameplayStatics.GetTimeSeconds()
+    let bound: map<string, int> = {}
+    for pid, rid in MapLoad.JobTo {
+        let ph = MapLoad.VoyagePhase.Find(pid)
+        let delivered = MapLoad.Voyages.Contains(pid) && ph.ReturnValue && ph.Value >= 2
+        if !delivered {
+            for res, units in BPL_FDNet.Manifest(MapLoad, pid) {
+                AddTo(bound, BPL_FDNet.JobKey(rid, res), units)
+            }
+        }
+    }
+    let seen: array<string> = []
+    for r in BPL_FDNet.FreightDocks(MapLoad) {
+        let u = BPL_FDNet.Unpack(r.activeTradePartnerId)
+        let requests = false
+        let i = 0
+        while i < BPL_FDNet.Slots() {
+            if u.Nets[i] > 0 && (u.Roles[i] & BPL_FDNet.Request()) != 0 {
+                requests = true
+            }
+            i += 1
+        }
+        if requests {
+            let rid = BPL_FDNet.DockId(r)
+            let deficits = MapLoad.DeficitsFor(r).Want
+            for res, deficit in deficits.counts {
+                let key = BPL_FDNet.JobKey(rid, res)
+                let atR = r.m_stockpile_goodsFromSea.Slots.Find(res)
+                let b = bound.Find(key)
+                let open = deficit - (if atR.ReturnValue { atR.Value.count } else { 0 }) - (if b.ReturnValue { b.Value } else { 0 })
+                if open > 0 {
+                    Want[key] = open
+                    seen.Add(key)
+                    let since = MapLoad.DemandSince.Find(key)
+                    let start = if since.ReturnValue { since.Value } else { now }
+                    MapLoad.DemandSince[key] = start
+                    let had = Oldest.Find(rid)
+                    let age = now - start
+                    Oldest[rid] = if had.ReturnValue { KismetMathLibrary.FMax(had.Value, age) } else { age }
+                }
+            }
+        }
+    }
+    // demand that is met (or covered by a job) stops ageing
+    let stale: array<string> = []
+    for dk, t0 in MapLoad.DemandSince {
+        if !seen.Contains(dk) {
+            stale.Add(dk)
+        }
+    }
+    for sk in stale {
+        MapLoad.DemandSince.Remove(sk)
+    }
+}
+
+// What a provider holds for jobs: free stock in its input warehouses (Free), what its ship already has aboard
+// (Aboard: needs no fetching or hold space), and leftovers in its delivered-goods store its own output warehouses
+// don't want (Parked: unreserved units only).
+fn Supply(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Ship: NauticalShip, out Free: map<name, int>, out Aboard: map<name, int>, out Parked: map<name, int>) {
+    Free = Fetchable(MapLoad, Dock)
+    Aboard = MapLoad.HoldCounts(Ship).Counts
+    let own = MapLoad.DeficitsFor(Dock).Want
+    for res, slot in Dock.m_stockpile_goodsFromSea.Slots {
+        let spare = slot.count - slot.reservedForPickup
+        let w = own.counts.Find(res)
+        let wanted = w.ReturnValue && w.Value > 0
+        if spare > 0 && !wanted {
+            Parked[res] = spare
+        }
+    }
+}
+
+// Whether a good cut from Id's last job as stalled (MapLoad.CutStock: the input warehouses' free stock then) is
+// still barred: its free stock hasn't changed since. A change lifts the bar.
+fn Barred(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Good: name, FreeNow: int) -> bool {
+    let key = BPL_FDNet.JobKey(Id, Good)
+    let c = MapLoad.CutStock.Find(key)
+    if !c.ReturnValue {
+        return false
+    }
+    if c.Value == FreeNow {
+        return true
+    }
+    MapLoad.CutStock.Remove(key)
+    return false
+}
+
+// The dock's input warehouses' free stock, less goods barred after a stall (Barred).
+fn Fetchable(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> map<name, int> {
+    let id = BPL_FDNet.DockId(Dock)
+    let out: map<name, int> = {}
+    for res, n in BPL_FDNet.SourceStock(MapLoad, Dock).Stock {
+        if !Barred(MapLoad, id, res, n) {
+            out[res] = n
+        }
+    }
+    return out
+}
+
+// Jobs still loading take more when their requester's demand has grown, their hold has room and their input
+// warehouses hold the extra (free stock beyond what the manifest still has to fetch).
+fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>) {
+    let ids: array<int> = []
+    for pid, rid in MapLoad.JobTo {
+        ids.Add(pid)
+    }
+    for id in ids {
+        if Sailing(MapLoad, id) {
+            continue
+        }
+        let dock = BPL_FDNet.DockIn(MapLoad, id)
+        if dock == none {
+            continue
+        }
+        let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
+        if ship == none {
+            continue
+        }
+        let rid = MapLoad.JobTo[id]
+        let manifest = BPL_FDNet.Manifest(MapLoad, id)
+        let hold = MapLoad.HoldCounts(ship).Counts
+        // hold space the manifest and the rest of the hold take
+        let taken = 0
+        for res, units in manifest {
+            let h = hold.Find(res)
+            taken += KismetMathLibrary.Max(units, if h.ReturnValue { h.Value } else { 0 })
+        }
+        for res, n in hold {
+            if !manifest.Contains(res) {
+                taken += n
+            }
+        }
+        let room = ship.config.cargoLimit - taken
+        if room <= 0 {
+            continue
+        }
+        let free = Fetchable(MapLoad, dock)
+        let grew = ""
+        let keys: array<string> = []
+        for key, open in Want {
+            if open > 0 && KismetStringLibrary.StartsWith(key, Prefix(rid), ESearchCase.CaseSensitive) {
+                keys.Add(key)
+            }
+        }
+        for gk in keys {
+            let good = GoodOf(gk)
+            let need = Want[gk]
+            let f = free.Find(good)
+            let m = manifest.Find(good)
+            let inHold = hold.Find(good)
+            let still = KismetMathLibrary.Max((if m.ReturnValue { m.Value } else { 0 }) - (if inHold.ReturnValue { inHold.Value } else { 0 }), 0)
+            let spare = (if f.ReturnValue { f.Value } else { 0 }) - still
+            let add = KismetMathLibrary.Min(KismetMathLibrary.Min(need, spare), room)
+            if add > 0 {
+                let jk = BPL_FDNet.JobKey(id, good)
+                let before = if m.ReturnValue { m.Value } else { 0 }
+                MapLoad.JobGoods[jk] = before + add
+                // the stall clock starts over for the larger amount
+                MapLoad.PickupSeen.Remove(jk)
+                MapLoad.PickupSince.Remove(jk)
+                Want[gk] = need - add
+                room -= add
+                // the total as written, read back, so the log shows what the loading plan will see
+                grew += " " + string(good) + " " + string(before) + "+" + string(add) + "=" + string(MapLoad.JobGoods[jk]) + " (free " + string(if f.ReturnValue { f.Value } else { 0 }) + ", still to fetch " + string(still) + ")"
+            }
+        }
+        if grew != "" {
+            Log(MapLoad, "Dock " + string(id) + ": job to " + string(rid) + " grows:" + grew)
+        }
+    }
+}
+
+// New jobs for idle providers (a ship at home, no job, not sailing): the best-scoring (provider, requester) pair
+// first, until none scores above zero. Records why a provider stays idle (IdleWhy).
+fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>, Oldest: ref map<int, float>) {
+    let now = GameplayStatics.GetTimeSeconds()
+    // idle providers and their supply ("<provider>|<good>")
+    let idle: array<WorkDock> = []
+    let ships: array<NauticalShip> = []
+    let freeS: map<string, int> = {}
+    let aboardS: map<string, int> = {}
+    let parkS: map<string, int> = {}
+    // the reasons of the last pass, to log the ones that change
+    let wasIdle = MapLoad.IdleWhy
+    MapLoad.IdleWhy.Clear()
+    for d in BPL_FDNet.FreightDocks(MapLoad) {
+        let did = BPL_FDNet.DockId(d)
+        let reqs = BPL_FDNet.RequestersOf(MapLoad, d)
+        let away = Sailing(MapLoad, did)
+        if reqs.Length() > 0 && !MapLoad.JobTo.Contains(did) && !away {
+            let home = BPL_FDNet.ShipAtDock(MapLoad, d)
+            if home == none {
+                MapLoad.IdleWhy[did] = BPL_FDText.T("freightdock.idle.noShip")
+            } else {
+                idle.Add(d)
+                ships.Add(home)
+                let sup = Supply(MapLoad, d, home)
+                for res, n in sup.Free {
+                    AddTo(freeS, BPL_FDNet.JobKey(did, res), n)
+                }
+                for res, n in sup.Aboard {
+                    AddTo(aboardS, BPL_FDNet.JobKey(did, res), n)
+                }
+                for res, n in sup.Parked {
+                    AddTo(parkS, BPL_FDNet.JobKey(did, res), n)
+                }
+                let src = BPL_FDNet.SourceStock(MapLoad, d)
+                MapLoad.IdleWhy[did] = BPL_FDText.T(if src.HasSources { "freightdock.idle.noRequests" } else { "freightdock.idle.noInputs" })
+            }
+        }
+    }
+    // input warehouse stock, once per warehouse: docks sharing one draw on the same units
+    let pool = Pool(MapLoad, idle)
+    let done: array<int> = []
+    let rounds = 0
+    while rounds < 64 {
+        rounds += 1
+        let bestScore = 0.0
+        let bestP = -1
+        let bestR: WorkDock = none
+        let i = 0
+        while i < idle.Length() {
+            let p = idle[i]
+            let pid = BPL_FDNet.DockId(p)
+            if !done.Contains(pid) {
+                let pship = ships[i]
+                let held = MapLoad.HoldCounts(pship)
+                let space = KismetMathLibrary.Max(pship.config.cargoLimit - held.Total, 0)
+                for r in BPL_FDNet.RequestersOf(MapLoad, p) {
+                    let rid = BPL_FDNet.DockId(r)
+                    let units = 0
+                    let value = 0.0
+                    let total = 0
+                    let left = space
+                    for key, open in Want {
+                        if open > 0 && KismetStringLibrary.StartsWith(key, Prefix(rid), ESearchCase.CaseSensitive) {
+                            total += open
+                            let good = GoodOf(key)
+                            let pk = BPL_FDNet.JobKey(pid, good)
+                            let a = aboardS.Find(pk)
+                            let fr = freeS.Find(pk)
+                            let pa = parkS.Find(pk)
+                            let fromAboard = KismetMathLibrary.Min(open, if a.ReturnValue { a.Value } else { 0 })
+                            let fromPool = 0
+                            if fr.ReturnValue {
+                                fromPool = PoolFree(MapLoad, p, pool, good)
+                            }
+                            let fetchable = fromPool + (if pa.ReturnValue { pa.Value } else { 0 })
+                            let fetched = KismetMathLibrary.Min(KismetMathLibrary.Min(open - fromAboard, fetchable), left)
+                            left -= fetched
+                            let since = MapLoad.DemandSince.Find(key)
+                            let age = if since.ReturnValue { now - since.Value } else { 0.0 }
+                            units += fromAboard + fetched
+                            value += GoodValue(fromAboard + fetched, age)
+                        }
+                    }
+                    let o = Oldest.Find(rid)
+                    let oldestAge = if o.ReturnValue { o.Value } else { 0.0 }
+                    let fits = MeetsMinimum(units, MapLoad.MinLoad, pship.config.cargoLimit, total, oldestAge, MapLoad.MaxWaitSeconds)
+                    if units > 0 && !fits {
+                        MapLoad.IdleWhy[pid] = BPL_FDText.T2("freightdock.idle.belowMinimum", "n", string(units), "dock", BPL_FDNet.DockName(MapLoad, r))
+                    }
+                    if fits {
+                        let dist = KismetMathLibrary.Vector_Distance2D(p.GetOwner().K2_GetActorLocation(), r.GetOwner().K2_GetActorLocation())
+                        let trip = 2.0 * dist / KismetMathLibrary.FMax(MapLoad.ShipSpeed, 1.0) + Overhead()
+                        let score = value / trip
+                        if score > bestScore {
+                            bestScore = score
+                            bestP = i
+                            bestR = r
+                        }
+                    }
+                }
+            }
+            i += 1
+        }
+        if bestP < 0 {
+            break
+        }
+        Give(MapLoad, idle[bestP], ships[bestP], bestR, Want, freeS, aboardS, parkS, pool, bestScore)
+        done.Add(BPL_FDNet.DockId(idle[bestP]))
+    }
+    for idleId, reason in MapLoad.IdleWhy {
+        let was = wasIdle.Find(idleId)
+        let same = was.ReturnValue && was.Value == reason
+        if !same {
+            Log(MapLoad, "Dock " + string(idleId) + " idle: " + reason)
+        }
+    }
+}
+
+// Free stock ("<warehouse>|<good>") of the input warehouses of Docks, each warehouse once.
+fn Pool(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Docks: array<WorkDock>) -> map<string, int> {
+    let out: map<string, int> = {}
+    let seen: array<int> = []
+    for d in Docks {
+        let linker = cast(d.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+        if linker != none {
+            for bid in linker.m_sourceStockpileIds {
+                if !seen.Contains(bid) {
+                    seen.Add(bid)
+                    let b = MapLoad.BuildingById(bid).Building
+                    if b != none {
+                        let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+                        if rb != none {
+                            for res, slot in rb.m_stockpile.Slots {
+                                let free = slot.count - slot.reservedForPickup
+                                if free > 0 {
+                                    out[string(bid) + "|" + string(res)] = free
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return out
+}
+
+// What of Good the Pool still has in Dock's input warehouses.
+fn PoolFree(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, InPool: map<string, int>, Good: name) -> int {
+    let n = 0
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker != none {
+        for bid in linker.m_sourceStockpileIds {
+            let f = InPool.Find(string(bid) + "|" + string(Good))
+            if f.ReturnValue {
+                n += f.Value
+            }
+        }
+    }
+    return n
+}
+
+// Takes Units of Good from the Pool, from Dock's input warehouses in order.
+fn TakePool(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, InPool: ref map<string, int>, Good: name, Units: int) {
+    let left = Units
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker != none {
+        for bid in linker.m_sourceStockpileIds {
+            let key = string(bid) + "|" + string(Good)
+            let f = InPool.Find(key)
+            if left > 0 && f.ReturnValue {
+                let had = f.Value
+                let take = KismetMathLibrary.Min(left, had)
+                InPool[key] = had - take
+                left -= take
+            }
+        }
+    }
+}
+
+// Writes the job for provider P to requester R: per good, goods aboard first, then input stock, then parked
+// leftovers (marked to be moved to the loading store), within the hold's free space. Takes it out of Want.
+fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Ship: NauticalShip, R: WorkDock, Want: ref map<string, int>, FreeS: ref map<string, int>, AboardS: ref map<string, int>, ParkS: ref map<string, int>, InPool: ref map<string, int>, Score: float) {
+    let pid = BPL_FDNet.DockId(P)
+    let rid = BPL_FDNet.DockId(R)
+    let left = KismetMathLibrary.Max(Ship.config.cargoLimit - MapLoad.HoldCounts(Ship).Total, 0)
+    let summary = ""
+    let keys: array<string> = []
+    for key, open in Want {
+        if open > 0 && KismetStringLibrary.StartsWith(key, Prefix(rid), ESearchCase.CaseSensitive) {
+            keys.Add(key)
+        }
+    }
+    for gk in keys {
+        let need = Want[gk]
+        let good = GoodOf(gk)
+        let pk = BPL_FDNet.JobKey(pid, good)
+        let a = AboardS.Find(pk)
+        let fr = FreeS.Find(pk)
+        let pa = ParkS.Find(pk)
+        let aboard = if a.ReturnValue { a.Value } else { 0 }
+        // free stock as the pool has it (a dock sharing an input warehouse may have taken some); a good barred
+        // after a stall isn't in FreeS
+        let free = 0
+        if fr.ReturnValue {
+            free = PoolFree(MapLoad, P, InPool, good)
+        }
+        let park = if pa.ReturnValue { pa.Value } else { 0 }
+        let fromAboard = KismetMathLibrary.Min(need, aboard)
+        let fromFree = KismetMathLibrary.Min(KismetMathLibrary.Min(need - fromAboard, free), left)
+        left -= fromFree
+        let fromPark = KismetMathLibrary.Min(KismetMathLibrary.Min(need - fromAboard - fromFree, park), left)
+        left -= fromPark
+        let units = fromAboard + fromFree + fromPark
+        if units > 0 {
+            MapLoad.JobGoods[pk] = units
+            // the stall clock starts over: what a past job loaded of this good says nothing about this one
+            MapLoad.PickupSeen.Remove(pk)
+            MapLoad.PickupSince.Remove(pk)
+            if fromPark > 0 {
+                MapLoad.JobGoods[BPL_FDNet.ParkKey(pid, good)] = fromPark
+            }
+            Want[gk] = need - units
+            AboardS[pk] = aboard - fromAboard
+            FreeS[pk] = free - fromFree
+            TakePool(MapLoad, P, InPool, good, fromFree)
+            ParkS[pk] = park - fromPark
+            summary += " " + string(good) + "=" + string(units)
+        }
+    }
+    MapLoad.JobTo[pid] = rid
+    MapLoad.JobSailed.Remove(pid)
+    MapLoad.IdleWhy.Remove(pid)
+    MapLoad.PlanRoute(P)
+    MapLoad.RouteSelId = -999
+    Log(MapLoad, "Dispatch: dock " + string(pid) + " -> " + string(rid) + ":" + summary + " (score " + string(Score) + ")")
+}

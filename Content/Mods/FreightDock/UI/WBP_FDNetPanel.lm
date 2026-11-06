@@ -1,0 +1,216 @@
+blueprint WBP_FDNetPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDNetPanel
+
+// The network GUI: opened by Edit in the dock GUI (WBP_FDPanel), it stands to the dock GUI's left, bottoms aligned,
+// in the same frame, background and fonts. A table of networks 1 to the highest in use plus one (gaps included):
+// the selected dock's Provide / Request checkboxes with the network's provider / requester counts, and its
+// requested goods (WBP_FDNetRow).
+// Headers explain their columns on hover. A checkbox applies at once; Changed tells the dock GUI to refresh.
+
+dispatcher Changed()
+
+var MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C
+var Dock: WorkDock
+var Rows: array<WBP_FDNetRow>
+var HeadTips: array<WBP_FDTip>
+var BodyFont: SlateFontInfo
+var SmallFont: SlateFontInfo
+
+widget Width: SizeBox(WidthOverride: 660.0) {
+    widget Stack: Overlay {
+        widget Bg: Image(ColorAndOpacity: "#0d1520f2") slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill)
+        widget Frame: RoundedFrameWithHeaderIcon(showIcon: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill, Padding: Margin(Left: 26, Top: 16, Right: 26, Bottom: 16))
+        widget Inner: Border(BrushColor: "#00000000", Padding: Margin(Left: 20, Top: 16, Right: 20, Bottom: 18)) {
+            widget Col: VerticalBox {
+                widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
+                widget DockLine: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
+                widget Div: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 8, Right: 0, Bottom: 6))
+                widget Header: HorizontalBox {
+                    widget HIdBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget HId: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                    }
+                    widget HProvBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget HProv: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                    }
+                    widget HReqBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget HReq: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                    }
+                    widget HGoods: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 8, Top: 0, Right: 0, Bottom: 0))
+                }
+                widget RuleBox: SizeBox(HeightOverride: 1.0) slot(Padding: Margin(Left: 0, Top: 5, Right: 0, Bottom: 3)) {
+                    widget Rule: Image(ColorAndOpacity: "#e8c87259")
+                }
+                // the rows scroll once they would take more than RowsMax's height (set from the screen in Place)
+                widget RowsMax: SizeBox(MaxDesiredHeight: 600.0) {
+                    widget RowsBox: ScrollBox
+                }
+            }
+        }
+    }
+}
+
+on Construct {
+    // as in the dock GUI: the content goes into the game's rounded frame (its named slot)
+    Frame.NamedSlot_93.SetContent(Inner)
+    HideFrameIcon()
+    // the header tips' text is set by Labels, in the order of its tips
+    HeadTip(HProvBox, "")
+    HeadTip(HReqBox, "")
+    HeadTip(HGoods, "")
+    Labels()
+    SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// A click on the panel's background stays on the panel, so it doesn't reach the world behind it.
+on OnMouseButtonDown(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+fn HeadTip(Cell: Widget, Msg: string) {
+    let t = create_widget(WBP_FDTip)
+    Cell.SetToolTip(t)
+    HeadTips.Add(t)
+    t.Setup(Msg, BodyFont)
+}
+
+// The rounded frame draws its header icon whatever showIcon says: collapse its images showing the frame's Icon.
+fn HideFrameIcon() {
+    if Frame.Icon == none {
+        return
+    }
+    let parts: array<Image> = [Frame.Image, Frame.Image_1, Frame.Image_125, Frame.Image_42, Frame.Image_85]
+    for img in parts {
+        if img != none {
+            if img.Brush.ResourceObject == Frame.Icon {
+                img.SetVisibility(ESlateVisibility.Collapsed)
+            }
+        }
+    }
+}
+
+// The dock GUI's background and fonts, so both panels look alike.
+fn SetLook(Brush: SlateBrush, Tint: LinearColor, TitleFont: SlateFontInfo, HeadFont: SlateFontInfo, Body: SlateFontInfo, Small: SlateFontInfo) {
+    Bg.SetBrush(Brush)
+    Bg.SetColorAndOpacity(Tint)
+    BodyFont = Body
+    SmallFont = Small
+    Title.SetFont(TitleFont)
+    DockLine.SetFont(Body)
+    let heads: array<TextBlock> = [HId, HProv, HReq, HGoods]
+    for h in heads {
+        h.SetFont(Body)
+    }
+    for t in HeadTips {
+        t.Msg.SetFont(Small)
+    }
+}
+
+// The fixed labels, in the player's language (BPL_FDText); set again on every Show, so a language change shows.
+fn Labels() {
+    Title.SetText(text(BPL_FDText.T("freightdock.net.title")))
+    HId.SetText(text(BPL_FDText.T("freightdock.net.id")))
+    HProv.SetText(text(BPL_FDText.T("freightdock.net.provide")))
+    HReq.SetText(text(BPL_FDText.T("freightdock.net.request")))
+    HGoods.SetText(text(BPL_FDText.T("freightdock.net.goods")))
+    let tips: array<string> = [BPL_FDText.T("freightdock.net.provideTip"), BPL_FDText.T("freightdock.net.requestTip"), BPL_FDText.T("freightdock.net.goodsTip")]
+    let i = 0
+    while i < HeadTips.Length() && i < tips.Length() {
+        HeadTips[i].Setup(tips[i], SmallFont)
+        i += 1
+    }
+}
+
+// Bottom right corner at (Right, Bottom), viewport pixels. The rows may take up to 60% of the screen's height.
+fn Place(Right: float, Bottom: float) {
+    SetAlignmentInViewport(Vector2D(X: 1.0, Y: 1.0))
+    SetPositionInViewport(Vector2D(X: Right, Y: Bottom), true)
+    let scale = KismetMathLibrary.FMax(WidgetLayoutLibrary.GetViewportScale(), 0.1)
+    RowsMax.SetMaxDesiredHeight(WidgetLayoutLibrary.GetViewportSize().Y / scale * 0.6)
+}
+
+// What the cursor is over in the table (see WBP_FDNetRow.HoverInfo); Net 0 when nothing.
+fn Hover(out Net: int, out Kind: int, out Good: name) {
+    Net = 0
+    Kind = 0
+    if !IsVisible() {
+        return
+    }
+    for row in Rows {
+        if row.IsVisible() {
+            let h = row.HoverInfo()
+            if h.Kind > 0 {
+                Net = row.Net
+                Kind = h.Kind
+                Good = h.Good
+            }
+        }
+    }
+}
+
+// The table for InDock.
+fn Show(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock) {
+    MapLoad = Owner
+    Dock = InDock
+    if Dock == none {
+        return
+    }
+    Labels()
+    DockLine.SetText(text(BPL_FDNet.DockName(MapLoad, Dock)))
+    let used = BPL_FDNet.InUse(MapLoad)
+    let top = 1
+    for n in used.Nets {
+        top = KismetMathLibrary.Max(top, n + 1)
+    }
+    top = KismetMathLibrary.Min(top, BPL_FDNet.MaxNet())
+    let net = 1
+    while net <= top {
+        if net > Rows.Length() {
+            let made = create_widget(WBP_FDNetRow)
+            made.Toggled.bind(NetToggled)
+            RowsBox.AddChild(made)
+            Rows.Add(made)
+        }
+        let m = BPL_FDNet.Members(MapLoad, net)
+        let provNames: array<string> = []
+        for p in m.Providers {
+            provNames.Add(BPL_FDNet.DockName(MapLoad, p))
+        }
+        let reqNames: array<string> = []
+        for r in m.Requesters {
+            reqNames.Add(BPL_FDNet.DockName(MapLoad, r))
+        }
+        let req = BPL_FDNet.NetRequests(MapLoad, net)
+        let goods: array<name> = []
+        for res, n in req.Wanted {
+            goods.Add(res)
+        }
+        let prov = BPL_FDNet.ProvidedGoods(MapLoad, net)
+        let row = Rows[net - 1]
+        row.Show(net, BPL_FDNet.RoleOn(Dock.activeTradePartnerId, net), provNames, reqNames, goods, req.Wanted, req.Stocked, prov.All, prov.Goods, net % 2 == 0, BodyFont, SmallFont)
+        row.SetVisibility(ESlateVisibility.Visible)
+        net += 1
+    }
+    while net <= Rows.Length() {
+        Rows[net - 1].SetVisibility(ESlateVisibility.Collapsed)
+        net += 1
+    }
+}
+
+// A checkbox: Bit 1 flips providing on Net, 2 requesting. A dock is in at most 4 networks.
+fn NetToggled(Net: int, Bit: int) {
+    if Dock == none || MapLoad == none {
+        return
+    }
+    let stored = Dock.activeTradePartnerId
+    let cur = BPL_FDNet.RoleOn(stored, Net)
+    let role = if (cur & Bit) != 0 { cur - Bit } else { cur + Bit }
+    let w = BPL_FDNet.With(stored, Net, role)
+    if !w.Ok {
+        MapLoad.Toast(BPL_FDText.T("freightdock.toast.maxNetworks"))
+        return
+    }
+    Dock.activeTradePartnerId = if BPL_FDNet.IsMember(w.ReturnValue) { w.ReturnValue } else { BPL_FDNet.Emptied(w.ReturnValue) }
+    let names = ["none", "provide", "request", "both"]
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(BPL_FDNet.DockId(Dock)) + ": network " + string(Net) + " role " + names[role], false)
+    Show(MapLoad, Dock)
+    Changed.broadcast()
+}

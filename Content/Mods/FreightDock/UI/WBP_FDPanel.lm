@@ -1,7 +1,8 @@
 blueprint WBP_FDPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDPanel
 
-// The Freight Dock panel: while a paired freight dock is selected, it stands to the left of the dock's window
-// (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the partner, the ship, the
+// The Freight Dock panel: while a freight dock is selected, it stands to the left of the dock's window
+// (Details_WorkDock_Generic), its foot just above the bottom of the screen, and shows the partner, the dock's freight
+// networks (Edit opens the network GUI, WBP_FDNetPanel, to its left), the ship, the
 // goods waiting at this dock to be unloaded (while there are any), a table of what the partner wants (WBP_FDWantRow),
 // the partner's output and this dock's input warehouses (links that pan the camera there; input warehouses with
 // what they hold), and Deliver now.
@@ -22,6 +23,7 @@ var ReqRows: array<WBP_FDWantRow>
 var Window: Details_WorkDock_Generic
 var Kept: array<Widget>
 var KeptWas: array<ESlateVisibility>
+var KeptOpacity: array<float>
 var Spacers: array<SizeBox>
 var SpacerMins: array<float>
 var HaveFonts: bool = false
@@ -33,6 +35,22 @@ var Placed: int = 0
 var ShownAt: float = 0.0
 var HaveBrush: bool = false
 var Migrated: bool = false
+var ShownDock: WorkDock
+var Editing: bool = false
+var NetPanel: WBP_FDNetPanel
+var FdSigns: array<signPost>
+var FdSignShown: array<bool>
+var NextSignScan: float = 0.0
+// the NETWORKS entries (one per membership, hoverable) and the highlight last asked for (BPL_FDPairing.Highlight)
+var NetEntryBoxes: array<Border>
+var NetEntryNets: array<int>
+var NetEntryTips: array<WBP_FDMembersTip>
+var NetEntriesKey: string = ""
+var HiNet: int = 0
+var HiKind: int = 0
+var HiGood: name
+// the camera's zoom target while the cursor is over the network GUI (-1: not held)
+var HeldZoom: float = -1.0
 
 widget Width: SizeBox(WidthOverride: 500.0) {
     widget Stack: Overlay {
@@ -40,24 +58,33 @@ widget Width: SizeBox(WidthOverride: 500.0) {
         widget Frame: RoundedFrameWithHeaderIcon(showIcon: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill, Padding: Margin(Left: 26, Top: 16, Right: 26, Bottom: 16))
         widget Inner: Border(BrushColor: "#00000000", Padding: Margin(Left: 20, Top: 16, Right: 20, Bottom: 16)) {
             widget Col: VerticalBox {
-                widget Title: TextBlock(Text: "FREIGHT DOCK", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
-                widget PartnerBox: VerticalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
+                widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
                 widget Div1: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
-                widget ShipHead: TextBlock(Text: "SHIP", ColorAndOpacity: "#e8c872ff")
+                widget NetHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
+                widget NetLine: HorizontalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0)) {
+                    widget NetSummary: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
+                    widget NetEntries: WrapBox slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+                    widget EditBtn: Arco_Button_CommonRound slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
+                }
+                widget DivNet: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                widget ShipHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
+                // the job: "Delivery to <requester>", clickable (pans there); collapsed without one
+                widget PartnerBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 widget ShipText: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                widget TripIcons: ResourceCollectionAsRowOfIcons slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 widget Div2: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 widget UnloadBox: VerticalBox {
-                    widget UnloadHead: TextBlock(Text: "WAITING TO UNLOAD", ColorAndOpacity: "#e8c872ff")
+                    widget UnloadHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                     widget UnloadIcons: ResourceCollectionAsRowOfIcons slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                     widget DivUnload: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 }
-                widget ReqHead: TextBlock(Text: "PARTNER WANTS", ColorAndOpacity: "#e8c872ff")
+                widget ReqHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 widget ReqBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
-                widget ReqNone: TextBlock(Text: "Nothing", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                widget ReqNone: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 widget Div3: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
-                widget DestHead: TextBlock(Text: "PARTNER'S OUTPUT", ColorAndOpacity: "#e8c872ff")
+                widget DestHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 widget DestBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
-                widget SrcHead: TextBlock(Text: "THIS DOCK'S INPUT", ColorAndOpacity: "#e8c872ff")
+                widget SrcHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 widget SrcBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
                 widget Deliver: Arco_Button_CommonRound slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 0))
             }
@@ -70,9 +97,23 @@ on Construct {
     // a widget tree has a single root.
     Frame.NamedSlot_93.SetContent(Inner)
     HideFrameIcon()
-    Deliver.SetLabelText("Deliver now")
+    Labels()
     Deliver.OnClicked.bind(DeliverClicked)
+    EditBtn.OnClicked.bind(EditClicked)
     SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// The fixed labels, in the player's language (BPL_FDText); set again on every refresh, so a language change shows.
+fn Labels() {
+    NetHead.SetText(text(BPL_FDText.T("freightdock.panel.networks")))
+    ShipHead.SetText(text(BPL_FDText.T("freightdock.panel.ship")))
+    UnloadHead.SetText(text(BPL_FDText.T("freightdock.panel.waitingToUnload")))
+    ReqHead.SetText(text(BPL_FDText.T("freightdock.panel.partnerWants")))
+    ReqNone.SetText(text(BPL_FDText.T("freightdock.panel.nothing")))
+    DestHead.SetText(text(BPL_FDText.T("freightdock.panel.partnerOutput")))
+    SrcHead.SetText(text(BPL_FDText.T("freightdock.panel.thisInput")))
+    Deliver.SetLabelText(BPL_FDText.T("freightdock.panel.deliverNow"))
+    EditBtn.SetLabelText(BPL_FDText.T(if Editing { "freightdock.panel.close" } else { "freightdock.panel.edit" }))
 }
 
 // A click on the panel's background stays on the panel, so it doesn't reach the world behind it.
@@ -96,6 +137,24 @@ fn HideFrameIcon() {
     }
 }
 
+// Opens or closes the network GUI (WBP_FDNetPanel), made the first time.
+fn EditClicked() {
+    Editing = !Editing
+    Labels()
+    if Editing && NetPanel == none {
+        NetPanel = create_widget(WBP_FDNetPanel)
+        NetPanel.AddToViewport(0)
+        NetPanel.Changed.bind(NetChanged)
+    }
+    NextRefresh = 0.0
+}
+
+// The network GUI changed a membership: show it here at once.
+fn NetChanged() {
+    NextRefresh = 0.0
+    RowsKey = ""
+}
+
 fn DeliverClicked() {
     if MapLoad != none {
         MapLoad.DeliverSelected()
@@ -112,13 +171,13 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted", false)
     }
     let found = Owner.FindDockUnderCursor()
+    SignStep(found.HitLoc)
     let dock = found.Dock
     let show = false
     if dock != none {
-        if BPL_FDNet.IsPaired(dock.activeTradePartnerId) {
-            show = Owner.IsFreightDock(dock).Result
-        }
+        show = Owner.IsFreightDock(dock).Result
     }
+    ShownDock = if show { dock } else { none }
     if !show {
         if ShownId != -1 {
             Leave()
@@ -156,12 +215,94 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             SetVisibility(ESlateVisibility.Visible)
         }
     }
+    ShowNetPanel()
+    HoverStep()
+    HoldZoom()
+}
+
+// The game zooms on the mouse wheel through its own input, which only its own UI can stop: while the cursor is
+// over the network GUI (whose table scrolls), its zoom target is held where it was.
+fn HoldZoom() {
+    let pawn = cast(GameplayStatics.GetPlayerPawn(0), Pawn_Play)
+    if pawn == none {
+        return
+    }
+    let over = false
+    if NetPanel != none {
+        over = NetPanel.IsVisible() && NetPanel.IsHovered()
+    }
+    if !over {
+        HeldZoom = -1.0
+        return
+    }
+    if HeldZoom < 0.0 {
+        HeldZoom = pawn.m_desiredZoomDist
+    }
+    pawn.m_desiredZoomDist = HeldZoom
+}
+
+// The network GUI is shown while editing and this panel is drawn.
+fn ShowNetPanel() {
+    if NetPanel == none {
+        return
+    }
+    let shown = Editing && GetVisibility() == ESlateVisibility.Visible
+    NetPanel.SetVisibility(if shown { ESlateVisibility.Visible } else { ESlateVisibility.Collapsed })
+}
+
+// Dock name signs ("[fd] Name", BPL_FDNet.DockName) keep their text panel hidden unless the cursor is over the
+// sign's tile or one next to it. The signs are looked for again every half second (new, renamed, reloaded).
+fn SignStep(Cursor: Vector) {
+    let now = GameplayStatics.GetRealTimeSeconds()
+    if now >= NextSignScan {
+        NextSignScan = now + 0.5
+        let found: array<signPost> = []
+        for a in GameplayStatics.GetAllActorsOfClass(signPost).OutActors {
+            let s = cast(a, signPost)
+            if s != none {
+                if KismetStringLibrary.StartsWith(s.Signpost.shownMessage, "[fd]", ESearchCase.IgnoreCase) {
+                    found.Add(s)
+                }
+            }
+        }
+        // a sign no longer tagged gets its text back
+        let i = 0
+        while i < FdSigns.Length() {
+            if KismetSystemLibrary.IsValid(FdSigns[i]) && !found.Contains(FdSigns[i]) {
+                FdSigns[i].Widget.SetVisibility(true, true)
+            }
+            i += 1
+        }
+        FdSigns = found
+        FdSignShown = []
+        for tagged in FdSigns {
+            FdSignShown.Add(true)
+        }
+    }
+    let k = 0
+    while k < FdSigns.Length() {
+        let sign = FdSigns[k]
+        if KismetSystemLibrary.IsValid(sign) {
+            let near = KismetMathLibrary.Vector_Distance2D(Cursor, sign.K2_GetActorLocation()) <= 75.0
+            if near != FdSignShown[k] {
+                sign.Widget.SetVisibility(near, true)
+                FdSignShown[k] = near
+            }
+        }
+        k += 1
+    }
 }
 
 // Nothing to show: hide, and give the dock window's parts back their visibility.
 fn Leave() {
     ShownId = -1
     SetVisibility(ESlateVisibility.Collapsed)
+    if Editing {
+        EditClicked()
+    }
+    ShowNetPanel()
+    // hidden: no highlight
+    HoverStep()
     Restore()
 }
 
@@ -171,11 +312,13 @@ fn Restore() {
         let w = Kept[i]
         if KismetSystemLibrary.IsValid(w) {
             w.SetVisibility(KeptWas[i])
+            w.SetRenderOpacity(KeptOpacity[i])
         }
         i -= 1
     }
     Kept = []
     KeptWas = []
+    KeptOpacity = []
     i = 0
     while i < Spacers.Length() {
         if KismetSystemLibrary.IsValid(Spacers[i]) {
@@ -198,6 +341,10 @@ fn Keep(Part: Widget) {
     }
     Kept.Add(Part)
     KeptWas.Add(Part.GetVisibility())
+    // the game re-shows some parts every frame (a dock without a ship: "Supported Actions"), which would flicker;
+    // it never resets their opacity, so they stay unseen
+    KeptOpacity.Add(Part.GetRenderOpacity())
+    Part.SetRenderOpacity(0.0)
     Part.SetVisibility(ESlateVisibility.Collapsed)
 }
 
@@ -415,12 +562,16 @@ fn TakeFonts() {
     Title.SetFont(TitleFont)
     ShipHead.SetFont(HeadFont)
     UnloadHead.SetFont(HeadFont)
+    NetHead.SetFont(HeadFont)
+    NetSummary.SetFont(BodyFont)
     ReqHead.SetFont(HeadFont)
     DestHead.SetFont(HeadFont)
     SrcHead.SetFont(HeadFont)
     ShipText.SetFont(BodyFont)
     ReqNone.SetFont(BodyFont)
     RowsKey = ""
+    // the NETWORKS labels are made with the font they have then: make them again
+    NetEntriesKey = ""
 }
 
 pure fn Sized(Font: SlateFontInfo, Size: float) -> SlateFontInfo {
@@ -440,6 +591,10 @@ fn Place() {
     let left = if Window == none { size.X * 0.64 } else { WindowLeft(size.X) }
     SetAlignmentInViewport(Vector2D(X: 1.0, Y: 1.0))
     SetPositionInViewport(Vector2D(X: left - 6.0, Y: size.Y - 8.0), true)
+    if Editing && NetPanel != none {
+        // the network GUI to this panel's left, 8 px apart, bottoms aligned
+        NetPanel.Place(PosOf(Width).X - 8.0, size.Y - 8.0)
+    }
 }
 
 // Seconds as "m:ss".
@@ -462,7 +617,8 @@ fn Refresh(Dock: WorkDock) {
     let id = DockId(Dock)
     let partner = MapLoad.PartnerOf(Dock).Partner
     let pid = if partner == none { -1 } else { DockId(partner) }
-    Title.SetText(text("FREIGHT DOCK " + string(id)))
+    Labels()
+    Title.SetText(text(KismetStringLibrary.ToUpper(BPL_FDNet.DockName(MapLoad, Dock))))
 
     let destIds: array<int> = []
     if partner != none {
@@ -480,12 +636,9 @@ fn Refresh(Dock: WorkDock) {
             srcIds.Add(s)
         }
     }
-    // where the ship goes: its turn among its requesters, or (a dock that only requests) who supplies it
-    let turn = BPL_FDNet.Turn(MapLoad, Dock)
-    let caption = "Supplied by: Freight Dock " + string(pid)
-    if turn.Count > 0 {
-        caption = "Delivering to: Freight Dock " + string(pid) + (if turn.Count > 1 { " (" + string(turn.Place) + " of " + string(turn.Count) + ")" } else { "" })
-    }
+    // the job, shown in the ship section: where the ship delivers
+    let caption = if partner == none { "" } else { BPL_FDText.T1("freightdock.ship.deliveryTo", "dock", BPL_FDNet.DockName(MapLoad, partner)) }
+    let provides = BPL_FDNet.RequestersOf(MapLoad, Dock).Length() > 0
     let key = caption + "|"
     for d in destIds {
         key += string(d) + ","
@@ -499,15 +652,34 @@ fn Refresh(Dock: WorkDock) {
         BuildRows(partner, caption, destIds, srcIds)
     }
 
-    let line = ShipLine(Dock, id)
-    if turn.Count > 0 {
-        if !BPL_FDNet.SourceStock(MapLoad, Dock).HasSources {
-            line += "\nLoads nothing: no input warehouses"
-        }
+    let line = ShipLine(Dock, id, partner != none)
+    if partner == none {
+        // no job: why the ship is idle (ShipLine then has only the hold, or nothing without a ship)
+        let why = MapLoad.IdleWhy.Find(id)
+        let idle = if !provides { BPL_FDText.T1("freightdock.ship.idleWhy", "why", BPL_FDText.T("freightdock.idle.notProviding")) } else if why.ReturnValue { BPL_FDText.T1("freightdock.ship.idleWhy", "why", why.Value) } else { BPL_FDText.T("freightdock.ship.idle") }
+        line = if line == "" { idle } else { idle + "\n" + line }
     }
     ShipText.SetText(text(line))
+    // the trip's manifest, as icons with counts
+    let manifest = BPL_FDNet.Manifest(MapLoad, id)
+    if partner != none && manifest.Length() > 0 {
+        TripIcons.SetData(ResourceCollection(counts: manifest))
+        TripIcons.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    } else {
+        TripIcons.SetVisibility(ESlateVisibility.Collapsed)
+    }
+    FillNetworks(Dock)
     FillUnload(Dock)
     FillWants(Dock, partner)
+    // the partner's sections only while it has one
+    let hasPartner = if partner == none { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible }
+    let partnerParts: array<Widget> = [ReqHead, ReqBox, Div3, DestHead, DestBox, Deliver]
+    for w in partnerParts {
+        w.SetVisibility(hasPartner)
+    }
+    if partner == none {
+        ReqNone.SetVisibility(ESlateVisibility.Collapsed)
+    }
     let i = 0
     for row in SrcRows {
         let b = MapLoad.BuildingById(SrcIds[i]).Building
@@ -539,65 +711,178 @@ fn BuildRows(Partner: WorkDock, Caption: string, DestIds: array<int>, Src: array
     SrcIds = Src
     let nowhere = Vector(X: 0.0, Y: 0.0, Z: 0.0)
     if Partner == none {
-        PartnerRows.Add(Row(PartnerBox, "No partner", nowhere, false))
+        PartnerBox.SetVisibility(ESlateVisibility.Collapsed)
     } else {
         PartnerRows.Add(Row(PartnerBox, Caption, Partner.GetOwner().K2_GetActorLocation(), true))
+        PartnerBox.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     }
     for d in DestIds {
         let b = MapLoad.BuildingById(d).Building
         if b == none {
-            DestRows.Add(Row(DestBox, "Building " + string(d) + " (gone)", nowhere, false))
+            DestRows.Add(Row(DestBox, BPL_FDText.T1("freightdock.panel.buildingGone", "id", string(d)), nowhere, false))
         } else {
             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
             let empty = if rb == none { false } else { rb.m_forceEmpty }
-            DestRows.Add(Row(DestBox, BuildingName(b) + " " + string(d) + (if empty { "  ·  Keep empty" } else { "" }), b.K2_GetActorLocation(), true))
+            DestRows.Add(Row(DestBox, BuildingName(b) + " " + string(d) + (if empty { "  ·  " + BPL_FDText.T("freightdock.panel.keepEmpty") } else { "" }), b.K2_GetActorLocation(), true))
         }
     }
     if DestIds.Length() == 0 {
-        DestRows.Add(Row(DestBox, "None", nowhere, false))
+        DestRows.Add(Row(DestBox, BPL_FDText.T("freightdock.panel.none"), nowhere, false))
     }
     for s in Src {
         let b = MapLoad.BuildingById(s).Building
         if b == none {
-            SrcRows.Add(Row(SrcBox, "Building " + string(s) + " (gone)", nowhere, false))
+            SrcRows.Add(Row(SrcBox, BPL_FDText.T1("freightdock.panel.buildingGone", "id", string(s)), nowhere, false))
         } else {
             SrcRows.Add(Row(SrcBox, BuildingName(b) + " " + string(s), b.K2_GetActorLocation(), true))
         }
     }
     if Src.Length() == 0 {
-        Row(SrcBox, "None", nowhere, false)
+        Row(SrcBox, BPL_FDText.T("freightdock.panel.none"), nowhere, false)
     }
 }
 
-// The ship: where it is, its hold, the wait clock or a pending departure, and the one-way trip time.
-fn ShipLine(Dock: WorkDock, Id: int) -> string {
+// The ship: with a job, its state (waiting for cargo, loading, leaving, on the way, unloading, returning); its hold
+// while at the dock; the one-way trip time. Without a job only the hold (nothing without a ship): Refresh puts why
+// it is idle first.
+fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
     let s = ""
     if MapLoad.Voyages.Contains(Id) {
         let phase = MapLoad.VoyagePhase[Id]
-        s = if phase == 1 { "Sailing to the partner" } else if phase == 2 { "At the partner" } else { "Sailing home" }
+        s = BPL_FDText.T(if phase == 1 { "freightdock.ship.onTheWay" } else if phase == 2 { "freightdock.ship.unloading" } else { "freightdock.ship.returning" })
     } else {
         let ship = MapLoad.ShipAtDock(Dock).Ship
         if ship == none {
-            s = "No ship at the dock"
+            // without a job the idle reason says it
+            s = if HasJob { BPL_FDText.T("freightdock.ship.noShip") } else { "" }
         } else {
-            let hold = MapLoad.HoldCounts(ship)
-            s = "Hold " + string(hold.Total) + " / " + string(ship.config.cargoLimit)
-            if MapLoad.DepartingSince.Contains(Id) {
-                s += "\nLeaving once the goods being carried arrive"
-            } else if MapLoad.LoadingSince.Contains(Id) {
-                let waited = int(GameplayStatics.GetTimeSeconds() - MapLoad.LoadingSince[Id])
-                let limit = MapLoad.MaxWaitSeconds
-                s += "\nLoading " + Clock(waited) + (if limit > 100000.0 { "" } else { " of " + Clock(int(limit)) })
-            } else {
-                s += "\nWaiting for cargo"
+            if HasJob {
+                if MapLoad.DepartingSince.Contains(Id) {
+                    s = BPL_FDText.T("freightdock.ship.leaving") + "\n"
+                } else if MapLoad.LoadingSince.Contains(Id) {
+                    let waited = Clock(int(GameplayStatics.GetTimeSeconds() - MapLoad.LoadingSince[Id]))
+                    let limit = MapLoad.MaxWaitSeconds
+                    s = (if limit > 100000.0 { BPL_FDText.T1("freightdock.ship.loading", "time", waited) } else { BPL_FDText.T2("freightdock.ship.loadingOf", "time", waited, "limit", Clock(int(limit))) }) + "\n"
+                } else {
+                    s = BPL_FDText.T("freightdock.ship.waiting") + "\n"
+                }
             }
+            let hold = MapLoad.HoldCounts(ship)
+            s += BPL_FDText.T2("freightdock.ship.hold", "n", string(hold.Total), "max", string(ship.config.cargoLimit))
         }
     }
-    let curve = MapLoad.RouteCurve(Id).Curve
+    // the trip time only for a job (no other end without one)
+    let curve: SplineComponent = none
+    if HasJob {
+        curve = MapLoad.RouteCurve(Id).Curve
+    }
     if curve != none && MapLoad.ShipSpeed > 0.0 {
-        s += "\nOne-way trip about " + Clock(int(float(curve.GetSplineLength()) / MapLoad.ShipSpeed))
+        s += "\n" + BPL_FDText.T1("freightdock.ship.trip", "time", Clock(int(float(curve.GetSplineLength()) / MapLoad.ShipSpeed)))
     }
     return s
+}
+
+// The dock's memberships in ascending network order ("1: provide   3: both", or "Not in a network"), and, while
+// editing, the network GUI's table.
+fn FillNetworks(Dock: WorkDock) {
+    let names: array<string> = ["", BPL_FDText.T("freightdock.role.provide"), BPL_FDText.T("freightdock.role.request"), BPL_FDText.T("freightdock.role.both")]
+    let u = BPL_FDNet.Unpack(Dock.activeTradePartnerId)
+    let nets: array<int> = []
+    let roles: array<int> = []
+    let key = ""
+    let net = 1
+    while net <= BPL_FDNet.MaxNet() {
+        let i = 0
+        while i < BPL_FDNet.Slots() {
+            if u.Nets[i] == net {
+                nets.Add(net)
+                roles.Add(u.Roles[i])
+                // the role's text too, so a language change rebuilds the labels
+                key += string(net) + ":" + names[u.Roles[i]] + " "
+            }
+            i += 1
+        }
+        net += 1
+    }
+    // one label per membership, in its network's colour; rebuilt only when the memberships change
+    if key != NetEntriesKey {
+        NetEntriesKey = key
+        NetEntries.ClearChildren()
+        NetEntryBoxes = []
+        NetEntryNets = []
+        NetEntryTips = []
+        let k = 0
+        while k < nets.Length() {
+            let label = construct(TextBlock, self)
+            label.SetText(text(BPL_FDText.T2("freightdock.panel.membership", "net", string(nets[k]), "role", names[roles[k]])))
+            label.SetColorAndOpacity(SlateColor(SpecifiedColor: BPL_FDNet.NetLinear(nets[k])))
+            label.SetFont(BodyFont)
+            let box = construct(Border, self)
+            box.SetBrushColor(LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 0.0))
+            box.SetPadding(Margin(Left: 0, Top: 0, Right: 14, Bottom: 0))
+            box.SetContent(label)
+            let tip = create_widget(WBP_FDMembersTip)
+            box.SetToolTip(tip)
+            NetEntries.AddChildToWrapBox(box)
+            NetEntryBoxes.Add(box)
+            NetEntryNets.Add(nets[k])
+            NetEntryTips.Add(tip)
+            k += 1
+        }
+    }
+    // each label's tooltip: the network's providers (red) and requesters (blue), by name
+    let t = 0
+    while t < NetEntryTips.Length() {
+        let m = BPL_FDNet.Members(MapLoad, NetEntryNets[t])
+        let provNames: array<string> = []
+        for p in m.Providers {
+            provNames.Add(BPL_FDNet.DockName(MapLoad, p))
+        }
+        let reqNames: array<string> = []
+        for r in m.Requesters {
+            reqNames.Add(BPL_FDNet.DockName(MapLoad, r))
+        }
+        NetEntryTips[t].Setup(provNames, reqNames, SmallFont)
+        t += 1
+    }
+    NetSummary.SetText(text(BPL_FDText.T("freightdock.panel.notInNetwork")))
+    NetSummary.SetVisibility(if nets.Length() == 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
+    if Editing && NetPanel != none {
+        if HaveBrush && HaveFonts {
+            NetPanel.SetLook(Bg.Brush, Bg.ColorAndOpacity, TitleFont, HeadFont, BodyFont, SmallFont)
+        }
+        NetPanel.Show(MapLoad, Dock)
+    }
+}
+
+// Every frame: what the cursor is over (a NETWORKS entry here, or a part of the network GUI's table) decides the
+// arcs and pointers drawn (BPL_FDPairing.Highlight, worked out only when it changes).
+fn HoverStep() {
+    let net = 0
+    let kind = 0
+    let good: name = "None"
+    if GetVisibility() == ESlateVisibility.Visible {
+        let i = 0
+        while i < NetEntryBoxes.Length() {
+            if NetEntryBoxes[i].IsHovered() {
+                net = NetEntryNets[i]
+                kind = 1
+            }
+            i += 1
+        }
+        if kind == 0 && Editing && NetPanel != none {
+            let h = NetPanel.Hover()
+            net = h.Net
+            kind = h.Kind
+            good = h.Good
+        }
+    }
+    if net != HiNet || kind != HiKind || good != HiGood {
+        HiNet = net
+        HiKind = kind
+        HiGood = good
+        BPL_FDPairing.Highlight(MapLoad, net, kind, good)
+    }
 }
 
 // What the partner's ship left at this dock (its goods-from-sea store) and haulers haven't picked up yet; the
@@ -641,7 +926,7 @@ fn FillWants(Dock: WorkDock, Partner: WorkDock) {
             }
             let row = ReqRows[n]
             row.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-            row.Show(res, aboard[res] + atDock, flying, waiting, toFetch, deficit, BPL_FDLoad.StallLeft(MapLoad, DockId(Dock), res), BodyFont)
+            row.Show(res, aboard[res] + atDock, flying, waiting, toFetch, deficit, 0, BodyFont)
             n += 1
         }
     }

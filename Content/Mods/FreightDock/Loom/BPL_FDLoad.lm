@@ -1,141 +1,95 @@
 blueprint BPL_FDLoad : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDLoad
 
-// Loading plan for a freight dock (BP_MapLoad.UpdateRequest calls Plan): how much of each resource the partner
-// wants to ask haulers to bring to this dock.
+// Loading plan for a freight dock with a job (BP_MapLoad.UpdateRequest calls Plan; BPL_FDDispatch gives out jobs):
+// what to ask haulers to bring so the job's manifest ends up aboard.
 //
-// - A resource's need: the partner's deficit - our hold - the partner's dock cargo - what is waiting at this dock
-//   (dropped by haulers, not yet loaded: the input slot's count) - what is being carried here.
-// - The destination (Partner) is chosen first, round-robin over the dock's requesters (BPL_FDNet.ChooseDest), and
-//   its need also leaves out what other providers' ships bound for it carry or are loading.
-// - Its cap: what the input warehouses hold free (count - reservedForPickup); with none set, 0 (providing
-//   requires them).
-// - Remaining (for departure, "all wanted aboard"): the need this dock can still supply, each resource's need capped
-//   by what the input warehouses hold, reserved for pickup or not (reserved stock is on its way here). A resource
-//   the inputs don't hold doesn't keep the ship waiting.
-// - The free hold space (cargoLimit - hold - all waiting at the dock or being carried; 0 while NoMore) is shared in
-//   proportion to the capped needs; what rounding leaves goes to them in order, then to stalled resources.
-// - Stalled: a resource with an open request (asked for more than is aboard, at the dock and being carried) that no
-//   hauler has picked up for STALL seconds is left out for RETRY seconds, so its space goes to the others.
-//   MapLoad.PickupSeen holds each "<dock>|<resource>"'s hold + at dock + carried at the last plan, MapLoad.PickupSince
-//   when it last grew (or the request last opened); a time in the future means stalled until then.
-//
-// The request is a total to have aboard: the game sets the input slot's capacity to the request less the hold, and
-// turns away haulers beyond it. So a resource being brought is asked for as hold + at dock + carried (+ allowance);
-// one only in the hold (ship provisions) stays out, so it isn't freight. InFlight is all at the dock or carried.
+// - Per good of the manifest: got = in the hold + being carried here. Haulers carry goods straight into the hold; a
+//   count left in the input slot ("at dock" in the log) never boards, so it doesn't count.
+//   The request is a total to have aboard: the manifest, or the hold when that is more. RequestFor sets the input
+//   slot's capacity to the request less the hold, so haulers beyond it are turned away. Goods not in the manifest
+//   leave the request (their slot's capacity goes to 0).
+// - Remaining (for departure, "all wanted aboard"): the manifest not yet aboard, waiting or carried.
+// - Parked leftovers the job takes (BPL_FDNet.ParkKey) are moved from the dock's delivered-goods store straight into
+//   the hold (unreserved units only).
+// - Stalled: a good whose manifest isn't met and that no hauler has picked up for Stall() seconds is cut from the
+//   manifest down to what is got; the rest goes back to the dispatcher's pool. MapLoad.PickupSeen holds each
+//   "<dock>|<good>"'s got at the last plan, MapLoad.PickupSince when it last grew. MapLoad.CutStock records the
+//   input warehouses' free stock of the good then; the dispatcher doesn't offer it from this dock until that changes.
+// - Anything aboard beyond the manifest is parked (BPL_FDNet.ParkStray), except provisions (canned food), which stay
+//   aboard and out of the request.
+//   InFlight is the manifest's goods being carried.
 
 pure fn Stall() -> float {
     return 20.0
-}
-
-pure fn Retry() -> float {
-    return 60.0
 }
 
 pure fn Key(Id: int, Res: name) -> string {
     return string(Id) + "|" + string(Res)
 }
 
-// Seconds until "<dock>|<resource>" is asked for again, 0 when not stalled (for the panel).
-fn StallLeft(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Res: name) -> int {
-    let f = MapLoad.PickupSince.Find(Key(Id, Res))
-    if !f.ReturnValue {
-        return 0
-    }
-    return KismetMathLibrary.Max(KismetMathLibrary.FCeil(f.Value - GameplayStatics.GetTimeSeconds()), 0)
-}
-
-// What other providers' ships bound for Partner carry (in the hold, when berthed or sailing out) or are loading.
-fn OthersBringing(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Partner: WorkDock) -> map<name, int> {
-    let out: map<name, int> = {}
-    for p in BPL_FDNet.ProvidersOf(MapLoad, Partner) {
-        let bound: WorkDock = none
-        if p != Dock {
-            bound = BPL_FDNet.PartnerOf(MapLoad, p)
-        }
-        if bound == Partner && Partner != none {
-            let pid = BPL_FDNet.DockId(p)
-            let ship: NauticalShip = none
-            if MapLoad.Voyages.Contains(pid) {
-                let ph = MapLoad.VoyagePhase.Find(pid)
-                if ph.ReturnValue && ph.Value == 1 {
-                    ship = MapLoad.VoyageShip.Find(pid).Value
-                }
-            } else {
-                ship = MapLoad.ShipAtDock(p).Ship
-                for res, slot in p.m_inputStockpile.Slots {
-                    let had = out.Find(res)
-                    out[res] = (if had.ReturnValue { had.Value } else { 0 }) + slot.count + slot.reservedSpaceForDropoff
-                }
-            }
-            if ship != none {
-                for res, n in MapLoad.HoldCounts(ship).Counts {
-                    let inHold = out.Find(res)
-                    out[res] = (if inHold.ReturnValue { inHold.Value } else { 0 }) + n
-                }
-            }
+// Moves the parked leftovers the job takes from the dock's delivered-goods store straight into its ship's hold, as
+// far as unreserved units allow (the game loads only what haulers carry aboard, never from the input slot).
+fn BoardParked(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Ship: NauticalShip, Id: int) {
+    let prefix = string(Id) + "|"
+    let keys: array<string> = []
+    for key, units in MapLoad.JobGoods {
+        if units > 0 && KismetStringLibrary.StartsWith(key, prefix, ESearchCase.CaseSensitive) && KismetStringLibrary.EndsWith(key, "|park", ESearchCase.CaseSensitive) {
+            keys.Add(key)
         }
     }
-    return out
+    for key in keys {
+        let res = name(KismetStringLibrary.LeftChop(KismetStringLibrary.RightChop(key, KismetStringLibrary.Len(prefix)), 5))
+        let want = MapLoad.JobGoods[key]
+        let pile = Dock.m_stockpile_goodsFromSea
+        let f = pile.Slots.Find(res)
+        let free = if f.ReturnValue { f.Value.count - f.Value.reservedForPickup } else { 0 }
+        let move = KismetMathLibrary.Min(want, free)
+        if move > 0 {
+            let from = f.Value
+            from.count = from.count - move
+            pile.Slots[res] = from
+            Dock.m_stockpile_goodsFromSea = pile
+            let state = Ship.State
+            let cargo = state.cargo
+            let items = cargo.Items
+            let had = items.Find(res)
+            let item = if had.ReturnValue { had.Value } else { NauticalCargoItem(ItemName: res, Quantity: 0.0) }
+            item.Quantity = item.Quantity + float(move)
+            items[res] = item
+            cargo.Items = items
+            state.cargo = cargo
+            Ship.State = state
+        }
+        MapLoad.JobGoods[key] = want - move
+    }
 }
 
 fn Plan(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Partner: WorkDock, Ship: NauticalShip, NoMore: bool, out Request: map<name, int>, out Remaining: int, out InFlight: int, out Space: int, out Detail: string) {
+    if Ship == none || Dock == none {
+        return
+    }
     let now = GameplayStatics.GetTimeSeconds()
     let id = BPL_FDNet.DockId(Dock)
-    // the destination may move on (round-robin) before this plan; the caller's Partner can be a tick behind
-    BPL_FDNet.ChooseDest(MapLoad, Dock)
-    let chosen = BPL_FDNet.PartnerOf(MapLoad, Dock)
-    let dest = if chosen == none { Partner } else { chosen }
-    let others = OthersBringing(MapLoad, Dock, dest)
-    let want = MapLoad.DeficitsFor(dest).Want
+    BoardParked(MapLoad, Dock, Ship, id)
+    // the ship carries only the job's freight: anything else that got aboard goes to the delivered-goods store
+    let stray = BPL_FDNet.ParkStray(MapLoad, Dock, BPL_FDNet.Manifest(MapLoad, id))
+    if stray != "" {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(id) + ": not the job's freight, parked:" + stray, false)
+    }
     let held = MapLoad.HoldCounts(Ship)
     let hold = held.Counts
 
-    // what is waiting at the dock or being carried here stays requested
-    for res, slot in Dock.m_inputStockpile.Slots {
-        let kept = slot.count + slot.reservedSpaceForDropoff
-        if kept > 0 {
-            let hh = hold.Find(res)
-            Request[res] = (if hh.ReturnValue { hh.Value } else { 0 }) + kept
-            InFlight += kept
-        }
-    }
-    Space = 0
-    if !NoMore {
-        Space = KismetMathLibrary.Max(Ship.config.cargoLimit - held.Total - InFlight, 0)
-    }
-    let src = BPL_FDNet.SourceStock(MapLoad, Dock)
-    let srcAll = BPL_FDNet.SourceStock(MapLoad, Dock, true)
-
-    // need, cap and stall state per resource
-    let names: array<name> = []
-    let avail: array<int> = []
-    let stalled: array<bool> = []
-    let fly: array<int> = []
-    let docked: array<int> = []
-    let holds: array<int> = []
-    let needs: array<int> = []
-    for res, deficit in want.counts {
+    for res, units in BPL_FDNet.Manifest(MapLoad, id) {
         let h = hold.Find(res)
         let inHold = if h.ReturnValue { h.Value } else { 0 }
         let f = Dock.m_inputStockpile.Slots.Find(res)
         let carried = if f.ReturnValue { f.Value.reservedSpaceForDropoff } else { 0 }
         let atDock = if f.ReturnValue { f.Value.count } else { 0 }
-        let s = dest.m_stockpile_goodsFromSea.Slots.Find(res)
-        let atPartner = if s.ReturnValue { s.Value.count } else { 0 }
-        let o = others.Find(res)
-        let byOthers = if o.ReturnValue { o.Value } else { 0 }
-        let need = deficit - inHold - atPartner - atDock - carried - byOthers
-        let sa = srcAll.Stock.Find(res)
-        let supply = KismetMathLibrary.Min(need, if sa.ReturnValue { sa.Value } else { 0 })
-        if supply > 0 {
-            Remaining += supply
-        }
-        let st = src.Stock.Find(res)
-        let cap = KismetMathLibrary.Min(need, if st.ReturnValue { st.Value } else { 0 })
+        let got = inHold + carried
+        InFlight += carried
 
-        // stall: no pickup (hold + at dock + carried growing) for Stall() seconds while asked for more than that
+        // stall: no pickup (got growing) for Stall() seconds while the manifest isn't met: cut it to got
         let key = Key(id, res)
-        let got = inHold + atDock + carried
         // copied into variables before PickupSeen is written: a map Find is re-read wherever it is used
         let before = -1
         let seen = MapLoad.PickupSeen.Find(key)
@@ -144,79 +98,98 @@ fn Plan(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock,
         }
         let since = MapLoad.PickupSince.Find(key)
         let sinceT = if since.ReturnValue { since.Value } else { now }
-        if before < 0 || got > before {
+        if before < 0 || got > before || got >= units {
             sinceT = now
         }
-        let a = Dock.m_requiredEmbarkSupplies_dockSpecific.counts.Find(res)
-        let asked = if a.ReturnValue { a.Value } else { 0 }
-
         MapLoad.PickupSeen[key] = got
-        let open = asked > got
-        if sinceT <= now {
-            if !open {
-                sinceT = now
-            } else if now - sinceT > Stall() {
-                sinceT = now + Retry()
-            }
-        }
         MapLoad.PickupSince[key] = sinceT
-
-        names.Add(res)
-        avail.Add(KismetMathLibrary.Max(cap, 0))
-        stalled.Add(sinceT > now)
-        fly.Add(carried)
-        docked.Add(atDock)
-        holds.Add(inHold)
-        needs.Add(need)
-    }
-
-    // share the space in proportion to the capped needs of the resources not stalled
-    let total = 0
-    let i = 0
-    while i < names.Length() {
-        if !stalled[i] {
-            total += avail[i]
+        let target = units
+        let cut = false
+        if got < units && now - sinceT > Stall() {
+            target = got
+            cut = true
+            MapLoad.JobGoods[BPL_FDNet.JobKey(id, res)] = got
+            MapLoad.PickupSince[key] = now
+            // the dispatcher leaves the good with this dock until its input warehouses' free stock changes
+            let left = BPL_FDNet.SourceStock(MapLoad, Dock).Stock.Find(res)
+            MapLoad.CutStock[BPL_FDNet.JobKey(id, res)] = if left.ReturnValue { left.Value } else { 0 }
         }
-        i += 1
-    }
-    let takes: array<int> = []
-    let added = 0
-    i = 0
-    while i < names.Length() {
-        let t = 0
-        if !stalled[i] && total > 0 {
-            t = if total <= Space { avail[i] } else { int(float(Space) * float(avail[i]) / float(total)) }
+
+        // the manifest, or what is aboard when more (left as it is); what waits in the input slot or is carried
+        // doesn't raise it, so hauls don't feed on themselves
+        if !NoMore && target > 0 {
+            Request[res] = KismetMathLibrary.Max(target, inHold)
         }
-        takes.Add(t)
-        added += t
-        i += 1
+        // waiting to leave (NoMore): only what is already on its way stays requested, so those haulers aren't
+        // turned away
+        if NoMore && carried > 0 {
+            Request[res] = inHold + carried
+        }
+        if !NoMore {
+            Remaining += KismetMathLibrary.Max(target - got, 0)
+        }
+        Detail += string(res) + ": " + string(got) + " of " + string(target) + " (at dock " + string(atDock) + ", in flight " + string(carried) + (if cut { ", cut: stalled" } else { "" }) + "); "
     }
-    // what is left: first to the others, then to stalled resources
-    let pass = 0
-    while pass < 2 {
-        i = 0
-        while i < names.Length() {
-            let take = stalled[i] == (pass == 1)
-            if take {
-                let more = KismetMathLibrary.Min(avail[i] - takes[i], Space - added)
-                if more > 0 {
-                    takes[i] = takes[i] + more
-                    added += more
-                }
+    Space = 0
+    if !NoMore {
+        Space = KismetMathLibrary.Max(Ship.config.cargoLimit - held.Total - InFlight, 0)
+    }
+}
+
+// Writes Want as the dock's request: its dock-specific supplies and live requirement, and per good its input slot's
+// capacity, the request less what is in the hold (never the whole request: haulers would be sent for goods already
+// aboard). A good that left the request leaves the live requirement, and its input slot's capacity goes to 0.
+fn RequestFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Want: ResourceCollection) {
+    let old = Dock.m_requiredEmbarkSupplies_dockSpecific.counts
+    Dock.m_requiredEmbarkSupplies_dockSpecific = Want
+    let ship = BPL_FDNet.ShipAtDock(MapLoad, Dock)
+    let hold: map<name, int> = {}
+    if ship != none {
+        hold = MapLoad.HoldCounts(ship).Counts
+    }
+    let live = Dock.m_requiredEmbarkSupplies_live
+    let pile = Dock.m_inputStockpile
+    for res, was in old {
+        if !Want.counts.Contains(res) {
+            live.counts.Remove(res)
+            let f = pile.Slots.Find(res)
+            if f.ReturnValue {
+                let gone = f.Value
+                gone.capacity = 0
+                pile.Slots[res] = gone
             }
-            i += 1
         }
-        pass += 1
     }
+    for res, units in Want.counts {
+        live.counts[res] = units
+        let h = hold.Find(res)
+        let room = KismetMathLibrary.Max(units - (if h.ReturnValue { h.Value } else { 0 }), 0)
+        let g = pile.Slots.Find(res)
+        let slot = if g.ReturnValue { g.Value } else { ResourceStockpileSlot(count: 0, capacity: 0) }
+        slot.capacity = room
+        pile.Slots[res] = slot
+    }
+    Dock.m_requiredEmbarkSupplies_live = live
+    Dock.m_inputStockpile = pile
+}
 
-    i = 0
-    while i < names.Length() {
-        let res = names[i]
-        if takes[i] > 0 {
-            Request[res] = holds[i] + docked[i] + fly[i] + takes[i]
-        }
-        let capText = if src.HasSources { string(avail[i]) } else { "none set" }
-        Detail += string(res) + ": need " + string(needs[i]) + " (at dock " + string(docked[i]) + ", in flight " + string(fly[i]) + ", free at input " + capText + (if stalled[i] { ", stalled" } else { "" }) + "), +" + string(takes[i]) + "; "
-        i += 1
+// The panel's Deliver now button (BP_MapLoad.DeliverSelected, ported from fdgen): the selected freight dock's ship sails
+// now with what it has - its loading clock (LoadingSince) is set far back so FreightTick's max-wait check passes. Ship
+// away or nothing loaded yet: a toast.
+fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let dock = MapLoad.FindDockUnderCursor().Dock
+    if dock == none {
+        return
     }
+    let id = BPL_FDNet.DockId(dock)
+    if MapLoad.Voyages.Contains(id) {
+        MapLoad.Toast(BPL_FDText.T("freightdock.toast.underWay"))
+        return
+    }
+    if !MapLoad.LoadingSince.Contains(id) {
+        MapLoad.Toast(BPL_FDText.T("freightdock.toast.nothingLoaded"))
+        return
+    }
+    MapLoad.LoadingSince[id] = -1000000000000000.0
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Deliver now: dock " + string(id), false)
 }

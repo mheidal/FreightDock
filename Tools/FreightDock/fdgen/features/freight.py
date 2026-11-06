@@ -6,12 +6,12 @@ from fdgen.core.types import (
     BOOL, DOUBLE, EXEC, INT, INT_ARRAY, INT_SET, MAP_INT_ACTOR, MAP_INT_DOUBLE,
     MAP_NAME_INT, MAP_NAME_TO, NAME, NAME_ARRAY, OBJ, SEARCHCASE_PIN, STR, STR_ARRAY, STR_SET, STRUCT)
 from fdgen.core.paths import (
-    CARGO, GRIDACTOR, ITEM, K2, LINKER, MAPLIB, MAPLOAD_C, MATHLIB, MODAPI, RESBUILDING, RESCOLL,
+    CARGO, GRIDACTOR, ITEM, K2, LINKER, LOAD_LIB, MAPLIB, MAPLOAD_C, MATHLIB, MODAPI, RESBUILDING, RESCOLL,
     SETLIB, SHIP, SHIPCONFIG, SHIPSTATE, SLOT, STOCKPILE, STORAGETAB, STRLIB, SYSLIB, WORKDOCK)
 from fdgen.core.nodes import (
     bnot, branch, break_struct, comp_owner, find_component, for_each, get_local, get_member,
-    get_self, ii, int_op, is_valid, make_struct, map_add, map_contains, map_find, map_keys, map_remove, set_fields,
-    set_local, set_member, set_pin_default, user_call)
+    get_self, ii, int_op, is_valid, loom_call, make_struct, map_add, map_contains, map_find, map_keys, map_remove,
+    set_fields, set_local, set_member, set_pin_default, user_call)
 from fdgen.core.specs import fn_spec
 from fdgen.core.text import concat_parts, fmt_to_string, log_msg, to_str
 from fdgen.features.docks import dock_id_call
@@ -166,117 +166,14 @@ def keep_empty_deficits():
 
 
 def request_for():
-    """Put Want into the dock's dock-specific supplies, live requirement and input slots. A resource that was in the
-    previous request but not in Want leaves the live requirement, and its input slot's capacity goes to 0."""
+    """RequestFor(Dock, Want): BPL_FDLoad.RequestFor - Want as the dock's request, input slot capacities net of the
+    hold."""
     g = Graph()
-    F = "RequestFor"
-    MAP_SLOTS = MAP_NAME_TO(SLOT)
-    get_local(g, "GetDock", F, "Dock", OBJ(WORKDOCK), 0, 300)
-    get_local(g, "GetWant", F, "Want", STRUCT(RESCOLL), 0, 400)
-    get_local(g, "GetLive", F, "Live", MAP_NAME_INT, 0, 500)
-    get_local(g, "GetSlots", F, "Slots", MAP_SLOTS, 0, 600)
-    get_local(g, "GetSlot", F, "Slot", STRUCT(SLOT), 0, 700)
-    get_local(g, "GetOld", F, "Old", MAP_NAME_INT, 0, 800)
-
-    get_member(g, "OldGet", WORKDOCK, "m_requiredEmbarkSupplies_dockSpecific", STRUCT(RESCOLL), -250, 300)
-    g.link(("GetDock", "Dock"), ("OldGet", "self"))
-    break_struct(g, "OldBreak", RESCOLL, [("counts", MAP_NAME_INT)], -250, 450)
-    g.link(("OldGet", "m_requiredEmbarkSupplies_dockSpecific"), ("OldBreak", "ResourceCollection"))
-    set_local(g, "SetOld", F, "Old", MAP_NAME_INT, -250, 0)
-    g.link(("OldBreak", "counts"), ("SetOld", "Old"))
-    set_member(g, "SetSpecific", WORKDOCK, "m_requiredEmbarkSupplies_dockSpecific", STRUCT(RESCOLL), 0, 0)
-    g.link(("SetOld", "then"), ("SetSpecific", "execute"))
-    g.link(("GetDock", "Dock"), ("SetSpecific", "self"))
-    g.link(("GetWant", "Want"), ("SetSpecific", "m_requiredEmbarkSupplies_dockSpecific"))
-
-    get_member(g, "LiveGet", WORKDOCK, "m_requiredEmbarkSupplies_live", STRUCT(RESCOLL), 250, 300)
-    g.link(("GetDock", "Dock"), ("LiveGet", "self"))
-    break_struct(g, "LiveBreak", RESCOLL, [("counts", MAP_NAME_INT)], 500, 300)
-    g.link(("LiveGet", "m_requiredEmbarkSupplies_live"), ("LiveBreak", "ResourceCollection"))
-    set_local(g, "SetLive", F, "Live", MAP_NAME_INT, 250, 0)
-    g.link(("SetSpecific", "then"), ("SetLive", "execute"))
-    g.link(("LiveBreak", "counts"), ("SetLive", "Live"))
-
-    get_member(g, "InputGet", WORKDOCK, "m_inputStockpile", STRUCT(STOCKPILE), 500, 450)
-    g.link(("GetDock", "Dock"), ("InputGet", "self"))
-    break_struct(g, "InputBreak", STOCKPILE, [("Slots", MAP_SLOTS)], 750, 450)
-    g.link(("InputGet", "m_inputStockpile"), ("InputBreak", "Stockpile"))
-    set_local(g, "SetSlots", F, "Slots", MAP_SLOTS, 500, 0)
-    g.link(("SetLive", "then"), ("SetSlots", "execute"))
-    g.link(("InputBreak", "Slots"), ("SetSlots", "Slots"))
-
-    break_struct(g, "WantBreak", RESCOLL, [("counts", MAP_NAME_INT)], 750, 600)
-    g.link(("GetWant", "Want"), ("WantBreak", "ResourceCollection"))
-
-    # resources dropped from the request: out of the live requirement, input slot capacity 0
-    map_keys(g, "OldKeys", ("GetOld", "Old"), MAP_NAME_INT, 750, -600)
-    g.link(("SetSlots", "then"), ("OldKeys", "execute"))
-    for_each(g, "ForOld", NAME, 1000, -600)
-    g.link(("OldKeys", "then"), ("ForOld", "Exec"))
-    g.link(("OldKeys", "Keys"), ("ForOld", "Array"))
-    old_key = ("ForOld", "Array Element")
-    kept = map_contains(g, "StillWanted", ("WantBreak", "counts"), old_key, MAP_NAME_INT, 1250, -450, key_type=NAME)
-    branch(g, "BrDropped", 1250, -600)
-    g.link(("ForOld", "LoopBody"), ("BrDropped", "execute"))
-    g.link(bnot(g, "Dropped", kept, 1250, -350), ("BrDropped", "Condition"))
-    map_remove(g, "RemoveLive", ("GetLive", "Live"), old_key, MAP_NAME_INT, 1500, -600, key_type=NAME)
-    g.link(("BrDropped", "then"), ("RemoveLive", "execute"))
-    map_find(g, "OldSlotFind", ("GetSlots", "Slots"), old_key, MAP_SLOTS, STRUCT(SLOT), 1750, -450)
-    branch(g, "BrOldSlot", 1750, -600)
-    g.link(("RemoveLive", "then"), ("BrOldSlot", "execute"))
-    g.link(("OldSlotFind", "ReturnValue"), ("BrOldSlot", "Condition"))
-    set_local(g, "SetOldSlot", F, "Slot", STRUCT(SLOT), 2000, -600)
-    g.link(("BrOldSlot", "then"), ("SetOldSlot", "execute"))
-    g.link(("OldSlotFind", "Value"), ("SetOldSlot", "Slot"))
-    set_fields(g, "ZeroCapacity", SLOT, "capacity", INT, 2250, -600, defaults={"capacity": "0"})
-    g.link(("SetOldSlot", "then"), ("ZeroCapacity", "execute"))
-    g.link(("GetSlot", "Slot"), ("ZeroCapacity", "StructRef"))
-    map_add(g, "PutOldSlot", ("GetSlots", "Slots"), old_key, ("ZeroCapacity", "StructOut"),
-            MAP_SLOTS, STRUCT(SLOT), 2500, -600)
-    g.link(("ZeroCapacity", "then"), ("PutOldSlot", "execute"))
-
-    map_keys(g, "WantKeys", ("WantBreak", "counts"), MAP_NAME_INT, 750, 0)
-    g.link(("ForOld", "Completed"), ("WantKeys", "execute"))
-    for_each(g, "ForKeys", NAME, 1000, 0)
-    g.link(("WantKeys", "then"), ("ForKeys", "Exec"))
-    g.link(("WantKeys", "Keys"), ("ForKeys", "Array"))
-
-    map_find(g, "Amount", ("WantBreak", "counts"), ("ForKeys", "Array Element"), MAP_NAME_INT, INT, 1250, 300)
-    map_add(g, "AddLive", ("GetLive", "Live"), ("ForKeys", "Array Element"), ("Amount", "Value"), MAP_NAME_INT, INT, 1250, 0)
-    g.link(("ForKeys", "LoopBody"), ("AddLive", "execute"))
-    map_find(g, "SlotFind", ("GetSlots", "Slots"), ("ForKeys", "Array Element"), MAP_SLOTS, STRUCT(SLOT), 1500, 300)
-    branch(g, "BrHasSlot", 1500, 0)
-    g.link(("AddLive", "then"), ("BrHasSlot", "execute"))
-    g.link(("SlotFind", "ReturnValue"), ("BrHasSlot", "Condition"))
-
-    set_local(g, "SetSlot", F, "Slot", STRUCT(SLOT), 1750, -150)
-    g.link(("BrHasSlot", "then"), ("SetSlot", "execute"))
-    g.link(("SlotFind", "Value"), ("SetSlot", "Slot"))
-    set_fields(g, "SlotCapacity", SLOT, "capacity", INT, 2000, -150)
-    g.link(("SetSlot", "then"), ("SlotCapacity", "execute"))
-    g.link(("GetSlot", "Slot"), ("SlotCapacity", "StructRef"))
-    g.link(("Amount", "Value"), ("SlotCapacity", "capacity"))
-    map_add(g, "AddExisting", ("GetSlots", "Slots"), ("ForKeys", "Array Element"), ("SlotCapacity", "StructOut"),
-            MAP_SLOTS, STRUCT(SLOT), 2250, -150)
-    g.link(("SlotCapacity", "then"), ("AddExisting", "execute"))
-    make_struct(g, "NewSlot", SLOT, [("capacity", INT)], 1750, 150)
-    g.link(("Amount", "Value"), ("NewSlot", "capacity"))
-    map_add(g, "AddNew", ("GetSlots", "Slots"), ("ForKeys", "Array Element"), ("NewSlot", "ResourceStockpileSlot"),
-            MAP_SLOTS, STRUCT(SLOT), 2000, 150)
-    g.link(("BrHasSlot", "else"), ("AddNew", "execute"))
-
-    make_struct(g, "MakeLive", RESCOLL, [("counts", MAP_NAME_INT)], 1250, -350)
-    g.link(("GetLive", "Live"), ("MakeLive", "counts"))
-    set_member(g, "LiveSet", WORKDOCK, "m_requiredEmbarkSupplies_live", STRUCT(RESCOLL), 1500, -350)
-    g.link(("ForKeys", "Completed"), ("LiveSet", "execute"))
-    g.link(("GetDock", "Dock"), ("LiveSet", "self"))
-    g.link(("MakeLive", "ResourceCollection"), ("LiveSet", "m_requiredEmbarkSupplies_live"))
-    make_struct(g, "MakeInput", STOCKPILE, [("Slots", MAP_SLOTS)], 1750, -550)
-    g.link(("GetSlots", "Slots"), ("MakeInput", "Slots"))
-    set_member(g, "InputSet", WORKDOCK, "m_inputStockpile", STRUCT(STOCKPILE), 2000, -350)
-    g.link(("LiveSet", "then"), ("InputSet", "execute"))
-    g.link(("GetDock", "Dock"), ("InputSet", "self"))
-    g.link(("MakeInput", "Stockpile"), ("InputSet", "m_inputStockpile"))
+    get_local(g, "GetDock", "RequestFor", "Dock", OBJ(WORKDOCK), 0, 250)
+    get_local(g, "GetWant", "RequestFor", "Want", STRUCT(RESCOLL), 0, 350)
+    loom_call(g, "Call", LOAD_LIB, "RequestFor", 250, 0, ins=[("Dock", OBJ(WORKDOCK)), ("Want", STRUCT(RESCOLL))])
+    g.link(("GetDock", "Dock"), ("Call", "Dock"))
+    g.link(("GetWant", "Want"), ("Call", "Want"))
     return g.render()
 
 
@@ -488,7 +385,6 @@ def hold_counts():
     return g.render()
 
 
-LOAD_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDLoad.BPL_FDLoad_C'"
 
 
 def update_request():
@@ -1028,9 +924,7 @@ SPECS = {
                                  locals_=[("Result", MAP_NAME_INT), ("Inbound", MAP_NAME_INT),
                                           ("Slots", MAP_NAME_TO(SLOT)), ("Need", INT)],
                                  returns=[("ForKeys", "Completed")], values=[("GetResultForReturn", "Result", "Deficit")]),
-    "RequestFor": fn_spec(("SetOld", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Want", STRUCT(RESCOLL))],
-                          locals_=[("Live", MAP_NAME_INT), ("Slots", MAP_NAME_TO(SLOT)), ("Slot", STRUCT(SLOT)),
-                                   ("Old", MAP_NAME_INT)]),
+    "RequestFor": fn_spec(("Call", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Want", STRUCT(RESCOLL))]),
     "UpdateRequest": fn_spec(("Plan", "execute"),
                              inputs=[("Dock", OBJ(WORKDOCK)), ("Partner", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP)),
                                      ("NoMore", BOOL)],

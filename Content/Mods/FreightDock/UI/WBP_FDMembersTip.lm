@@ -1,0 +1,28 @@
+blueprint WBP_FDMembersTip : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDMembersTip
+
+// Tooltip of a network label in the dock GUI's NETWORKS line (WBP_FDPanel): the network's providers on one line in
+// red, its requesters on the next in blue (the pointer colours).
+
+widget Width: SizeBox(MaxDesiredWidth: 360.0) {
+    widget Box: Border(BrushColor: "#0d1520f2", Padding: Margin(Left: 10, Top: 6, Right: 10, Bottom: 6)) {
+        widget Col: VerticalBox {
+            widget Providers: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#e9594dff")
+            widget Requesters: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#71d0eaff") slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
+        }
+    }
+}
+
+// "Providers: none", "Provider: A" or "Providers: A, B" (Singular / Plural: BPL_FDText keys with {names}).
+pure fn Line(Singular: name, Plural: name, Names: array<string>) -> string {
+    if Names.Length() == 0 {
+        return BPL_FDText.T1(Plural, "names", BPL_FDText.T("freightdock.members.none"))
+    }
+    return BPL_FDText.T1(if Names.Length() == 1 { Singular } else { Plural }, "names", KismetStringLibrary.JoinStringArray(Names, ", "))
+}
+
+fn Setup(ProviderNames: array<string>, RequesterNames: array<string>, Font: SlateFontInfo) {
+    Providers.SetText(text(Line("freightdock.members.provider", "freightdock.members.providers", ProviderNames)))
+    Requesters.SetText(text(Line("freightdock.members.requester", "freightdock.members.requesters", RequesterNames)))
+    Providers.SetFont(Font)
+    Requesters.SetFont(Font)
+}

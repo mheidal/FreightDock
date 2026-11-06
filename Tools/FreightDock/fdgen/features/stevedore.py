@@ -1,10 +1,10 @@
 """Stevedore modifier: +10 carry capacity for workers at a freight dock. RegisterExtras (BP_Startup) adds the
-modifier and its strings; SetStevedore / SyncStevedores apply it in BP_MapLoad.
+modifier (in Loom, BPL_FDSetup); SetStevedore / SyncStevedores apply it in BP_MapLoad.
 """
 from fdgen.core.graph import Graph
 from fdgen.core.types import BOOL, EXEC, INT, MOD_MAP, NAME, OBJ, SLOT_ARRAY, STR, STRUCT, T
 from fdgen.core.paths import (
-    AGENT, AGENTMOD, AGENTSTATE, K2, MAPLIB, MATHLIB, MODAPI, MODSTATE, SYSLIB, WORKDOCK,
+    SETUP_LIB, AGENT, AGENTMOD, AGENTSTATE, K2, MAPLIB, MATHLIB, MODAPI, MODSTATE, SYSLIB, WORKDOCK,
     WORKERS, WORKERSLOT)
 from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
@@ -16,68 +16,14 @@ from fdgen.core.text import LOG_PREFIX, concat_parts, log_msg, to_str
 STEVEDORE = "mod.stevedore"
 
 
-STEVEDORE_STRINGS = {
-    STEVEDORE: "Stevedore",
-    "mod.desc.stevedore": "+10 carry capacity while working at a freight dock",
-}
-
-
 def register_extras():
-    """BP_Startup: the Stevedore worker modifier (AgentModifiers row, copied from mod.constructionyardWorker, carry +10,
-    no expiry) with its strings."""
+    """RegisterExtras (BP_Startup): BPL_FDSetup.RegisterExtras(ModAPI) - the Stevedore worker modifier (AgentModifiers
+    row, copied from mod.constructionyardWorker, carry +10, no expiry). Its strings are in BPL_FDText."""
     g = Graph()
-    MAPI = f"/Script/CoreUObject.Class'{MODAPI}'"
-    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 400)
-    state = {"prev": None, "x": 0}
-
-    def step(node):
-        if state["prev"]:
-            g.link((state["prev"], "then"), (node, "execute"))
-        g.link(("GetModAPI", "ModAPI"), (node, "self"))
-        state["prev"] = node
-        state["x"] += 250
-
-    def api(name, func, pins):
-        g.call(name, MAPI, func, state["x"], 0,
-               [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", OBJ(MODAPI), None)] + pins)
-        step(name)
-        return name
-
-    def table_pins(table, row, col=None):
-        pins = [("datatableName", "in", NAME, f'DefaultValue="{table}"'), ("rowId", "in", NAME, f'DefaultValue="{row}"')]
-        if col:
-            pins.append(("ColumnName", "in", NAME, f'DefaultValue="{col}"'))
-        return pins
-
-    def write(name, table, row, col, literal=None, src=None):
-        api(name, "WriteDataTableValue", table_pins(table, row, col) +
-            [("valueStringified", "in", STR, None if literal is None else f'DefaultValue="{literal}"'), ("ReturnValue", "out", BOOL, None)])
-        if src:
-            g.link(src, (name, "valueStringified"))
-
-    # Stevedore
-    api("AddMod", "AddDataTableRow", table_pins("AgentModifiers", STEVEDORE) + [("ReturnValue", "out", BOOL, None)])
-    for col in ("Icon", "Category", "severity_mastersync", "useResourceData"):
-        api("ModGet_" + col, "ReadDataTableValue", table_pins("AgentModifiers", "mod.constructionyardWorker", col) + [("ReturnValue", "out", STR, None)])
-        write("ModSet_" + col, "AgentModifiers", STEVEDORE, col, src=("ModGet_" + col, "ReturnValue"))
-    for col, value in (("DisplayName", STEVEDORE), ("Description", "mod.desc.stevedore"), ("carryMod", "10"),
-                       ("productivityMod", "0"), ("speedMod", "0"), ("additionalStacks", "0"), ("canStack", "False"),
-                       ("expires", "False"), ("hiddenMod", "False")):
-        write("ModSet_" + col, "AgentModifiers", STEVEDORE, col, literal=value)
-    mapt = T("name", container="Map", value=("string", None))
-    pins = []
-    for i, (k, v) in enumerate(STEVEDORE_STRINGS.items()):
-        pins += [(f"Key {i}", "in", NAME, f'DefaultValue="{k}"'), (f"Value {i}", "in", STR, f'DefaultValue="{v}"')]
-    g.node("Strings", K2 + "K2Node_MakeMap", [f"NumInputs={len(STEVEDORE_STRINGS)}"], 0, 600, pins + [("Map", "out", mapt, None)])
-    for lang in ("dev", "en"):   # "dev" first, then "en" (ModAPI requirement)
-        api("Strings_" + lang, "AddNewStrings", [("langId", "in", NAME, f'DefaultValue="{lang}"'), ("idStringPairs", "in", mapt, None),
-                                                 ("ReturnValue", "out", BOOL, None)])
-        g.link(("Strings", "Map"), ("Strings_" + lang, "idStringPairs"))
-
-    parts = [LOG_PREFIX + "Stevedore modifier added: ", to_str(g, "SMod", "Conv_BoolToString", "InBool", BOOL, ("AddMod", "ReturnValue"), 0, 900)]
-    msg = concat_parts(g, "Msg", parts, 0, 1100)
-    api("LogDone", "LogMessage", [("Msg", "in", STR, None), ("doPrependDate", "in", BOOL, 'DefaultValue="true"')])
-    g.link((msg, "ReturnValue"), ("LogDone", "Msg"))
+    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 250)
+    g.call("Call", SETUP_LIB, "RegisterExtras", 250, 0,
+           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("Api", "in", OBJ(MODAPI), None)])
+    g.link(("GetModAPI", "ModAPI"), ("Call", "Api"))
     return g.render()
 
 
@@ -232,7 +178,7 @@ def sync_stevedores():
 
 
 SPECS = {
-    "RegisterExtras": fn_spec(("AddMod", "execute")),
+    "RegisterExtras": fn_spec(("Call", "execute")),
     "SetStevedore": fn_spec(("SetState", "execute"), inputs=[("Agent", OBJ(AGENT)), ("On", BOOL)],
                             locals_=[("State", STRUCT(AGENTSTATE)), ("ModState", STRUCT(MODSTATE)), ("Mods", MOD_MAP),
                                      ("Mod", STRUCT(AGENTMOD))]),
