@@ -40,6 +40,54 @@ static void ShowNotification(const FString& Message, bool bSuccess)
 	FSlateNotificationManager::Get().AddNotification(Info);
 }
 
+// The latest Cook & Install's status, written from the cook's background task
+static FCriticalSection CookStatusLock;
+static FCookStatus CookStatus;
+
+FCookStatus ModActions::GetCookStatus()
+{
+	FScopeLock Lock(&CookStatusLock);
+	return CookStatus;
+}
+
+static void SetCookStage(const FString& Stage)
+{
+	FScopeLock Lock(&CookStatusLock);
+	CookStatus.Stage = Stage;
+}
+
+static void AddCookOutput(const FString& Line)
+{
+	FScopeLock Lock(&CookStatusLock);
+	CookStatus.RecentOutput.Add(Line);
+	if (CookStatus.RecentOutput.Num() > 40)
+	{
+		CookStatus.RecentOutput.RemoveAt(0);
+	}
+}
+
+static void FinishCook(const FString& Message, bool bSuccess)
+{
+	FScopeLock Lock(&CookStatusLock);
+	CookStatus.bRunning = false;
+	CookStatus.bSuccess = bSuccess;
+	CookStatus.Stage = Message;
+	CookStatus.Finished = FDateTime::Now();
+}
+
+// A Cook & Install that stops before cooking: the toast, and the status
+static void FailCook(const FString& ModName, const FString& Message)
+{
+	{
+		FScopeLock Lock(&CookStatusLock);
+		CookStatus = FCookStatus();
+		CookStatus.ModName = ModName;
+		CookStatus.Started = FDateTime::Now();
+	}
+	FinishCook(Message, false);
+	ShowNotification(Message, false);
+}
+
 static int32 FindNextChunkId()
 {
 	TSet<int32> Used;
@@ -572,21 +620,33 @@ static bool InstallCookedChunkFiles(
 void ModActions::CookAndInstallMod(const FString& ModName)
 {
 	FModInfo Info;
-	if (!EnsureModInfo(ModName, Info)) return;
+	if (!EnsureModInfo(ModName, Info))
+	{
+		FailCook(ModName, FString::Printf(TEXT("No mod details for '%s'"), *ModName));
+		return;
+	}
 
 	const FString RunUAT = GetRunUATPath();
 	if (RunUAT.IsEmpty())
 	{
-		ShowNotification(TEXT("RunUAT.bat not found. Check Whiskerwood Mod Tools settings"), false);
+		FailCook(ModName, TEXT("RunUAT.bat not found. Check Whiskerwood Mod Tools settings"));
 		return;
 	}
 
 	const int32 ChunkId = GetChunkIdForMod(ModName);
 	if (ChunkId < 0)
 	{
-		ShowNotification(
-			FString::Printf(TEXT("Cannot find PAL_%s or its ChunkID"), *ModName), false);
+		FailCook(ModName, FString::Printf(TEXT("Cannot find PAL_%s or its ChunkID"), *ModName));
 		return;
+	}
+
+	{
+		FScopeLock Lock(&CookStatusLock);
+		CookStatus = FCookStatus();
+		CookStatus.ModName = ModName;
+		CookStatus.bRunning = true;
+		CookStatus.Stage = TEXT("Starting");
+		CookStatus.Started = FDateTime::Now();
 	}
 
 	const FString ProjectPath =
@@ -680,6 +740,7 @@ void ModActions::CookAndInstallMod(const FString& ModName)
 	{
 		auto UpdateNotif = [&WeakNotif](const FString& Text)
 		{
+			SetCookStage(Text.Replace(TEXT("\n"), TEXT(": ")));
 			AsyncTask(ENamedThreads::GameThread, [WeakNotif, Text]()
 			{
 				if (TSharedPtr<SNotificationItem> Pin = WeakNotif.Pin())
@@ -691,6 +752,7 @@ void ModActions::CookAndInstallMod(const FString& ModName)
 
 		auto FinishNotif = [&WeakNotif](const FString& Text, bool bSuccess)
 		{
+			FinishCook(Text, bSuccess);
 			AsyncTask(ENamedThreads::GameThread, [WeakNotif, Text, bSuccess]()
 			{
 				if (TSharedPtr<SNotificationItem> Pin = WeakNotif.Pin())
@@ -737,6 +799,7 @@ void ModActions::CookAndInstallMod(const FString& ModName)
 				Chunk.ParseIntoArrayLines(Lines);
 				for (const FString& Line : Lines)
 				{
+					AddCookOutput(Line.TrimStartAndEnd());
 					FString Status;
 					if (ParseUATLine(Line.TrimStartAndEnd(), Status) && Status != LastStatus)
 					{

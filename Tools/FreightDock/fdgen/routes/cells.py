@@ -2,11 +2,12 @@
 line-of-sight over cells (ClearLine), the stand-off point off a dock, and the octile distance.
 """
 from fdgen.core.graph import Graph
-from fdgen.core.types import BOOL, DOUBLE, FLOAT, INT, INT_SET, MAP_INT_INT, OBJ, STRUCT
-from fdgen.core.paths import MAPLIB, MATHLIB, NDOCK, NDOCKSTATE, VECTOR, WORKDOCK
+from fdgen.core.types import BOOL, DOUBLE, INT, MAP_INT_INT, OBJ, STRUCT
+from fdgen.core.paths import MAPLIB, MATHLIB, VECTOR, VOYAGE_LIB, WORKDOCK
 from fdgen.core.nodes import (
-    bnot, bop, branch, break_struct, for_loop, get_local, get_member, get_self, ii, map_add,
-    set_contains, set_local, set_pin_default, user_call)
+    bop, branch, get_local, get_self, ii, loom_call, map_add,
+    user_call)
+from fdgen.core.specs import fn_spec
 
 
 # Route cells are CellSize (100) units square. A cell key packs its grid coordinates into one int:
@@ -127,97 +128,26 @@ def cell_pos():
 
 
 def clear_line():
-    """ClearLine(A, B) -> Clear: no Blocked cell on the segment (sampled every half cell, ends excluded).
-    Local: Hit (Boolean). Wire node "NotHit" to the Return node's LineClear."""
+    """ClearLine(A, B) -> LineClear: BPL_FDVoyage.ClearLine - no blocked cell, other dock's outline or (away from the
+    ends) near-shore cell anywhere the segment touches (an exact walk along the grid, so no corner is cut)."""
     g = Graph()
-    F = "ClearLine"
-    get_local(g, "GetA", F, "A", STRUCT(VECTOR), 0, 400)
-    get_local(g, "GetB", F, "B", STRUCT(VECTOR), 0, 500)
-    get_self(g, "GetSize", "CellSize", DOUBLE, 0, 600)
-    get_self(g, "GetBlocked", "Blocked", INT_SET, 0, 700)
-    set_local(g, "HitFalse", F, "Hit", BOOL, 0, 0)
-    set_pin_default(g, "HitFalse", "Hit", "false")
-    g.call("Dist", MATHLIB, "Vector_Distance2D", 250, 400,
-           [("v1", "in", STRUCT(VECTOR), None), ("v2", "in", STRUCT(VECTOR), None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("GetA", "A"), ("Dist", "v1"))
-    g.link(("GetB", "B"), ("Dist", "v2"))
-    g.call("Step", MATHLIB, "Multiply_DoubleDouble", 250, 600,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, 'DefaultValue="0.5"'), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("GetSize", "CellSize"), ("Step", "A"))
-    g.call("Ratio", MATHLIB, "Divide_DoubleDouble", 500, 400,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Dist", "ReturnValue"), ("Ratio", "A"))
-    g.link(("Step", "ReturnValue"), ("Ratio", "B"))
-    g.call("N", MATHLIB, "FCeil", 750, 400, [("A", "in", DOUBLE, None), ("ReturnValue", "out", INT, None)])
-    g.link(("Ratio", "ReturnValue"), ("N", "A"))
-    last = ii(g, "Last", "Subtract_IntInt", ("N", "ReturnValue"), None, 1000, 400, b_default="1")
-    for_loop(g, "Loop", 250, 0, first=1, with_break=True)
-    g.link(last, ("Loop", "LastIndex"))
-    g.link(("HitFalse", "then"), ("Loop", "Exec"))
-    g.call("IdxD", MATHLIB, "Conv_IntToDouble", 500, 200, [("inInt", "in", INT, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Loop", "Index"), ("IdxD", "inInt"))
-    g.call("ND", MATHLIB, "Conv_IntToDouble", 1000, 550, [("inInt", "in", INT, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("N", "ReturnValue"), ("ND", "inInt"))
-    g.call("Alpha", MATHLIB, "Divide_DoubleDouble", 1250, 200,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("IdxD", "ReturnValue"), ("Alpha", "A"))
-    g.link(("ND", "ReturnValue"), ("Alpha", "B"))
-    g.call("P", MATHLIB, "VLerp", 1500, 200,
-           [("A", "in", STRUCT(VECTOR), None), ("B", "in", STRUCT(VECTOR), None), ("Alpha", "in", FLOAT, None),
-            ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(("GetA", "A"), ("P", "A"))
-    g.link(("GetB", "B"), ("P", "B"))
-    g.link(("Alpha", "ReturnValue"), ("P", "Alpha"))
-    k = cell_key_call(g, "PKey", ("P", "ReturnValue"), 1750, 200)
-    blocked = set_contains(g, "IsBlocked", ("GetBlocked", "Blocked"), k, 2000, 200)
-    get_self(g, "GetPenalty", "Penalty", MAP_INT_INT, 0, 800)
-    g.call("IsNearShore", MAPLIB, "Map_Contains", 2000, 350,
-           [("TargetMap", "in", MAP_INT_INT, None), ("Key", "in", INT, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("GetPenalty", "Penalty"), ("IsNearShore", "TargetMap"))
-    g.link(k, ("IsNearShore", "Key"))
-    blocked = bop(g, "AnyObstacle", "BooleanOR", blocked, ("IsNearShore", "ReturnValue"), 2250, 200)
-    near = near_end(g, "E", ("P", "ReturnValue"), 1750, 700)
-    blocked = bop(g, "BlockedHere", "BooleanAND", blocked, bnot(g, "NotNear", near, 2750, 950), 2250, 300)
-    branch(g, "BrBlocked", 500, 0)
-    g.link(("Loop", "LoopBody"), ("BrBlocked", "execute"))
-    g.link(blocked, ("BrBlocked", "Condition"))
-    set_local(g, "HitTrue", F, "Hit", BOOL, 750, -150)
-    set_pin_default(g, "HitTrue", "Hit", "true")
-    g.link(("BrBlocked", "then"), ("HitTrue", "execute"))
-    g.link(("HitTrue", "then"), ("Loop", "Break"))
-    get_local(g, "GetHit", F, "Hit", BOOL, 1000, -300)
-    bnot(g, "NotHit", ("GetHit", "Hit"), 1250, -300)
+    get_local(g, "GetA", "ClearLine", "A", STRUCT(VECTOR), 0, 250)
+    get_local(g, "GetB", "ClearLine", "B", STRUCT(VECTOR), 0, 350)
+    loom_call(g, "Call", VOYAGE_LIB, "ClearLine", 250, 0, ins=[("A", STRUCT(VECTOR)), ("B", STRUCT(VECTOR))],
+              outs=[("ReturnValue", BOOL)])
+    g.link(("GetA", "A"), ("Call", "A"))
+    g.link(("GetB", "B"), ("Call", "B"))
     return g.render()
 
 
 def stand_off_point():
-    """StandOffPoint(Dock) -> Pos: StandOff units out from the dock's berth, at Z = 0.
-    Wire entry -> FindBerth, FindBerth -> Return, and node "Pos" to the Return node's Pos."""
+    """StandOffPoint(Dock) -> Pos: BPL_FDVoyage.StandOffPoint - StandOff units out from the dock's berth, at Z = 0,
+    turned up to 80 degrees where the way straight out is blocked."""
     g = Graph()
-    get_local(g, "GetDock", "StandOffPoint", "Dock", OBJ(WORKDOCK), 0, 200)
-    user_call(g, "FindBerth", "NauticalDockAt", 0, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("Best", OBJ(NDOCK))])
-    g.link(("GetDock", "Dock"), ("FindBerth", "Dock"))
-    get_member(g, "BerthState", NDOCK, "State", STRUCT(NDOCKSTATE), 250, 200)
-    g.link(("FindBerth", "Best"), ("BerthState", "self"))
-    break_struct(g, "BreakBerth", NDOCKSTATE, [("berthLocation", STRUCT(VECTOR)), ("berthOutDirection", STRUCT(VECTOR))], 500, 200)
-    g.link(("BerthState", "State"), ("BreakBerth", "NauticalDockState"))
-    get_self(g, "GetStandOff", "StandOff", DOUBLE, 500, 400)
-    g.call("OutStep", MATHLIB, "Multiply_VectorFloat", 750, 300,
-           [("A", "in", STRUCT(VECTOR), None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(("BreakBerth", "berthOutDirection"), ("OutStep", "A"))
-    g.link(("GetStandOff", "StandOff"), ("OutStep", "B"))
-    g.call("Stand", MATHLIB, "Add_VectorVector", 1000, 200,
-           [("A", "in", STRUCT(VECTOR), None), ("B", "in", STRUCT(VECTOR), None), ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(("BreakBerth", "berthLocation"), ("Stand", "A"))
-    g.link(("OutStep", "ReturnValue"), ("Stand", "B"))
-    g.call("XY", MATHLIB, "BreakVector", 1250, 200,
-           [("InVec", "in", STRUCT(VECTOR), None), ("X", "out", DOUBLE, None), ("Y", "out", DOUBLE, None), ("Z", "out", DOUBLE, None)])
-    g.link(("Stand", "ReturnValue"), ("XY", "InVec"))
-    g.call("Pos", MATHLIB, "MakeVector", 1500, 200,
-           [("X", "in", DOUBLE, None), ("Y", "in", DOUBLE, None), ("Z", "in", DOUBLE, 'DefaultValue="0.0"'),
-            ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(("XY", "X"), ("Pos", "X"))
-    g.link(("XY", "Y"), ("Pos", "Y"))
+    get_local(g, "GetDock", "StandOffPoint", "Dock", OBJ(WORKDOCK), 0, 250)
+    loom_call(g, "Call", VOYAGE_LIB, "StandOffPoint", 250, 0, ins=[("Dock", OBJ(WORKDOCK))],
+              outs=[("ReturnValue", STRUCT(VECTOR))])
+    g.link(("GetDock", "Dock"), ("Call", "Dock"))
     return g.render()
 
 
@@ -237,6 +167,15 @@ def octile(g, p, key_src, goal_src, x, y):
     mx = ii(g, f"{p}Max10", "Multiply_IntInt", mx, None, x + 1000, y - 400, b_default="10")
     mn = ii(g, f"{p}Min4", "Multiply_IntInt", mn, None, x + 1000, y - 300, b_default="4")
     return ii(g, f"{p}H", "Add_IntInt", mx, mn, x + 1250, y - 400)
+
+
+SPECS = {
+    "StandOffPoint": fn_spec(("Call", "execute"), inputs=[("Dock", OBJ(WORKDOCK))], outputs=[("Pos", STRUCT(VECTOR))],
+                             returns=[("Call", "then")], values=[("Call", "ReturnValue", "Pos")]),
+    "ClearLine": fn_spec(("Call", "execute"), inputs=[("A", STRUCT(VECTOR)), ("B", STRUCT(VECTOR))],
+                         outputs=[("LineClear", BOOL)], returns=[("Call", "then")],
+                         values=[("Call", "ReturnValue", "LineClear")]),
+}
 
 
 GRAPHS = {

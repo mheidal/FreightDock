@@ -1,12 +1,15 @@
 blueprint WBP_FDNetRow : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDNetRow
 
-// One row of the network table (WBP_FDNetPanel): the network's number, Provide and Request checkboxes for the
-// selected dock (both ticked: the role "both"), each with the network's number of providers / requesters in
-// parentheses (the tooltip names them), and the goods its requesters ask for, dimmed when no provider on the network
-// has them whitelisted (each good's tooltip: WBP_FDNetTip). A checkbox broadcasts Toggled; the network panel
-// applies it. Column widths match the header in WBP_FDNetPanel: 96, 110, 110, then the goods.
+// One row of the network table (WBP_FDNetPanel): the network's number and name ([fn<id>] signs), Provide and Request
+// checkboxes for the selected dock (both ticked: the role "both"), each with the network's number of providers /
+// requesters in parentheses (the tooltip names them), the priority of the dock's requests there (click cycles it;
+// only while it requests), and the goods its requesters ask for, dimmed when no provider on the network has them
+// whitelisted (each good's tooltip: WBP_FDNetTip). A checkbox broadcasts Toggled, the priority PrioClicked; the
+// network panel applies them. A dock already in all its networks gets the other rows' checkboxes disabled, with why
+// as their tooltip. Column widths match the header in WBP_FDNetPanel: 96, 110, 110, 80, then the goods.
 
 dispatcher Toggled(Net: int, Bit: int)
+dispatcher PrioClicked(Net: int)
 
 var Net: int = 0
 var Odd: bool = false
@@ -17,12 +20,14 @@ var GoodTips: array<WBP_FDNetTip>
 var GoodNames: array<name>
 var ProvTip: WBP_FDTip
 var ReqTip: WBP_FDTip
+var LimitTip: WBP_FDTip
+var PrioTip: WBP_FDTip
 
 widget Root: Overlay {
     widget Band: Image(ColorAndOpacity: "#ffffff00") slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill)
     widget Line: HorizontalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 4)) {
         widget IdBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
-            widget NetId: TextBlock(Text: "1", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+            widget NetId: TextBlock(Text: "1", AutoWrapText: true, ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
         }
         widget ProvideBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
             widget ProvideCell: HorizontalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, VerticalAlignment: EVerticalAlignment.VAlign_Center) {
@@ -40,6 +45,11 @@ widget Root: Overlay {
                 widget RequestCount: TextBlock(Text: "(0)", ColorAndOpacity: "#9c917cff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 2, Top: 0, Right: 0, Bottom: 0))
             }
         }
+        widget PrioBox: SizeBox(WidthOverride: 80.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+            widget PrioBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                widget PrioText: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
+            }
+        }
         // wraps onto more lines when the goods don't fit, so the row grows taller rather than wider
         widget GoodsBox: WrapBox slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 8, Top: 0, Right: 0, Bottom: 0), Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
     }
@@ -48,6 +58,7 @@ widget Root: Overlay {
 on Construct {
     ProvideBtn.OnClicked.bind(ProvideClicked)
     RequestBtn.OnClicked.bind(RequestClicked)
+    PrioBtn.OnClicked.bind(PrioPressed)
     let size = Vector2D(X: 22.0, Y: 22.0)
     ProvideTick.SetDesiredSizeOverride(size)
     RequestTick.SetDesiredSizeOverride(size)
@@ -96,18 +107,23 @@ fn RequestClicked() {
     Toggled.broadcast(Net, 2)
 }
 
+fn PrioPressed() {
+    PrioClicked.broadcast(Net)
+}
+
 fn SetTick(Tick: Image, On: bool) {
     Tick.SetBrushFromTexture(if On { TickOn.load() } else { TickOff.load() }, false)
     Tick.SetColorAndOpacity(if On { LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 0.85) })
 }
 
-// Role: the selected dock's role on InNet (0 none, 1 provide, 2 request, 3 both). Goods: what the network's
+// Role: the selected dock's role on InNet (0 none, 1 provide, 2 request, 3 both); Prio its priority there; Label the
+// network's number and name; Locked: the dock is in all its networks and not in this one. Goods: what the network's
 // requesters ask for, with Wanted / Stocked amounts; a good is dimmed unless AllProvided or it is in Provided.
-fn Show(InNet: int, Role: int, ProviderNames: array<string>, RequesterNames: array<string>, Goods: array<name>, Wanted: map<name, int>, Stocked: map<name, int>, AllProvided: bool, Provided: array<name>, InOdd: bool, Font: SlateFontInfo, Small: SlateFontInfo) {
+fn Show(InNet: int, Role: int, Prio: int, Label: string, Locked: bool, ProviderNames: array<string>, RequesterNames: array<string>, Goods: array<name>, Wanted: map<name, int>, Stocked: map<name, int>, AllProvided: bool, Provided: array<name>, InOdd: bool, Font: SlateFontInfo, Small: SlateFontInfo) {
     Net = InNet
     Odd = InOdd
     Shade()
-    NetId.SetText(text(string(InNet)))
+    NetId.SetText(text(Label))
     NetId.SetColorAndOpacity(SlateColor(SpecifiedColor: BPL_FDNet.NetLinear(InNet)))
     SetTick(ProvideTick, (Role & 1) != 0)
     SetTick(RequestTick, (Role & 2) != 0)
@@ -119,6 +135,24 @@ fn Show(InNet: int, Role: int, ProviderNames: array<string>, RequesterNames: arr
         ReqTip = create_widget(WBP_FDTip)
         RequestCount.SetToolTip(ReqTip)
     }
+    if LimitTip == none {
+        LimitTip = create_widget(WBP_FDTip)
+        PrioTip = create_widget(WBP_FDTip)
+        PrioBtn.SetToolTip(PrioTip)
+    }
+    LimitTip.Setup(BPL_FDText.T("freightdock.net.full"), Small)
+    PrioTip.Setup(BPL_FDText.T("freightdock.net.priorityTip"), Small)
+    let checks: array<Button> = [ProvideBtn, RequestBtn]
+    for c in checks {
+        c.SetIsEnabled(!Locked)
+        c.SetToolTip(if Locked { LimitTip } else { none })
+    }
+    // the priority, only while the dock requests here
+    let requests = (Role & 2) != 0
+    PrioBtn.SetIsEnabled(requests)
+    PrioText.SetText(text(if requests { BPL_FDText.T(name("freightdock.prio." + string(Prio))) } else { "-" }))
+    PrioText.SetColorAndOpacity(SlateColor(SpecifiedColor: if requests { LinearColor(R: 0.87, G: 0.83, B: 0.74, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 0.6) }))
+    PrioText.SetFont(Font)
     let noNames = BPL_FDText.T("freightdock.members.none")
     ProvTip.Setup(BPL_FDText.T1("freightdock.members.providers", "names", if ProviderNames.Length() == 0 { noNames } else { KismetStringLibrary.JoinStringArray(ProviderNames, ", ") }), Small)
     ReqTip.Setup(BPL_FDText.T1("freightdock.members.requesters", "names", if RequesterNames.Length() == 0 { noNames } else { KismetStringLibrary.JoinStringArray(RequesterNames, ", ") }), Small)

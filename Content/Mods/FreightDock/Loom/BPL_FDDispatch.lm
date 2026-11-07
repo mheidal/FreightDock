@@ -107,12 +107,30 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     for id in ids {
         let dock = BPL_FDNet.DockIn(MapLoad, id)
         if Sailing(MapLoad, id) {
+            if !MapLoad.JobSailed.Contains(id) {
+                LogFacing(MapLoad, dock, id)
+            }
             MapLoad.JobSailed[id] = true
             continue
+        }
+        // loading with the crew off duty: the depart-after clock waits for them too
+        if dock != none {
+            let since = MapLoad.LoadingSince.Find(id)
+            if since.ReturnValue {
+                if !BPL_FDNet.OnDuty(MapLoad, dock) {
+                    MapLoad.LoadingSince[id] = since.Value + KismetMathLibrary.FMax(MapLoad.TickSeconds, 1.0)
+                }
+            }
         }
         let s = MapLoad.JobSailed.Find(id)
         if s.ReturnValue && s.Value {
             Complete(MapLoad, dock, id)
+            continue
+        }
+        // every good dropped (stalled with nothing got): the dock is free for another job
+        if BPL_FDNet.Manifest(MapLoad, id).Length() == 0 {
+            Log(MapLoad, "Dock " + string(id) + ": nothing left to load")
+            Cancel(MapLoad, dock, id)
             continue
         }
         let to = BPL_FDNet.DockIn(MapLoad, MapLoad.JobTo[id])
@@ -124,6 +142,32 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             Cancel(MapLoad, dock, id)
         }
     }
+}
+
+// How a voyage's stand-in starts out, against its berth (to find why a ship model would sail backwards): the ship's
+// class, the real ship's and its model's yaw, and the home berth's out direction. Logged once per voyage.
+fn LogFacing(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int) {
+    let ship = MapLoad.VoyageShip.Find(Id)
+    let proxy = MapLoad.Voyages.Find(Id)
+    let line = "Voyage " + string(Id) + ":"
+    if ship.ReturnValue && ship.Value != none {
+        line += " ship " + KismetSystemLibrary.GetDisplayName(ship.Value) + " yaw " + string(ship.Value.K2_GetActorRotation().Yaw)
+        let child = ship.Value.zoomedActor.ChildActor
+        if child != none {
+            line += ", model " + KismetSystemLibrary.GetDisplayName(child) + " yaw " + string(child.K2_GetActorRotation().Yaw)
+        }
+    }
+    if proxy.ReturnValue && proxy.Value != none {
+        line += ", stand-in yaw " + string(proxy.Value.K2_GetActorRotation().Yaw)
+    }
+    if Dock != none {
+        let berth = MapLoad.NauticalDockAt(Dock).Best
+        if berth != none {
+            let out = berth.State.berthOutDirection
+            line += ", berth out yaw " + string(KismetMathLibrary.DegAtan2(out.Y, out.X))
+        }
+    }
+    Log(MapLoad, line)
 }
 
 // The ship is back: goods of the manifest still aboard (not delivered) are parked (Park), and the job ends.
@@ -335,13 +379,19 @@ fn Barred(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Good
     return false
 }
 
-// The dock's input warehouses' free stock, less goods barred after a stall (Barred).
+// The dock's input warehouses' free stock, less goods barred after a stall (Barred) and goods its own output
+// warehouses still ask for (so two docks that both provide and request a good don't pass it back and forth).
 fn Fetchable(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> map<name, int> {
     let id = BPL_FDNet.DockId(Dock)
+    let own = MapLoad.DeficitsFor(Dock).Want
     let out: map<name, int> = {}
     for res, n in BPL_FDNet.SourceStock(MapLoad, Dock).Stock {
-        if !Barred(MapLoad, id, res, n) {
-            out[res] = n
+        let w = own.counts.Find(res)
+        let wanted = w.ReturnValue && w.Value > 0
+        if !wanted {
+            if !Barred(MapLoad, id, res, n) {
+                out[res] = n
+            }
         }
     }
     return out
@@ -364,6 +414,10 @@ fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<s
         }
         let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
         if ship == none {
+            continue
+        }
+        // off duty: nobody would fetch more
+        if !BPL_FDNet.OnDuty(MapLoad, dock) {
             continue
         }
         let rid = MapLoad.JobTo[id]
@@ -439,14 +493,19 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
         let away = Sailing(MapLoad, did)
         if reqs.Length() > 0 && !MapLoad.JobTo.Contains(did) && !away {
             let home = BPL_FDNet.ShipAtDock(MapLoad, d)
-            if home == none {
+            if BPL_FDNet.IsPaused(d.activeTradePartnerId) {
+                MapLoad.IdleWhy[did] = BPL_FDText.T("freightdock.idle.paused")
+            } else if home == none {
                 MapLoad.IdleWhy[did] = BPL_FDText.T("freightdock.idle.noShip")
             } else {
                 idle.Add(d)
                 ships.Add(home)
                 let sup = Supply(MapLoad, d, home)
-                for res, n in sup.Free {
-                    AddTo(freeS, BPL_FDNet.JobKey(did, res), n)
+                let onDuty = BPL_FDNet.OnDuty(MapLoad, d)
+                if onDuty {
+                    for res, n in sup.Free {
+                        AddTo(freeS, BPL_FDNet.JobKey(did, res), n)
+                    }
                 }
                 for res, n in sup.Aboard {
                     AddTo(aboardS, BPL_FDNet.JobKey(did, res), n)
@@ -455,12 +514,14 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                     AddTo(parkS, BPL_FDNet.JobKey(did, res), n)
                 }
                 let src = BPL_FDNet.SourceStock(MapLoad, d)
-                MapLoad.IdleWhy[did] = BPL_FDText.T(if src.HasSources { "freightdock.idle.noRequests" } else { "freightdock.idle.noInputs" })
+                MapLoad.IdleWhy[did] = BPL_FDText.T(if !onDuty { "freightdock.idle.offDuty" } else if src.HasSources { "freightdock.idle.noRequests" } else { "freightdock.idle.noInputs" })
             }
         }
     }
     // input warehouse stock, once per warehouse: docks sharing one draw on the same units
     let pool = Pool(MapLoad, idle)
+    // per target: why a provider with something for it didn't go (the minimum load)
+    let minFail: map<int, string> = {}
     let done: array<int> = []
     let rounds = 0
     while rounds < 64 {
@@ -506,10 +567,14 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                     }
                     let o = Oldest.Find(rid)
                     let oldestAge = if o.ReturnValue { o.Value } else { 0.0 }
-                    let fits = MeetsMinimum(units, MapLoad.MinLoad, pship.config.cargoLimit, total, oldestAge, MapLoad.MaxWaitSeconds)
+                    let fits = MeetsMinimum(units, MapLoad.MinLoad, pship.config.cargoLimit, total, oldestAge, WaiveAfter(MapLoad))
                     if units > 0 && !fits {
                         MapLoad.IdleWhy[pid] = BPL_FDText.T2("freightdock.idle.belowMinimum", "n", string(units), "dock", BPL_FDNet.DockName(MapLoad, r))
+                        let least = KismetMathLibrary.FCeil(MapLoad.MinLoad * float(KismetMathLibrary.Min(pship.config.cargoLimit, total)))
+                        minFail[rid] = BPL_FDText.T2("freightdock.why.belowMinimum", "n", string(units), "min", string(least))
                     }
+                    // what the target's requests on the networks it shares with this provider weigh
+                    value = value * PriorityWeight(BPL_FDNet.SharedPriority(p.activeTradePartnerId, r.activeTradePartnerId))
                     if fits {
                         let dist = KismetMathLibrary.Vector_Distance2D(p.GetOwner().K2_GetActorLocation(), r.GetOwner().K2_GetActorLocation())
                         let trip = 2.0 * dist / KismetMathLibrary.FMax(MapLoad.ShipSpeed, 1.0) + Overhead()
@@ -530,11 +595,90 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
         Give(MapLoad, idle[bestP], ships[bestP], bestR, Want, freeS, aboardS, parkS, pool, bestScore)
         done.Add(BPL_FDNet.DockId(idle[bestP]))
     }
+    Explain(MapLoad, Want, minFail)
     for idleId, reason in MapLoad.IdleWhy {
         let was = wasIdle.Find(idleId)
         let same = was.ReturnValue && was.Value == reason
         if !same {
             Log(MapLoad, "Dock " + string(idleId) + " idle: " + reason)
+        }
+    }
+}
+
+// How long a request waits before the minimum load no longer holds it back: the depart-after time, or 10 minutes
+// when that is Never.
+fn WaiveAfter(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> float {
+    return if MapLoad.MaxWaitSeconds > 100000.0 { 600.0 } else { MapLoad.MaxWaitSeconds }
+}
+
+// A membership priority's weight on its dock's requests (BPL_FDNet: 0 Low, 1 Normal, 2 High, 3 Top).
+pure fn PriorityWeight(Prio: int) -> float {
+    if Prio <= 0 {
+        return 0.5
+    }
+    if Prio == 2 {
+        return 2.0
+    }
+    if Prio >= 3 {
+        return 4.0
+    }
+    return 1.0
+}
+
+// Why each request left open after this pass gets nothing (MapLoad.WhyNot, "<target>|<good>" -> the reason, for
+// the target's dock GUI): no provider on its networks, none with the good, the minimum load, or every provider with
+// it busy (on a job, sailing, paused or without a ship).
+fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<string, int>, MinFail: map<int, string>) {
+    MapLoad.WhyNot.Clear()
+    // "<provider>|<good>" -> what the provider could ship, worked out once per provider
+    let stock: map<string, int> = {}
+    let seen: array<int> = []
+    for key, open in Want {
+        if open > 0 {
+            let parts = KismetStringLibrary.Split(key, "|", ESearchCase.CaseSensitive, ESearchDir.FromStart)
+            let rid = KismetStringLibrary.Conv_StringToInt(parts.LeftS)
+            let good = GoodOf(key)
+            let r = BPL_FDNet.DockIn(MapLoad, rid)
+            let reason = BPL_FDText.T("freightdock.why.noProvider")
+            if r != none {
+                // stock at a provider whose crew is at work, or only at ones off duty
+                let has = false
+                let hasOff = false
+                let providers = BPL_FDNet.ProvidersOf(MapLoad, r)
+                for p in providers {
+                    let pid = BPL_FDNet.DockId(p)
+                    if !seen.Contains(pid) {
+                        seen.Add(pid)
+                        for res, n in Fetchable(MapLoad, p) {
+                            AddTo(stock, BPL_FDNet.JobKey(pid, res), n)
+                        }
+                        for res, slot in p.m_stockpile_goodsFromSea.Slots {
+                            AddTo(stock, BPL_FDNet.JobKey(pid, res), slot.count - slot.reservedForPickup)
+                        }
+                    }
+                    let s = stock.Find(BPL_FDNet.JobKey(pid, good))
+                    if s.ReturnValue && s.Value > 0 {
+                        if BPL_FDNet.OnDuty(MapLoad, p) {
+                            has = true
+                        } else {
+                            hasOff = true
+                        }
+                    }
+                }
+                let mf = MinFail.Find(rid)
+                if providers.Length() == 0 {
+                    reason = BPL_FDText.T("freightdock.why.noProvider")
+                } else if !has && hasOff {
+                    reason = BPL_FDText.T("freightdock.why.offDuty")
+                } else if !has {
+                    reason = BPL_FDText.T("freightdock.why.noStock")
+                } else if mf.ReturnValue {
+                    reason = mf.Value
+                } else {
+                    reason = BPL_FDText.T("freightdock.why.busy")
+                }
+            }
+            MapLoad.WhyNot[key] = reason
         }
     }
 }
@@ -655,6 +799,15 @@ fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Sh
     MapLoad.JobSailed.Remove(pid)
     MapLoad.IdleWhy.Remove(pid)
     MapLoad.PlanRoute(P)
+    // the planned route (PlanRoute leaves PlanStart / PlanGoal at its ends): log any blocked cells it crosses
+    let routePts: array<Vector> = []
+    let rl = MapLoad.RouteLen.Find(pid)
+    let ri = 0
+    while rl.ReturnValue && ri < rl.Value {
+        routePts.Add(MapLoad.RoutePts.Find(pid * 1000 + ri).Value)
+        ri += 1
+    }
+    BPL_FDVoyage.LogCrossings(MapLoad, "route for dock " + string(pid) + " to " + string(rid), routePts)
     MapLoad.RouteSelId = -999
     Log(MapLoad, "Dispatch: dock " + string(pid) + " -> " + string(rid) + ":" + summary + " (score " + string(Score) + ")")
 }

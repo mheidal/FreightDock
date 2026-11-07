@@ -26,7 +26,7 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetBlockedLay
    NodePosX=0
    NodePosY=600
    NodeGuid=00000000000000000000000000000008
-   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="BlockedLayer",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(OffClearBOk 0000000000000000000000000000000A,OffClearB 0000000000000000000000000000000B,LBOk 0000000000000000000000000000000C,ClearBOk 0000000000000000000000000000000D,ClearB 0000000000000000000000000000000E,AddB 0000000000000000000000000000000F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="BlockedLayer",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(OffClearBOk 0000000000000000000000000000000A,OffClearB 0000000000000000000000000000000B,LBOk 0000000000000000000000000000000C,ClearBOk 0000000000000000000000000000000D,ClearB 0000000000000000000000000000000E,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPenaltyLayer"
    VariableReference=(MemberName="PenaltyLayer",bSelfContext=True)
@@ -35,8 +35,8 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPenaltyLay
    bCommentBubbleVisible=True
    NodePosX=0
    NodePosY=700
-   NodeGuid=00000000000000000000000000000010
-   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="PenaltyLayer",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(OffClearPOk 00000000000000000000000000000012,OffClearP 00000000000000000000000000000013,LPOk 00000000000000000000000000000014,ClearPOk 00000000000000000000000000000015,ClearP 00000000000000000000000000000016,AddP 00000000000000000000000000000017,),)
+   NodeGuid=0000000000000000000000000000000F
+   CustomProperties Pin (PinId=00000000000000000000000000000010,PinName="PenaltyLayer",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(OffClearPOk 00000000000000000000000000000011,OffClearP 00000000000000000000000000000012,LPOk 00000000000000000000000000000013,ClearPOk 00000000000000000000000000000014,ClearP 00000000000000000000000000000015,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetLandLayer"
    VariableReference=(MemberName="LandLayer",bSelfContext=True)
@@ -45,68 +45,8 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetLandLayer"
    bCommentBubbleVisible=True
    NodePosX=0
    NodePosY=750
-   NodeGuid=00000000000000000000000000000018
-   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="LandLayer",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(OffClearLOk 0000000000000000000000000000001A,OffClearL 0000000000000000000000000000001B,LLOk 0000000000000000000000000000001C,ClearLOk 0000000000000000000000000000001D,ClearL 0000000000000000000000000000001E,AddL 0000000000000000000000000000001F,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetLand"
-   VariableReference=(MemberName="LandNext",bSelfContext=True)
-   NodeComment="GetLand"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=0
-   NodePosY=1050
-   NodeGuid=00000000000000000000000000000020
-   CustomProperties Pin (PinId=00000000000000000000000000000021,PinName="LandNext",Direction="EGPD_Output",PinType.PinCategory="int",PinType.ContainerType=Set,LinkedTo=(IsLand 00000000000000000000000000000022,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetRadius"
-   VariableReference=(MemberName="CellsRadius",bSelfContext=True)
-   NodeComment="GetRadius"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=0
-   NodePosY=800
-   NodeGuid=00000000000000000000000000000023
-   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="CellsRadius",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(NegR 00000000000000000000000000000025,ForDX 00000000000000000000000000000026,ForDY 00000000000000000000000000000027,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetBlocked"
-   VariableReference=(MemberName="Blocked",bSelfContext=True)
-   NodeComment="GetBlocked"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=0
-   NodePosY=900
-   NodeGuid=00000000000000000000000000000028
-   CustomProperties Pin (PinId=00000000000000000000000000000029,PinName="Blocked",Direction="EGPD_Output",PinType.PinCategory="int",PinType.ContainerType=Set,LinkedTo=(IsBlocked 0000000000000000000000000000002A,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetPenalty"
-   VariableReference=(MemberName="Penalty",bSelfContext=True)
-   NodeComment="GetPenalty"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=0
-   NodePosY=1000
-   NodeGuid=0000000000000000000000000000002B
-   CustomProperties Pin (PinId=0000000000000000000000000000002C,PinName="Penalty",Direction="EGPD_Output",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="int"),LinkedTo=(IsNear 0000000000000000000000000000002D,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetHeight"
-   VariableReference=(MemberName="RouteLineHeight",bSelfContext=True)
-   NodeComment="GetHeight"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=0
-   NodePosY=1100
-   NodeGuid=0000000000000000000000000000002E
-   CustomProperties Pin (PinId=0000000000000000000000000000002F,PinName="RouteLineHeight",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Lift 00000000000000000000000000000030,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetCentre"
-   VariableReference=(MemberScope="DebugCells",MemberName="Centre")
-   NodeComment="GetCentre"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=0
-   NodePosY=1200
-   NodeGuid=00000000000000000000000000000031
-   CustomProperties Pin (PinId=00000000000000000000000000000032,PinName="Centre",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(KeyX 00000000000000000000000000000033,),)
+   NodeGuid=00000000000000000000000000000016
+   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="LandLayer",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(OffClearLOk 00000000000000000000000000000018,OffClearL 00000000000000000000000000000019,LLOk 0000000000000000000000000000001A,ClearLOk 0000000000000000000000000000001B,ClearL 0000000000000000000000000000001C,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PC"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.GameplayStatics'",MemberName="GetPlayerController")
@@ -115,9 +55,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="PC"
    bCommentBubbleVisible=True
    NodePosX=0
    NodePosY=1400
-   NodeGuid=00000000000000000000000000000034
-   CustomProperties Pin (PinId=00000000000000000000000000000035,PinName="PlayerIndex",PinType.PinCategory="int",DefaultValue="0",)
-   CustomProperties Pin (PinId=00000000000000000000000000000036,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerController'",LinkedTo=(Toggled 00000000000000000000000000000037,),)
+   NodeGuid=0000000000000000000000000000001D
+   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="PlayerIndex",PinType.PinCategory="int",DefaultValue="0",)
+   CustomProperties Pin (PinId=0000000000000000000000000000001F,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerController'",LinkedTo=(Toggled 00000000000000000000000000000020,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Toggled"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PlayerController'",MemberName="WasInputKeyJustPressed")
@@ -126,10 +66,10 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Toggled"
    bCommentBubbleVisible=True
    NodePosX=250
    NodePosY=1400
-   NodeGuid=00000000000000000000000000000038
-   CustomProperties Pin (PinId=00000000000000000000000000000037,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerController'",LinkedTo=(PC 00000000000000000000000000000036,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000039,PinName="Key",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/InputCore.Key'",DefaultValue="F7",)
-   CustomProperties Pin (PinId=0000000000000000000000000000003A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrToggled 0000000000000000000000000000003B,),)
+   NodeGuid=00000000000000000000000000000021
+   CustomProperties Pin (PinId=00000000000000000000000000000020,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.PlayerController'",LinkedTo=(PC 0000000000000000000000000000001F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000022,PinName="Key",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/InputCore.Key'",DefaultValue="F7",)
+   CustomProperties Pin (PinId=00000000000000000000000000000023,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrToggled 00000000000000000000000000000024,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrToggled"
    NodeComment="BrToggled"
@@ -137,11 +77,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrToggled"
    bCommentBubbleVisible=True
    NodePosX=0
    NodePosY=0
-   NodeGuid=0000000000000000000000000000003C
-   CustomProperties Pin (PinId=0000000000000000000000000000003D,PinName="execute",PinType.PinCategory="exec",)
-   CustomProperties Pin (PinId=0000000000000000000000000000003B,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Toggled 0000000000000000000000000000003A,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000003E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Flip 0000000000000000000000000000003F,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000040,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrShow 00000000000000000000000000000041,),)
+   NodeGuid=00000000000000000000000000000025
+   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000024,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Toggled 00000000000000000000000000000023,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000027,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Flip 00000000000000000000000000000028,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000029,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrShow 0000000000000000000000000000002A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="Flip"
    VariableReference=(MemberName="ShowCells",bSelfContext=True)
@@ -150,11 +90,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="Flip"
    bCommentBubbleVisible=True
    NodePosX=250
    NodePosY=-150
-   NodeGuid=00000000000000000000000000000042
-   CustomProperties Pin (PinId=0000000000000000000000000000003F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrToggled 0000000000000000000000000000003E,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000043,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DrawNow 00000000000000000000000000000044,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000045,PinName="ShowCells",PinType.PinCategory="bool",LinkedTo=(NotShown 00000000000000000000000000000046,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000047,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="bool",)
+   NodeGuid=0000000000000000000000000000002B
+   CustomProperties Pin (PinId=00000000000000000000000000000028,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrToggled 00000000000000000000000000000027,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(DrawNow 0000000000000000000000000000002D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002E,PinName="ShowCells",PinType.PinCategory="bool",LinkedTo=(NotShown 0000000000000000000000000000002F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000030,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="bool",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="NotShown"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Not_PreBool")
@@ -163,9 +103,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="NotShown"
    bCommentBubbleVisible=True
    NodePosX=250
    NodePosY=-300
-   NodeGuid=00000000000000000000000000000048
+   NodeGuid=00000000000000000000000000000031
    CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="A",PinType.PinCategory="bool",LinkedTo=(GetShow 00000000000000000000000000000002,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000046,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(Flip 00000000000000000000000000000045,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000002F,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(Flip 0000000000000000000000000000002E,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="DrawNow"
    VariableReference=(MemberName="NextCellsDraw",bSelfContext=True)
@@ -174,11 +114,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="DrawNow"
    bCommentBubbleVisible=True
    NodePosX=500
    NodePosY=-150
-   NodeGuid=00000000000000000000000000000049
-   CustomProperties Pin (PinId=00000000000000000000000000000044,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Flip 00000000000000000000000000000043,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000004A,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrShow 00000000000000000000000000000041,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000004B,PinName="NextCellsDraw",PinType.PinCategory="real",PinType.PinSubCategory="double",DefaultValue="0.0",)
-   CustomProperties Pin (PinId=0000000000000000000000000000004C,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",)
+   NodeGuid=00000000000000000000000000000032
+   CustomProperties Pin (PinId=0000000000000000000000000000002D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Flip 0000000000000000000000000000002C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000033,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrShow 0000000000000000000000000000002A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000034,PinName="NextCellsDraw",PinType.PinCategory="real",PinType.PinSubCategory="double",DefaultValue="0.0",)
+   CustomProperties Pin (PinId=00000000000000000000000000000035,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrShow"
    NodeComment="BrShow"
@@ -186,11 +126,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrShow"
    bCommentBubbleVisible=True
    NodePosX=750
    NodePosY=0
-   NodeGuid=0000000000000000000000000000004D
-   CustomProperties Pin (PinId=00000000000000000000000000000041,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DrawNow 0000000000000000000000000000004A,BrToggled 00000000000000000000000000000040,),)
+   NodeGuid=00000000000000000000000000000036
+   CustomProperties Pin (PinId=0000000000000000000000000000002A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(DrawNow 00000000000000000000000000000033,BrToggled 00000000000000000000000000000029,),)
    CustomProperties Pin (PinId=00000000000000000000000000000004,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(GetShow 00000000000000000000000000000002,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000004E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrDue 0000000000000000000000000000004F,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000050,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearBBr 00000000000000000000000000000051,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000037,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrDue 00000000000000000000000000000038,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000039,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearBBr 0000000000000000000000000000003A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearBOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -199,9 +139,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearBOk"
    bCommentBubbleVisible=True
    NodePosX=1000
    NodePosY=450
-   NodeGuid=00000000000000000000000000000052
+   NodeGuid=0000000000000000000000000000003B
    CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetBlockedLayer 00000000000000000000000000000009,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000053,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(OffClearBBr 00000000000000000000000000000054,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(OffClearBBr 0000000000000000000000000000003D,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="OffClearBBr"
    NodeComment="OffClearBBr"
@@ -209,11 +149,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="OffClearBBr"
    bCommentBubbleVisible=True
    NodePosX=1000
    NodePosY=300
-   NodeGuid=00000000000000000000000000000055
-   CustomProperties Pin (PinId=00000000000000000000000000000051,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrShow 00000000000000000000000000000050,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000054,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(OffClearBOk 00000000000000000000000000000053,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000056,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearB 00000000000000000000000000000057,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000058,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearBDone 00000000000000000000000000000059,),)
+   NodeGuid=0000000000000000000000000000003E
+   CustomProperties Pin (PinId=0000000000000000000000000000003A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrShow 00000000000000000000000000000039,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003D,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(OffClearBOk 0000000000000000000000000000003C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000003F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearB 00000000000000000000000000000040,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000041,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearBDone 00000000000000000000000000000042,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearB"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="ClearInstances")
@@ -222,9 +162,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearB"
    bCommentBubbleVisible=True
    NodePosX=1250
    NodePosY=300
-   NodeGuid=0000000000000000000000000000005A
-   CustomProperties Pin (PinId=00000000000000000000000000000057,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearBBr 00000000000000000000000000000056,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000005B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearBDone 00000000000000000000000000000059,),)
+   NodeGuid=00000000000000000000000000000043
+   CustomProperties Pin (PinId=00000000000000000000000000000040,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearBBr 0000000000000000000000000000003F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000044,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearBDone 00000000000000000000000000000042,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetBlockedLayer 00000000000000000000000000000009,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="OffClearBDone"
@@ -233,9 +173,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="OffClea
    bCommentBubbleVisible=True
    NodePosX=1500
    NodePosY=300
-   NodeGuid=0000000000000000000000000000005C
-   CustomProperties Pin (PinId=00000000000000000000000000000059,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearB 0000000000000000000000000000005B,OffClearBBr 00000000000000000000000000000058,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000005D,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearPBr 0000000000000000000000000000005E,),)
+   NodeGuid=00000000000000000000000000000045
+   CustomProperties Pin (PinId=00000000000000000000000000000042,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearB 00000000000000000000000000000044,OffClearBBr 00000000000000000000000000000041,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000046,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearPBr 00000000000000000000000000000047,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearPOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -244,9 +184,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearPOk"
    bCommentBubbleVisible=True
    NodePosX=1750
    NodePosY=450
-   NodeGuid=0000000000000000000000000000005F
-   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000011,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000060,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(OffClearPBr 00000000000000000000000000000061,),)
+   NodeGuid=00000000000000000000000000000048
+   CustomProperties Pin (PinId=00000000000000000000000000000011,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000010,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000049,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(OffClearPBr 0000000000000000000000000000004A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="OffClearPBr"
    NodeComment="OffClearPBr"
@@ -254,11 +194,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="OffClearPBr"
    bCommentBubbleVisible=True
    NodePosX=1750
    NodePosY=300
-   NodeGuid=00000000000000000000000000000062
-   CustomProperties Pin (PinId=0000000000000000000000000000005E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearBDone 0000000000000000000000000000005D,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000061,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(OffClearPOk 00000000000000000000000000000060,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000063,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearP 00000000000000000000000000000064,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000065,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearPDone 00000000000000000000000000000066,),)
+   NodeGuid=0000000000000000000000000000004B
+   CustomProperties Pin (PinId=00000000000000000000000000000047,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearBDone 00000000000000000000000000000046,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004A,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(OffClearPOk 00000000000000000000000000000049,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearP 0000000000000000000000000000004D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000004E,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearPDone 0000000000000000000000000000004F,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearP"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="ClearInstances")
@@ -267,10 +207,10 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearP"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=300
-   NodeGuid=00000000000000000000000000000067
-   CustomProperties Pin (PinId=00000000000000000000000000000064,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearPBr 00000000000000000000000000000063,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000068,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearPDone 00000000000000000000000000000066,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000011,),)
+   NodeGuid=00000000000000000000000000000050
+   CustomProperties Pin (PinId=0000000000000000000000000000004D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearPBr 0000000000000000000000000000004C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000051,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearPDone 0000000000000000000000000000004F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000012,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000010,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="OffClearPDone"
    NodeComment="OffClearPDone"
@@ -278,9 +218,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="OffClea
    bCommentBubbleVisible=True
    NodePosX=2250
    NodePosY=300
-   NodeGuid=00000000000000000000000000000069
-   CustomProperties Pin (PinId=00000000000000000000000000000066,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearP 00000000000000000000000000000068,OffClearPBr 00000000000000000000000000000065,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000006A,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearLBr 0000000000000000000000000000006B,),)
+   NodeGuid=00000000000000000000000000000052
+   CustomProperties Pin (PinId=0000000000000000000000000000004F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearP 00000000000000000000000000000051,OffClearPBr 0000000000000000000000000000004E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000053,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearLBr 00000000000000000000000000000054,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearLOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -289,9 +229,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearLOk"
    bCommentBubbleVisible=True
    NodePosX=2500
    NodePosY=450
-   NodeGuid=0000000000000000000000000000006C
-   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000019,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000006D,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(OffClearLBr 0000000000000000000000000000006E,),)
+   NodeGuid=00000000000000000000000000000055
+   CustomProperties Pin (PinId=00000000000000000000000000000018,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000017,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000056,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(OffClearLBr 00000000000000000000000000000057,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="OffClearLBr"
    NodeComment="OffClearLBr"
@@ -299,11 +239,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="OffClearLBr"
    bCommentBubbleVisible=True
    NodePosX=2500
    NodePosY=300
-   NodeGuid=0000000000000000000000000000006F
-   CustomProperties Pin (PinId=0000000000000000000000000000006B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearPDone 0000000000000000000000000000006A,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000006E,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(OffClearLOk 0000000000000000000000000000006D,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000070,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearL 00000000000000000000000000000071,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000072,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearLDone 00000000000000000000000000000073,),)
+   NodeGuid=00000000000000000000000000000058
+   CustomProperties Pin (PinId=00000000000000000000000000000054,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearPDone 00000000000000000000000000000053,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000057,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(OffClearLOk 00000000000000000000000000000056,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000059,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearL 0000000000000000000000000000005A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000005B,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearLDone 0000000000000000000000000000005C,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearL"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="ClearInstances")
@@ -312,10 +252,10 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="OffClearL"
    bCommentBubbleVisible=True
    NodePosX=2750
    NodePosY=300
-   NodeGuid=00000000000000000000000000000074
-   CustomProperties Pin (PinId=00000000000000000000000000000071,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearLBr 00000000000000000000000000000070,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000075,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearLDone 00000000000000000000000000000073,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000019,),)
+   NodeGuid=0000000000000000000000000000005D
+   CustomProperties Pin (PinId=0000000000000000000000000000005A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearLBr 00000000000000000000000000000059,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000005E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(OffClearLDone 0000000000000000000000000000005C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000019,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000017,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="OffClearLDone"
    NodeComment="OffClearLDone"
@@ -323,9 +263,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="OffClea
    bCommentBubbleVisible=True
    NodePosX=3000
    NodePosY=300
-   NodeGuid=00000000000000000000000000000076
-   CustomProperties Pin (PinId=00000000000000000000000000000073,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearL 00000000000000000000000000000075,OffClearLBr 00000000000000000000000000000072,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000077,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   NodeGuid=0000000000000000000000000000005F
+   CustomProperties Pin (PinId=0000000000000000000000000000005C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(OffClearL 0000000000000000000000000000005E,OffClearLBr 0000000000000000000000000000005B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000060,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Now"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.GameplayStatics'",MemberName="GetRealTimeSeconds")
@@ -334,8 +274,8 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Now"
    bCommentBubbleVisible=True
    NodePosX=1000
    NodePosY=1400
-   NodeGuid=00000000000000000000000000000078
-   CustomProperties Pin (PinId=00000000000000000000000000000079,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Due 0000000000000000000000000000007A,InASecond 0000000000000000000000000000007B,),)
+   NodeGuid=00000000000000000000000000000061
+   CustomProperties Pin (PinId=00000000000000000000000000000062,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Due 00000000000000000000000000000063,InASecond 00000000000000000000000000000064,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Due"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="GreaterEqual_DoubleDouble")
@@ -344,10 +284,10 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Due"
    bCommentBubbleVisible=True
    NodePosX=1250
    NodePosY=1400
-   NodeGuid=0000000000000000000000000000007C
-   CustomProperties Pin (PinId=0000000000000000000000000000007A,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Now 00000000000000000000000000000079,),)
+   NodeGuid=00000000000000000000000000000065
+   CustomProperties Pin (PinId=00000000000000000000000000000063,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Now 00000000000000000000000000000062,),)
    CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="B",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(GetNext 00000000000000000000000000000006,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000007D,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrDue 0000000000000000000000000000007E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000066,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrDue 00000000000000000000000000000067,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrDue"
    NodeComment="BrDue"
@@ -355,11 +295,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrDue"
    bCommentBubbleVisible=True
    NodePosX=1000
    NodePosY=0
-   NodeGuid=0000000000000000000000000000007F
-   CustomProperties Pin (PinId=0000000000000000000000000000004F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrShow 0000000000000000000000000000004E,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000007E,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Due 0000000000000000000000000000007D,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000080,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Later 00000000000000000000000000000081,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000082,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   NodeGuid=00000000000000000000000000000068
+   CustomProperties Pin (PinId=00000000000000000000000000000038,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrShow 00000000000000000000000000000037,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000067,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(Due 00000000000000000000000000000066,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000069,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Later 0000000000000000000000000000006A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000006B,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="Later"
    VariableReference=(MemberName="NextCellsDraw",bSelfContext=True)
@@ -368,11 +308,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="Later"
    bCommentBubbleVisible=True
    NodePosX=1250
    NodePosY=0
-   NodeGuid=00000000000000000000000000000083
-   CustomProperties Pin (PinId=00000000000000000000000000000081,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrDue 00000000000000000000000000000080,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000084,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBBr 00000000000000000000000000000085,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000086,PinName="NextCellsDraw",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(InASecond 00000000000000000000000000000087,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000088,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",)
+   NodeGuid=0000000000000000000000000000006C
+   CustomProperties Pin (PinId=0000000000000000000000000000006A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrDue 00000000000000000000000000000069,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000006D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBBr 0000000000000000000000000000006E,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000006F,PinName="NextCellsDraw",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(InASecond 00000000000000000000000000000070,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000071,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="InASecond"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_DoubleDouble")
@@ -381,10 +321,10 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="InASecond"
    bCommentBubbleVisible=True
    NodePosX=1250
    NodePosY=1550
-   NodeGuid=00000000000000000000000000000089
-   CustomProperties Pin (PinId=0000000000000000000000000000007B,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Now 00000000000000000000000000000079,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000008A,PinName="B",PinType.PinCategory="real",PinType.PinSubCategory="double",DefaultValue="1.0",)
-   CustomProperties Pin (PinId=00000000000000000000000000000087,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Later 00000000000000000000000000000086,),)
+   NodeGuid=00000000000000000000000000000072
+   CustomProperties Pin (PinId=00000000000000000000000000000064,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Now 00000000000000000000000000000062,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000073,PinName="B",PinType.PinCategory="real",PinType.PinSubCategory="double",DefaultValue="1.0",)
+   CustomProperties Pin (PinId=00000000000000000000000000000070,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Later 0000000000000000000000000000006F,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -393,9 +333,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBOk"
    bCommentBubbleVisible=True
    NodePosX=1500
    NodePosY=300
-   NodeGuid=0000000000000000000000000000008B
+   NodeGuid=00000000000000000000000000000074
    CustomProperties Pin (PinId=0000000000000000000000000000000C,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetBlockedLayer 00000000000000000000000000000009,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000008C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(LBBr 0000000000000000000000000000008D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000075,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(LBBr 00000000000000000000000000000076,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="LBBr"
    NodeComment="LBBr"
@@ -403,11 +343,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="LBBr"
    bCommentBubbleVisible=True
    NodePosX=1500
    NodePosY=0
-   NodeGuid=0000000000000000000000000000008E
-   CustomProperties Pin (PinId=00000000000000000000000000000085,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Later 00000000000000000000000000000084,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000008D,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(LBOk 0000000000000000000000000000008C,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000008F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBReady 00000000000000000000000000000090,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000091,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBNew 00000000000000000000000000000092,),)
+   NodeGuid=00000000000000000000000000000077
+   CustomProperties Pin (PinId=0000000000000000000000000000006E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(Later 0000000000000000000000000000006D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000076,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(LBOk 00000000000000000000000000000075,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000078,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBReady 00000000000000000000000000000079,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000007A,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBNew 0000000000000000000000000000007B,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_AddComponentByClass Name="LBNew"
    NodeComment="LBNew"
@@ -415,14 +355,14 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_AddComponentByClass Name="LBNew
    bCommentBubbleVisible=True
    NodePosX=1750
    NodePosY=-200
-   NodeGuid=00000000000000000000000000000093
-   CustomProperties Pin (PinId=00000000000000000000000000000092,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBBr 00000000000000000000000000000091,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000094,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBMovable 00000000000000000000000000000095,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000096,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",)
-   CustomProperties Pin (PinId=00000000000000000000000000000097,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",DefaultObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
-   CustomProperties Pin (PinId=00000000000000000000000000000098,PinName="bManualAttachment",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
-   CustomProperties Pin (PinId=00000000000000000000000000000099,PinName="RelativeTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",)
-   CustomProperties Pin (PinId=0000000000000000000000000000009A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBMovable 0000000000000000000000000000009B,LBAbsolute 0000000000000000000000000000009C,LBMesh 0000000000000000000000000000009D,LBNoCollide 0000000000000000000000000000009E,LBNoShadow 0000000000000000000000000000009F,LBSetMat 000000000000000000000000000000A0,LBKeep 000000000000000000000000000000A1,),)
+   NodeGuid=0000000000000000000000000000007C
+   CustomProperties Pin (PinId=0000000000000000000000000000007B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBBr 0000000000000000000000000000007A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000007D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBMovable 0000000000000000000000000000007E,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000007F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000080,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",DefaultObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000081,PinName="bManualAttachment",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
+   CustomProperties Pin (PinId=00000000000000000000000000000082,PinName="RelativeTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000083,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBMovable 00000000000000000000000000000084,LBAbsolute 00000000000000000000000000000085,LBMesh 00000000000000000000000000000086,LBNoCollide 00000000000000000000000000000087,LBNoShadow 00000000000000000000000000000088,LBSetMat 00000000000000000000000000000089,LBKeep 0000000000000000000000000000008A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBMovable"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.SceneComponent'",MemberName="SetMobility")
@@ -431,11 +371,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBMovable"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000A2
-   CustomProperties Pin (PinId=00000000000000000000000000000095,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBNew 00000000000000000000000000000094,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000A3,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBAbsolute 000000000000000000000000000000A4,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000009B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 0000000000000000000000000000009A,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000A5,PinName="NewMobility",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.EComponentMobility'",DefaultValue="Movable",)
+   NodeGuid=0000000000000000000000000000008B
+   CustomProperties Pin (PinId=0000000000000000000000000000007E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBNew 0000000000000000000000000000007D,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000008C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBAbsolute 0000000000000000000000000000008D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000084,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000008E,PinName="NewMobility",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.EComponentMobility'",DefaultValue="Movable",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBAbsolute"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.SceneComponent'",MemberName="SetAbsolute")
@@ -444,13 +384,13 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBAbsolute"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000A6
-   CustomProperties Pin (PinId=000000000000000000000000000000A4,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBMovable 000000000000000000000000000000A3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000A7,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBMesh 000000000000000000000000000000A8,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000009C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 0000000000000000000000000000009A,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000A9,PinName="bNewAbsoluteLocation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=000000000000000000000000000000AA,PinName="bNewAbsoluteRotation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=000000000000000000000000000000AB,PinName="bNewAbsoluteScale",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   NodeGuid=0000000000000000000000000000008F
+   CustomProperties Pin (PinId=0000000000000000000000000000008D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBMovable 0000000000000000000000000000008C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000090,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBMesh 00000000000000000000000000000091,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000085,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000092,PinName="bNewAbsoluteLocation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   CustomProperties Pin (PinId=00000000000000000000000000000093,PinName="bNewAbsoluteRotation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   CustomProperties Pin (PinId=00000000000000000000000000000094,PinName="bNewAbsoluteScale",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBMesh"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.StaticMeshComponent'",MemberName="SetStaticMesh")
@@ -459,12 +399,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBMesh"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000AC
-   CustomProperties Pin (PinId=000000000000000000000000000000A8,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBAbsolute 000000000000000000000000000000A7,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000AD,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBNoCollide 000000000000000000000000000000AE,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000009D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 0000000000000000000000000000009A,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000AF,PinName="NewMesh",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.StaticMesh'",DefaultObject="/Script/Engine.StaticMesh'/Game/Mods/FreightDock/Route/SM_RouteStrip.SM_RouteStrip'",)
-   CustomProperties Pin (PinId=000000000000000000000000000000B0,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+   NodeGuid=00000000000000000000000000000095
+   CustomProperties Pin (PinId=00000000000000000000000000000091,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBAbsolute 00000000000000000000000000000090,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000096,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBNoCollide 00000000000000000000000000000097,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000086,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000098,PinName="NewMesh",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.StaticMesh'",DefaultObject="/Script/Engine.StaticMesh'/Game/Mods/FreightDock/Route/SM_RouteStrip.SM_RouteStrip'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000099,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBNoCollide"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetCollisionEnabled")
@@ -473,11 +413,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBNoCollide"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000B1
-   CustomProperties Pin (PinId=000000000000000000000000000000AE,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBMesh 000000000000000000000000000000AD,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000B2,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBNoShadow 000000000000000000000000000000B3,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000009E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 0000000000000000000000000000009A,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000B4,PinName="NewType",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.ECollisionEnabled'",DefaultValue="NoCollision",)
+   NodeGuid=0000000000000000000000000000009A
+   CustomProperties Pin (PinId=00000000000000000000000000000097,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBMesh 00000000000000000000000000000096,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000009B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBNoShadow 0000000000000000000000000000009C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000087,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000009D,PinName="NewType",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.ECollisionEnabled'",DefaultValue="NoCollision",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBNoShadow"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetCastShadow")
@@ -486,11 +426,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBNoShadow"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000B5
-   CustomProperties Pin (PinId=000000000000000000000000000000B3,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBNoCollide 000000000000000000000000000000B2,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000B6,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBMID 000000000000000000000000000000B7,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000009F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 0000000000000000000000000000009A,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000B8,PinName="NewCastShadow",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
+   NodeGuid=0000000000000000000000000000009E
+   CustomProperties Pin (PinId=0000000000000000000000000000009C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBNoCollide 0000000000000000000000000000009B,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000009F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBMID 000000000000000000000000000000A0,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000088,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000A1,PinName="NewCastShadow",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBMID"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMaterialLibrary'",MemberName="CreateDynamicMaterialInstance")
@@ -499,12 +439,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBMID"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=150
-   NodeGuid=000000000000000000000000000000B9
-   CustomProperties Pin (PinId=000000000000000000000000000000B7,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBNoShadow 000000000000000000000000000000B6,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000BA,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBTint 000000000000000000000000000000BB,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000BC,PinName="Parent",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",DefaultObject="/Script/Engine.Material'/Game/Mods/FreightDock/Route/M_RouteLine.M_RouteLine'",)
-   CustomProperties Pin (PinId=000000000000000000000000000000BD,PinName="OptionalName",PinType.PinCategory="name",DefaultValue="None",)
-   CustomProperties Pin (PinId=000000000000000000000000000000BE,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LBTint 000000000000000000000000000000BF,LBSetMat 000000000000000000000000000000C0,),)
+   NodeGuid=000000000000000000000000000000A2
+   CustomProperties Pin (PinId=000000000000000000000000000000A0,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBNoShadow 0000000000000000000000000000009F,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000A3,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBTint 000000000000000000000000000000A4,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000A5,PinName="Parent",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",DefaultObject="/Script/Engine.Material'/Game/Mods/FreightDock/Route/M_RouteLine.M_RouteLine'",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A6,PinName="OptionalName",PinType.PinCategory="name",DefaultValue="None",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A7,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LBTint 000000000000000000000000000000A8,LBSetMat 000000000000000000000000000000A9,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="LBColor"
    VariableReference=(MemberName="BlockedCellColor",bSelfContext=True)
@@ -513,8 +453,8 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="LBColor"
    bCommentBubbleVisible=True
    NodePosX=2000
    NodePosY=450
-   NodeGuid=000000000000000000000000000000C1
-   CustomProperties Pin (PinId=000000000000000000000000000000C2,PinName="BlockedCellColor",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LBTint 000000000000000000000000000000C3,),)
+   NodeGuid=000000000000000000000000000000AA
+   CustomProperties Pin (PinId=000000000000000000000000000000AB,PinName="BlockedCellColor",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LBTint 000000000000000000000000000000AC,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBTint"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",MemberName="SetVectorParameterValue")
@@ -523,12 +463,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBTint"
    bCommentBubbleVisible=True
    NodePosX=2250
    NodePosY=150
-   NodeGuid=000000000000000000000000000000C4
-   CustomProperties Pin (PinId=000000000000000000000000000000BB,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBMID 000000000000000000000000000000BA,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000C5,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBSetMat 000000000000000000000000000000C6,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000BF,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LBMID 000000000000000000000000000000BE,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000C7,PinName="ParameterName",PinType.PinCategory="name",DefaultValue="Color",)
-   CustomProperties Pin (PinId=000000000000000000000000000000C3,PinName="Value",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LBColor 000000000000000000000000000000C2,),)
+   NodeGuid=000000000000000000000000000000AD
+   CustomProperties Pin (PinId=000000000000000000000000000000A4,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBMID 000000000000000000000000000000A3,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000AE,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBSetMat 000000000000000000000000000000AF,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000A8,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LBMID 000000000000000000000000000000A7,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B0,PinName="ParameterName",PinType.PinCategory="name",DefaultValue="Color",)
+   CustomProperties Pin (PinId=000000000000000000000000000000AC,PinName="Value",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LBColor 000000000000000000000000000000AB,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBSetMat"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetMaterial")
@@ -537,12 +477,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LBSetMat"
    bCommentBubbleVisible=True
    NodePosX=2500
    NodePosY=150
-   NodeGuid=000000000000000000000000000000C8
-   CustomProperties Pin (PinId=000000000000000000000000000000C6,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBTint 000000000000000000000000000000C5,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000C9,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBKeep 000000000000000000000000000000CA,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000A0,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 0000000000000000000000000000009A,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000CB,PinName="ElementIndex",PinType.PinCategory="int",DefaultValue="0",)
-   CustomProperties Pin (PinId=000000000000000000000000000000C0,PinName="Material",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",LinkedTo=(LBMID 000000000000000000000000000000BE,),)
+   NodeGuid=000000000000000000000000000000B1
+   CustomProperties Pin (PinId=000000000000000000000000000000AF,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBTint 000000000000000000000000000000AE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B2,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBKeep 000000000000000000000000000000B3,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000089,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B4,PinName="ElementIndex",PinType.PinCategory="int",DefaultValue="0",)
+   CustomProperties Pin (PinId=000000000000000000000000000000A9,PinName="Material",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",LinkedTo=(LBMID 000000000000000000000000000000A7,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="LBKeep"
    VariableReference=(MemberName="BlockedLayer",bSelfContext=True)
@@ -551,11 +491,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="LBKeep"
    bCommentBubbleVisible=True
    NodePosX=2750
    NodePosY=150
-   NodeGuid=000000000000000000000000000000CC
-   CustomProperties Pin (PinId=000000000000000000000000000000CA,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBSetMat 000000000000000000000000000000C9,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000CD,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBReady 00000000000000000000000000000090,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000A1,PinName="BlockedLayer",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 0000000000000000000000000000009A,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000CE,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
+   NodeGuid=000000000000000000000000000000B5
+   CustomProperties Pin (PinId=000000000000000000000000000000B3,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBSetMat 000000000000000000000000000000B2,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B6,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LBReady 00000000000000000000000000000079,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000008A,PinName="BlockedLayer",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LBNew 00000000000000000000000000000083,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B7,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="LBReady"
    NodeComment="LBReady"
@@ -563,9 +503,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="LBReady
    bCommentBubbleVisible=True
    NodePosX=3000
    NodePosY=0
-   NodeGuid=000000000000000000000000000000CF
-   CustomProperties Pin (PinId=00000000000000000000000000000090,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBKeep 000000000000000000000000000000CD,LBBr 0000000000000000000000000000008F,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000D0,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPBr 000000000000000000000000000000D1,),)
+   NodeGuid=000000000000000000000000000000B8
+   CustomProperties Pin (PinId=00000000000000000000000000000079,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBKeep 000000000000000000000000000000B6,LBBr 00000000000000000000000000000078,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000B9,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPBr 000000000000000000000000000000BA,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -574,9 +514,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPOk"
    bCommentBubbleVisible=True
    NodePosX=3250
    NodePosY=300
-   NodeGuid=000000000000000000000000000000D2
-   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000011,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000D3,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(LPBr 000000000000000000000000000000D4,),)
+   NodeGuid=000000000000000000000000000000BB
+   CustomProperties Pin (PinId=00000000000000000000000000000013,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000010,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000BC,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(LPBr 000000000000000000000000000000BD,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="LPBr"
    NodeComment="LPBr"
@@ -584,11 +524,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="LPBr"
    bCommentBubbleVisible=True
    NodePosX=3250
    NodePosY=0
-   NodeGuid=000000000000000000000000000000D5
-   CustomProperties Pin (PinId=000000000000000000000000000000D1,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBReady 000000000000000000000000000000D0,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000D4,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(LPOk 000000000000000000000000000000D3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000D6,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPReady 000000000000000000000000000000D7,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000D8,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPNew 000000000000000000000000000000D9,),)
+   NodeGuid=000000000000000000000000000000BE
+   CustomProperties Pin (PinId=000000000000000000000000000000BA,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LBReady 000000000000000000000000000000B9,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000BD,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(LPOk 000000000000000000000000000000BC,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000BF,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPReady 000000000000000000000000000000C0,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000C1,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPNew 000000000000000000000000000000C2,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_AddComponentByClass Name="LPNew"
    NodeComment="LPNew"
@@ -596,14 +536,14 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_AddComponentByClass Name="LPNew
    bCommentBubbleVisible=True
    NodePosX=3500
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000DA
-   CustomProperties Pin (PinId=000000000000000000000000000000D9,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPBr 000000000000000000000000000000D8,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000DB,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPMovable 000000000000000000000000000000DC,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000DD,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",)
-   CustomProperties Pin (PinId=000000000000000000000000000000DE,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",DefaultObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
-   CustomProperties Pin (PinId=000000000000000000000000000000DF,PinName="bManualAttachment",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
-   CustomProperties Pin (PinId=000000000000000000000000000000E0,PinName="RelativeTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",)
-   CustomProperties Pin (PinId=000000000000000000000000000000E1,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPMovable 000000000000000000000000000000E2,LPAbsolute 000000000000000000000000000000E3,LPMesh 000000000000000000000000000000E4,LPNoCollide 000000000000000000000000000000E5,LPNoShadow 000000000000000000000000000000E6,LPSetMat 000000000000000000000000000000E7,LPKeep 000000000000000000000000000000E8,),)
+   NodeGuid=000000000000000000000000000000C3
+   CustomProperties Pin (PinId=000000000000000000000000000000C2,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPBr 000000000000000000000000000000C1,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000C4,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPMovable 000000000000000000000000000000C5,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000C6,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",)
+   CustomProperties Pin (PinId=000000000000000000000000000000C7,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",DefaultObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
+   CustomProperties Pin (PinId=000000000000000000000000000000C8,PinName="bManualAttachment",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
+   CustomProperties Pin (PinId=000000000000000000000000000000C9,PinName="RelativeTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",)
+   CustomProperties Pin (PinId=000000000000000000000000000000CA,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPMovable 000000000000000000000000000000CB,LPAbsolute 000000000000000000000000000000CC,LPMesh 000000000000000000000000000000CD,LPNoCollide 000000000000000000000000000000CE,LPNoShadow 000000000000000000000000000000CF,LPSetMat 000000000000000000000000000000D0,LPKeep 000000000000000000000000000000D1,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPMovable"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.SceneComponent'",MemberName="SetMobility")
@@ -612,11 +552,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPMovable"
    bCommentBubbleVisible=True
    NodePosX=3750
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000E9
-   CustomProperties Pin (PinId=000000000000000000000000000000DC,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPNew 000000000000000000000000000000DB,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000EA,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPAbsolute 000000000000000000000000000000EB,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000E2,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000E1,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000EC,PinName="NewMobility",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.EComponentMobility'",DefaultValue="Movable",)
+   NodeGuid=000000000000000000000000000000D2
+   CustomProperties Pin (PinId=000000000000000000000000000000C5,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPNew 000000000000000000000000000000C4,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D3,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPAbsolute 000000000000000000000000000000D4,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000CB,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D5,PinName="NewMobility",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.EComponentMobility'",DefaultValue="Movable",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPAbsolute"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.SceneComponent'",MemberName="SetAbsolute")
@@ -625,13 +565,13 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPAbsolute"
    bCommentBubbleVisible=True
    NodePosX=3750
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000ED
-   CustomProperties Pin (PinId=000000000000000000000000000000EB,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPMovable 000000000000000000000000000000EA,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000EE,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPMesh 000000000000000000000000000000EF,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000E3,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000E1,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000F0,PinName="bNewAbsoluteLocation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=000000000000000000000000000000F1,PinName="bNewAbsoluteRotation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=000000000000000000000000000000F2,PinName="bNewAbsoluteScale",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   NodeGuid=000000000000000000000000000000D6
+   CustomProperties Pin (PinId=000000000000000000000000000000D4,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPMovable 000000000000000000000000000000D3,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D7,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPMesh 000000000000000000000000000000D8,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000CC,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D9,PinName="bNewAbsoluteLocation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   CustomProperties Pin (PinId=000000000000000000000000000000DA,PinName="bNewAbsoluteRotation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   CustomProperties Pin (PinId=000000000000000000000000000000DB,PinName="bNewAbsoluteScale",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPMesh"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.StaticMeshComponent'",MemberName="SetStaticMesh")
@@ -640,12 +580,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPMesh"
    bCommentBubbleVisible=True
    NodePosX=3750
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000F3
-   CustomProperties Pin (PinId=000000000000000000000000000000EF,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPAbsolute 000000000000000000000000000000EE,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000F4,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPNoCollide 000000000000000000000000000000F5,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000E4,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000E1,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000F6,PinName="NewMesh",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.StaticMesh'",DefaultObject="/Script/Engine.StaticMesh'/Game/Mods/FreightDock/Route/SM_RouteStrip.SM_RouteStrip'",)
-   CustomProperties Pin (PinId=000000000000000000000000000000F7,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+   NodeGuid=000000000000000000000000000000DC
+   CustomProperties Pin (PinId=000000000000000000000000000000D8,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPAbsolute 000000000000000000000000000000D7,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000DD,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPNoCollide 000000000000000000000000000000DE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000CD,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000DF,PinName="NewMesh",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.StaticMesh'",DefaultObject="/Script/Engine.StaticMesh'/Game/Mods/FreightDock/Route/SM_RouteStrip.SM_RouteStrip'",)
+   CustomProperties Pin (PinId=000000000000000000000000000000E0,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPNoCollide"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetCollisionEnabled")
@@ -654,11 +594,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPNoCollide"
    bCommentBubbleVisible=True
    NodePosX=3750
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000F8
-   CustomProperties Pin (PinId=000000000000000000000000000000F5,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPMesh 000000000000000000000000000000F4,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000F9,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPNoShadow 000000000000000000000000000000FA,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000E5,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000E1,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000FB,PinName="NewType",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.ECollisionEnabled'",DefaultValue="NoCollision",)
+   NodeGuid=000000000000000000000000000000E1
+   CustomProperties Pin (PinId=000000000000000000000000000000DE,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPMesh 000000000000000000000000000000DD,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E2,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPNoShadow 000000000000000000000000000000E3,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000CE,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E4,PinName="NewType",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.ECollisionEnabled'",DefaultValue="NoCollision",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPNoShadow"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetCastShadow")
@@ -667,11 +607,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPNoShadow"
    bCommentBubbleVisible=True
    NodePosX=3750
    NodePosY=-200
-   NodeGuid=000000000000000000000000000000FC
-   CustomProperties Pin (PinId=000000000000000000000000000000FA,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPNoCollide 000000000000000000000000000000F9,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000FD,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPMID 000000000000000000000000000000FE,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000E6,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000E1,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000FF,PinName="NewCastShadow",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
+   NodeGuid=000000000000000000000000000000E5
+   CustomProperties Pin (PinId=000000000000000000000000000000E3,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPNoCollide 000000000000000000000000000000E2,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E6,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPMID 000000000000000000000000000000E7,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000CF,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000E8,PinName="NewCastShadow",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPMID"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMaterialLibrary'",MemberName="CreateDynamicMaterialInstance")
@@ -680,12 +620,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPMID"
    bCommentBubbleVisible=True
    NodePosX=3750
    NodePosY=150
-   NodeGuid=00000000000000000000000000000100
-   CustomProperties Pin (PinId=000000000000000000000000000000FE,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPNoShadow 000000000000000000000000000000FD,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000101,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPTint 00000000000000000000000000000102,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000103,PinName="Parent",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",DefaultObject="/Script/Engine.Material'/Game/Mods/FreightDock/Route/M_RouteLine.M_RouteLine'",)
-   CustomProperties Pin (PinId=00000000000000000000000000000104,PinName="OptionalName",PinType.PinCategory="name",DefaultValue="None",)
-   CustomProperties Pin (PinId=00000000000000000000000000000105,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LPTint 00000000000000000000000000000106,LPSetMat 00000000000000000000000000000107,),)
+   NodeGuid=000000000000000000000000000000E9
+   CustomProperties Pin (PinId=000000000000000000000000000000E7,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPNoShadow 000000000000000000000000000000E6,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000EA,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPTint 000000000000000000000000000000EB,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000EC,PinName="Parent",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",DefaultObject="/Script/Engine.Material'/Game/Mods/FreightDock/Route/M_RouteLine.M_RouteLine'",)
+   CustomProperties Pin (PinId=000000000000000000000000000000ED,PinName="OptionalName",PinType.PinCategory="name",DefaultValue="None",)
+   CustomProperties Pin (PinId=000000000000000000000000000000EE,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LPTint 000000000000000000000000000000EF,LPSetMat 000000000000000000000000000000F0,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="LPColor"
    VariableReference=(MemberName="PenaltyCellColor",bSelfContext=True)
@@ -694,8 +634,8 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="LPColor"
    bCommentBubbleVisible=True
    NodePosX=3750
    NodePosY=450
-   NodeGuid=00000000000000000000000000000108
-   CustomProperties Pin (PinId=00000000000000000000000000000109,PinName="PenaltyCellColor",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LPTint 0000000000000000000000000000010A,),)
+   NodeGuid=000000000000000000000000000000F1
+   CustomProperties Pin (PinId=000000000000000000000000000000F2,PinName="PenaltyCellColor",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LPTint 000000000000000000000000000000F3,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPTint"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",MemberName="SetVectorParameterValue")
@@ -704,12 +644,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPTint"
    bCommentBubbleVisible=True
    NodePosX=4000
    NodePosY=150
-   NodeGuid=0000000000000000000000000000010B
-   CustomProperties Pin (PinId=00000000000000000000000000000102,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPMID 00000000000000000000000000000101,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000010C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPSetMat 0000000000000000000000000000010D,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000106,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LPMID 00000000000000000000000000000105,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000010E,PinName="ParameterName",PinType.PinCategory="name",DefaultValue="Color",)
-   CustomProperties Pin (PinId=0000000000000000000000000000010A,PinName="Value",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LPColor 00000000000000000000000000000109,),)
+   NodeGuid=000000000000000000000000000000F4
+   CustomProperties Pin (PinId=000000000000000000000000000000EB,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPMID 000000000000000000000000000000EA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000F5,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPSetMat 000000000000000000000000000000F6,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000EF,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LPMID 000000000000000000000000000000EE,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000F7,PinName="ParameterName",PinType.PinCategory="name",DefaultValue="Color",)
+   CustomProperties Pin (PinId=000000000000000000000000000000F3,PinName="Value",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LPColor 000000000000000000000000000000F2,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPSetMat"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetMaterial")
@@ -718,12 +658,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LPSetMat"
    bCommentBubbleVisible=True
    NodePosX=4250
    NodePosY=150
-   NodeGuid=0000000000000000000000000000010F
-   CustomProperties Pin (PinId=0000000000000000000000000000010D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPTint 0000000000000000000000000000010C,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000110,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPKeep 00000000000000000000000000000111,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000E7,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000E1,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000112,PinName="ElementIndex",PinType.PinCategory="int",DefaultValue="0",)
-   CustomProperties Pin (PinId=00000000000000000000000000000107,PinName="Material",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",LinkedTo=(LPMID 00000000000000000000000000000105,),)
+   NodeGuid=000000000000000000000000000000F8
+   CustomProperties Pin (PinId=000000000000000000000000000000F6,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPTint 000000000000000000000000000000F5,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000F9,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPKeep 000000000000000000000000000000FA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D0,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000FB,PinName="ElementIndex",PinType.PinCategory="int",DefaultValue="0",)
+   CustomProperties Pin (PinId=000000000000000000000000000000F0,PinName="Material",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",LinkedTo=(LPMID 000000000000000000000000000000EE,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="LPKeep"
    VariableReference=(MemberName="PenaltyLayer",bSelfContext=True)
@@ -732,11 +672,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="LPKeep"
    bCommentBubbleVisible=True
    NodePosX=4500
    NodePosY=150
-   NodeGuid=00000000000000000000000000000113
-   CustomProperties Pin (PinId=00000000000000000000000000000111,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPSetMat 00000000000000000000000000000110,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000114,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPReady 000000000000000000000000000000D7,),)
-   CustomProperties Pin (PinId=000000000000000000000000000000E8,PinName="PenaltyLayer",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000E1,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000115,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
+   NodeGuid=000000000000000000000000000000FC
+   CustomProperties Pin (PinId=000000000000000000000000000000FA,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPSetMat 000000000000000000000000000000F9,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000FD,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LPReady 000000000000000000000000000000C0,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000D1,PinName="PenaltyLayer",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LPNew 000000000000000000000000000000CA,),)
+   CustomProperties Pin (PinId=000000000000000000000000000000FE,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="LPReady"
    NodeComment="LPReady"
@@ -744,9 +684,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="LPReady
    bCommentBubbleVisible=True
    NodePosX=4750
    NodePosY=0
-   NodeGuid=00000000000000000000000000000116
-   CustomProperties Pin (PinId=000000000000000000000000000000D7,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPKeep 00000000000000000000000000000114,LPBr 000000000000000000000000000000D6,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000117,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLBr 00000000000000000000000000000118,),)
+   NodeGuid=000000000000000000000000000000FF
+   CustomProperties Pin (PinId=000000000000000000000000000000C0,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPKeep 000000000000000000000000000000FD,LPBr 000000000000000000000000000000BF,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000100,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLBr 00000000000000000000000000000101,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -755,9 +695,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLOk"
    bCommentBubbleVisible=True
    NodePosX=5000
    NodePosY=300
-   NodeGuid=00000000000000000000000000000119
-   CustomProperties Pin (PinId=0000000000000000000000000000001C,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000019,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000011A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(LLBr 0000000000000000000000000000011B,),)
+   NodeGuid=00000000000000000000000000000102
+   CustomProperties Pin (PinId=0000000000000000000000000000001A,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000017,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000103,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(LLBr 00000000000000000000000000000104,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="LLBr"
    NodeComment="LLBr"
@@ -765,11 +705,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="LLBr"
    bCommentBubbleVisible=True
    NodePosX=5000
    NodePosY=0
-   NodeGuid=0000000000000000000000000000011C
-   CustomProperties Pin (PinId=00000000000000000000000000000118,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPReady 00000000000000000000000000000117,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000011B,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(LLOk 0000000000000000000000000000011A,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000011D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLReady 0000000000000000000000000000011E,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000011F,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLNew 00000000000000000000000000000120,),)
+   NodeGuid=00000000000000000000000000000105
+   CustomProperties Pin (PinId=00000000000000000000000000000101,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LPReady 00000000000000000000000000000100,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000104,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(LLOk 00000000000000000000000000000103,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000106,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLReady 00000000000000000000000000000107,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000108,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLNew 00000000000000000000000000000109,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_AddComponentByClass Name="LLNew"
    NodeComment="LLNew"
@@ -777,14 +717,14 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_AddComponentByClass Name="LLNew
    bCommentBubbleVisible=True
    NodePosX=5250
    NodePosY=-200
-   NodeGuid=00000000000000000000000000000121
-   CustomProperties Pin (PinId=00000000000000000000000000000120,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLBr 0000000000000000000000000000011F,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000122,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLMovable 00000000000000000000000000000123,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000124,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",)
-   CustomProperties Pin (PinId=00000000000000000000000000000125,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",DefaultObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
-   CustomProperties Pin (PinId=00000000000000000000000000000126,PinName="bManualAttachment",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
-   CustomProperties Pin (PinId=00000000000000000000000000000127,PinName="RelativeTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",)
-   CustomProperties Pin (PinId=00000000000000000000000000000128,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLMovable 00000000000000000000000000000129,LLAbsolute 0000000000000000000000000000012A,LLMesh 0000000000000000000000000000012B,LLNoCollide 0000000000000000000000000000012C,LLNoShadow 0000000000000000000000000000012D,LLSetMat 0000000000000000000000000000012E,LLKeep 0000000000000000000000000000012F,),)
+   NodeGuid=0000000000000000000000000000010A
+   CustomProperties Pin (PinId=00000000000000000000000000000109,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLBr 00000000000000000000000000000108,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000010B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLMovable 0000000000000000000000000000010C,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000010D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",)
+   CustomProperties Pin (PinId=0000000000000000000000000000010E,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.ActorComponent'",DefaultObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
+   CustomProperties Pin (PinId=0000000000000000000000000000010F,PinName="bManualAttachment",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
+   CustomProperties Pin (PinId=00000000000000000000000000000110,PinName="RelativeTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000111,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLMovable 00000000000000000000000000000112,LLAbsolute 00000000000000000000000000000113,LLMesh 00000000000000000000000000000114,LLNoCollide 00000000000000000000000000000115,LLNoShadow 00000000000000000000000000000116,LLSetMat 00000000000000000000000000000117,LLKeep 00000000000000000000000000000118,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLMovable"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.SceneComponent'",MemberName="SetMobility")
@@ -793,11 +733,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLMovable"
    bCommentBubbleVisible=True
    NodePosX=5500
    NodePosY=-200
-   NodeGuid=00000000000000000000000000000130
-   CustomProperties Pin (PinId=00000000000000000000000000000123,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLNew 00000000000000000000000000000122,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000131,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLAbsolute 00000000000000000000000000000132,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000129,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000128,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000133,PinName="NewMobility",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.EComponentMobility'",DefaultValue="Movable",)
+   NodeGuid=00000000000000000000000000000119
+   CustomProperties Pin (PinId=0000000000000000000000000000010C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLNew 0000000000000000000000000000010B,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000011A,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLAbsolute 0000000000000000000000000000011B,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000112,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000111,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000011C,PinName="NewMobility",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.EComponentMobility'",DefaultValue="Movable",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLAbsolute"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.SceneComponent'",MemberName="SetAbsolute")
@@ -806,13 +746,13 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLAbsolute"
    bCommentBubbleVisible=True
    NodePosX=5500
    NodePosY=-200
-   NodeGuid=00000000000000000000000000000134
-   CustomProperties Pin (PinId=00000000000000000000000000000132,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLMovable 00000000000000000000000000000131,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000135,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLMesh 00000000000000000000000000000136,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000012A,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000128,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000137,PinName="bNewAbsoluteLocation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=00000000000000000000000000000138,PinName="bNewAbsoluteRotation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=00000000000000000000000000000139,PinName="bNewAbsoluteScale",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   NodeGuid=0000000000000000000000000000011D
+   CustomProperties Pin (PinId=0000000000000000000000000000011B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLMovable 0000000000000000000000000000011A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000011E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLMesh 0000000000000000000000000000011F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000113,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000111,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000120,PinName="bNewAbsoluteLocation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   CustomProperties Pin (PinId=00000000000000000000000000000121,PinName="bNewAbsoluteRotation",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
+   CustomProperties Pin (PinId=00000000000000000000000000000122,PinName="bNewAbsoluteScale",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLMesh"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.StaticMeshComponent'",MemberName="SetStaticMesh")
@@ -821,12 +761,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLMesh"
    bCommentBubbleVisible=True
    NodePosX=5500
    NodePosY=-200
-   NodeGuid=0000000000000000000000000000013A
-   CustomProperties Pin (PinId=00000000000000000000000000000136,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLAbsolute 00000000000000000000000000000135,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000013B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLNoCollide 0000000000000000000000000000013C,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000012B,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000128,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000013D,PinName="NewMesh",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.StaticMesh'",DefaultObject="/Script/Engine.StaticMesh'/Game/Mods/FreightDock/Route/SM_RouteStrip.SM_RouteStrip'",)
-   CustomProperties Pin (PinId=0000000000000000000000000000013E,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
+   NodeGuid=00000000000000000000000000000123
+   CustomProperties Pin (PinId=0000000000000000000000000000011F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLAbsolute 0000000000000000000000000000011E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000124,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLNoCollide 00000000000000000000000000000125,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000114,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000111,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000126,PinName="NewMesh",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.StaticMesh'",DefaultObject="/Script/Engine.StaticMesh'/Game/Mods/FreightDock/Route/SM_RouteStrip.SM_RouteStrip'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000127,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLNoCollide"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetCollisionEnabled")
@@ -835,11 +775,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLNoCollide"
    bCommentBubbleVisible=True
    NodePosX=5500
    NodePosY=-200
-   NodeGuid=0000000000000000000000000000013F
-   CustomProperties Pin (PinId=0000000000000000000000000000013C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLMesh 0000000000000000000000000000013B,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000140,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLNoShadow 00000000000000000000000000000141,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000012C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000128,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000142,PinName="NewType",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.ECollisionEnabled'",DefaultValue="NoCollision",)
+   NodeGuid=00000000000000000000000000000128
+   CustomProperties Pin (PinId=00000000000000000000000000000125,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLMesh 00000000000000000000000000000124,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000129,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLNoShadow 0000000000000000000000000000012A,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000115,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000111,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000012B,PinName="NewType",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.ECollisionEnabled'",DefaultValue="NoCollision",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLNoShadow"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetCastShadow")
@@ -848,11 +788,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLNoShadow"
    bCommentBubbleVisible=True
    NodePosX=5500
    NodePosY=-200
-   NodeGuid=00000000000000000000000000000143
-   CustomProperties Pin (PinId=00000000000000000000000000000141,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLNoCollide 00000000000000000000000000000140,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000144,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLMID 00000000000000000000000000000145,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000012D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000128,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000146,PinName="NewCastShadow",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
+   NodeGuid=0000000000000000000000000000012C
+   CustomProperties Pin (PinId=0000000000000000000000000000012A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLNoCollide 00000000000000000000000000000129,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000012D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLMID 0000000000000000000000000000012E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000116,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000111,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000012F,PinName="NewCastShadow",PinType.PinCategory="bool",DefaultValue="false",AutogeneratedDefaultValue="true",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLMID"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMaterialLibrary'",MemberName="CreateDynamicMaterialInstance")
@@ -861,12 +801,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLMID"
    bCommentBubbleVisible=True
    NodePosX=5500
    NodePosY=150
-   NodeGuid=00000000000000000000000000000147
-   CustomProperties Pin (PinId=00000000000000000000000000000145,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLNoShadow 00000000000000000000000000000144,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000148,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLTint 00000000000000000000000000000149,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000014A,PinName="Parent",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",DefaultObject="/Script/Engine.Material'/Game/Mods/FreightDock/Route/M_RouteLine.M_RouteLine'",)
-   CustomProperties Pin (PinId=0000000000000000000000000000014B,PinName="OptionalName",PinType.PinCategory="name",DefaultValue="None",)
-   CustomProperties Pin (PinId=0000000000000000000000000000014C,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LLTint 0000000000000000000000000000014D,LLSetMat 0000000000000000000000000000014E,),)
+   NodeGuid=00000000000000000000000000000130
+   CustomProperties Pin (PinId=0000000000000000000000000000012E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLNoShadow 0000000000000000000000000000012D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000131,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLTint 00000000000000000000000000000132,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000133,PinName="Parent",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",DefaultObject="/Script/Engine.Material'/Game/Mods/FreightDock/Route/M_RouteLine.M_RouteLine'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000134,PinName="OptionalName",PinType.PinCategory="name",DefaultValue="None",)
+   CustomProperties Pin (PinId=00000000000000000000000000000135,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LLTint 00000000000000000000000000000136,LLSetMat 00000000000000000000000000000137,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="LLColor"
    VariableReference=(MemberName="LandCellColor",bSelfContext=True)
@@ -875,8 +815,8 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="LLColor"
    bCommentBubbleVisible=True
    NodePosX=5500
    NodePosY=450
-   NodeGuid=0000000000000000000000000000014F
-   CustomProperties Pin (PinId=00000000000000000000000000000150,PinName="LandCellColor",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LLTint 00000000000000000000000000000151,),)
+   NodeGuid=00000000000000000000000000000138
+   CustomProperties Pin (PinId=00000000000000000000000000000139,PinName="LandCellColor",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LLTint 0000000000000000000000000000013A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLTint"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",MemberName="SetVectorParameterValue")
@@ -885,12 +825,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLTint"
    bCommentBubbleVisible=True
    NodePosX=5750
    NodePosY=150
-   NodeGuid=00000000000000000000000000000152
-   CustomProperties Pin (PinId=00000000000000000000000000000149,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLMID 00000000000000000000000000000148,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000153,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLSetMat 00000000000000000000000000000154,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000014D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LLMID 0000000000000000000000000000014C,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000155,PinName="ParameterName",PinType.PinCategory="name",DefaultValue="Color",)
-   CustomProperties Pin (PinId=00000000000000000000000000000151,PinName="Value",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LLColor 00000000000000000000000000000150,),)
+   NodeGuid=0000000000000000000000000000013B
+   CustomProperties Pin (PinId=00000000000000000000000000000132,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLMID 00000000000000000000000000000131,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000013C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLSetMat 0000000000000000000000000000013D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000136,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInstanceDynamic'",LinkedTo=(LLMID 00000000000000000000000000000135,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000013E,PinName="ParameterName",PinType.PinCategory="name",DefaultValue="Color",)
+   CustomProperties Pin (PinId=0000000000000000000000000000013A,PinName="Value",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.LinearColor'",LinkedTo=(LLColor 00000000000000000000000000000139,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLSetMat"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.PrimitiveComponent'",MemberName="SetMaterial")
@@ -899,12 +839,12 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="LLSetMat"
    bCommentBubbleVisible=True
    NodePosX=6000
    NodePosY=150
-   NodeGuid=00000000000000000000000000000156
-   CustomProperties Pin (PinId=00000000000000000000000000000154,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLTint 00000000000000000000000000000153,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000157,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLKeep 00000000000000000000000000000158,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000012E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000128,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000159,PinName="ElementIndex",PinType.PinCategory="int",DefaultValue="0",)
-   CustomProperties Pin (PinId=0000000000000000000000000000014E,PinName="Material",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",LinkedTo=(LLMID 0000000000000000000000000000014C,),)
+   NodeGuid=0000000000000000000000000000013F
+   CustomProperties Pin (PinId=0000000000000000000000000000013D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLTint 0000000000000000000000000000013C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000140,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLKeep 00000000000000000000000000000141,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000117,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000111,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000142,PinName="ElementIndex",PinType.PinCategory="int",DefaultValue="0",)
+   CustomProperties Pin (PinId=00000000000000000000000000000137,PinName="Material",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.MaterialInterface'",LinkedTo=(LLMID 00000000000000000000000000000135,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="LLKeep"
    VariableReference=(MemberName="LandLayer",bSelfContext=True)
@@ -913,11 +853,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="LLKeep"
    bCommentBubbleVisible=True
    NodePosX=6250
    NodePosY=150
-   NodeGuid=0000000000000000000000000000015A
-   CustomProperties Pin (PinId=00000000000000000000000000000158,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLSetMat 00000000000000000000000000000157,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000015B,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLReady 0000000000000000000000000000011E,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000012F,PinName="LandLayer",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000128,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000015C,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
+   NodeGuid=00000000000000000000000000000143
+   CustomProperties Pin (PinId=00000000000000000000000000000141,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLSetMat 00000000000000000000000000000140,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000144,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(LLReady 00000000000000000000000000000107,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000118,PinName="LandLayer",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(LLNew 00000000000000000000000000000111,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000145,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="LLReady"
    NodeComment="LLReady"
@@ -925,9 +865,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="LLReady
    bCommentBubbleVisible=True
    NodePosX=6500
    NodePosY=0
-   NodeGuid=0000000000000000000000000000015D
-   CustomProperties Pin (PinId=0000000000000000000000000000011E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLKeep 0000000000000000000000000000015B,LLBr 0000000000000000000000000000011D,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000015E,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearBBr 0000000000000000000000000000015F,),)
+   NodeGuid=00000000000000000000000000000146
+   CustomProperties Pin (PinId=00000000000000000000000000000107,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLKeep 00000000000000000000000000000144,LLBr 00000000000000000000000000000106,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000147,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearBBr 00000000000000000000000000000148,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearBOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -936,9 +876,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearBOk"
    bCommentBubbleVisible=True
    NodePosX=6750
    NodePosY=150
-   NodeGuid=00000000000000000000000000000160
+   NodeGuid=00000000000000000000000000000149
    CustomProperties Pin (PinId=0000000000000000000000000000000D,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetBlockedLayer 00000000000000000000000000000009,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000161,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(ClearBBr 00000000000000000000000000000162,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000014A,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(ClearBBr 0000000000000000000000000000014B,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="ClearBBr"
    NodeComment="ClearBBr"
@@ -946,11 +886,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="ClearBBr"
    bCommentBubbleVisible=True
    NodePosX=6750
    NodePosY=0
-   NodeGuid=00000000000000000000000000000163
-   CustomProperties Pin (PinId=0000000000000000000000000000015F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLReady 0000000000000000000000000000015E,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000162,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(ClearBOk 00000000000000000000000000000161,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000164,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearB 00000000000000000000000000000165,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000166,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearBDone 00000000000000000000000000000167,),)
+   NodeGuid=0000000000000000000000000000014C
+   CustomProperties Pin (PinId=00000000000000000000000000000148,PinName="execute",PinType.PinCategory="exec",LinkedTo=(LLReady 00000000000000000000000000000147,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000014B,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(ClearBOk 0000000000000000000000000000014A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000014D,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearB 0000000000000000000000000000014E,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000014F,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearBDone 00000000000000000000000000000150,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearB"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="ClearInstances")
@@ -959,9 +899,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearB"
    bCommentBubbleVisible=True
    NodePosX=7000
    NodePosY=0
-   NodeGuid=00000000000000000000000000000168
-   CustomProperties Pin (PinId=00000000000000000000000000000165,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearBBr 00000000000000000000000000000164,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000169,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearBDone 00000000000000000000000000000167,),)
+   NodeGuid=00000000000000000000000000000151
+   CustomProperties Pin (PinId=0000000000000000000000000000014E,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearBBr 0000000000000000000000000000014D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000152,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearBDone 00000000000000000000000000000150,),)
    CustomProperties Pin (PinId=0000000000000000000000000000000E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetBlockedLayer 00000000000000000000000000000009,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="ClearBDone"
@@ -970,9 +910,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="ClearBD
    bCommentBubbleVisible=True
    NodePosX=7250
    NodePosY=0
-   NodeGuid=0000000000000000000000000000016A
-   CustomProperties Pin (PinId=00000000000000000000000000000167,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearB 00000000000000000000000000000169,ClearBBr 00000000000000000000000000000166,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000016B,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearPBr 0000000000000000000000000000016C,),)
+   NodeGuid=00000000000000000000000000000153
+   CustomProperties Pin (PinId=00000000000000000000000000000150,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearB 00000000000000000000000000000152,ClearBBr 0000000000000000000000000000014F,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000154,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearPBr 00000000000000000000000000000155,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearPOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -981,9 +921,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearPOk"
    bCommentBubbleVisible=True
    NodePosX=7500
    NodePosY=150
-   NodeGuid=0000000000000000000000000000016D
-   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000011,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000016E,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(ClearPBr 0000000000000000000000000000016F,),)
+   NodeGuid=00000000000000000000000000000156
+   CustomProperties Pin (PinId=00000000000000000000000000000014,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000010,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000157,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(ClearPBr 00000000000000000000000000000158,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="ClearPBr"
    NodeComment="ClearPBr"
@@ -991,11 +931,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="ClearPBr"
    bCommentBubbleVisible=True
    NodePosX=7500
    NodePosY=0
-   NodeGuid=00000000000000000000000000000170
-   CustomProperties Pin (PinId=0000000000000000000000000000016C,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearBDone 0000000000000000000000000000016B,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000016F,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(ClearPOk 0000000000000000000000000000016E,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000171,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearP 00000000000000000000000000000172,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000173,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearPDone 00000000000000000000000000000174,),)
+   NodeGuid=00000000000000000000000000000159
+   CustomProperties Pin (PinId=00000000000000000000000000000155,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearBDone 00000000000000000000000000000154,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000158,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(ClearPOk 00000000000000000000000000000157,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000015A,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearP 0000000000000000000000000000015B,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000015C,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearPDone 0000000000000000000000000000015D,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearP"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="ClearInstances")
@@ -1004,10 +944,10 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearP"
    bCommentBubbleVisible=True
    NodePosX=7750
    NodePosY=0
-   NodeGuid=00000000000000000000000000000175
-   CustomProperties Pin (PinId=00000000000000000000000000000172,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearPBr 00000000000000000000000000000171,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000176,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearPDone 00000000000000000000000000000174,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000016,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000011,),)
+   NodeGuid=0000000000000000000000000000015E
+   CustomProperties Pin (PinId=0000000000000000000000000000015B,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearPBr 0000000000000000000000000000015A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000015F,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearPDone 0000000000000000000000000000015D,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000015,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000010,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="ClearPDone"
    NodeComment="ClearPDone"
@@ -1015,9 +955,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="ClearPD
    bCommentBubbleVisible=True
    NodePosX=8000
    NodePosY=0
-   NodeGuid=00000000000000000000000000000177
-   CustomProperties Pin (PinId=00000000000000000000000000000174,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearP 00000000000000000000000000000176,ClearPBr 00000000000000000000000000000173,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000178,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearLBr 00000000000000000000000000000179,),)
+   NodeGuid=00000000000000000000000000000160
+   CustomProperties Pin (PinId=0000000000000000000000000000015D,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearP 0000000000000000000000000000015F,ClearPBr 0000000000000000000000000000015C,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000161,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearLBr 00000000000000000000000000000162,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearLOk"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetSystemLibrary'",MemberName="IsValid")
@@ -1026,9 +966,9 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearLOk"
    bCommentBubbleVisible=True
    NodePosX=8250
    NodePosY=150
-   NodeGuid=0000000000000000000000000000017A
-   CustomProperties Pin (PinId=0000000000000000000000000000001D,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000019,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000017B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(ClearLBr 0000000000000000000000000000017C,),)
+   NodeGuid=00000000000000000000000000000163
+   CustomProperties Pin (PinId=0000000000000000000000000000001B,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000017,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000164,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(ClearLBr 00000000000000000000000000000165,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="ClearLBr"
    NodeComment="ClearLBr"
@@ -1036,11 +976,11 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="ClearLBr"
    bCommentBubbleVisible=True
    NodePosX=8250
    NodePosY=0
-   NodeGuid=0000000000000000000000000000017D
-   CustomProperties Pin (PinId=00000000000000000000000000000179,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearPDone 00000000000000000000000000000178,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000017C,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(ClearLOk 0000000000000000000000000000017B,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000017E,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearL 0000000000000000000000000000017F,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000180,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearLDone 00000000000000000000000000000181,),)
+   NodeGuid=00000000000000000000000000000166
+   CustomProperties Pin (PinId=00000000000000000000000000000162,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearPDone 00000000000000000000000000000161,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000165,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(ClearLOk 00000000000000000000000000000164,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000167,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearL 00000000000000000000000000000168,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000169,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearLDone 0000000000000000000000000000016A,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearL"
    FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="ClearInstances")
@@ -1049,10 +989,10 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="ClearL"
    bCommentBubbleVisible=True
    NodePosX=8500
    NodePosY=0
-   NodeGuid=00000000000000000000000000000182
-   CustomProperties Pin (PinId=0000000000000000000000000000017F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearLBr 0000000000000000000000000000017E,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000183,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearLDone 00000000000000000000000000000181,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000001E,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000019,),)
+   NodeGuid=0000000000000000000000000000016B
+   CustomProperties Pin (PinId=00000000000000000000000000000168,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearLBr 00000000000000000000000000000167,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000016C,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ClearLDone 0000000000000000000000000000016A,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000001C,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000017,),)
 End Object
 Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="ClearLDone"
    NodeComment="ClearLDone"
@@ -1060,335 +1000,28 @@ Begin Object Class=/Script/BlueprintGraph.K2Node_ExecutionSequence Name="ClearLD
    bCommentBubbleVisible=True
    NodePosX=8750
    NodePosY=0
-   NodeGuid=00000000000000000000000000000184
-   CustomProperties Pin (PinId=00000000000000000000000000000181,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearL 00000000000000000000000000000183,ClearLBr 00000000000000000000000000000180,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000185,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(SetCentre 00000000000000000000000000000186,),)
+   NodeGuid=0000000000000000000000000000016D
+   CustomProperties Pin (PinId=0000000000000000000000000000016A,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearL 0000000000000000000000000000016C,ClearLBr 00000000000000000000000000000169,),)
+   CustomProperties Pin (PinId=0000000000000000000000000000016E,PinName="then_0",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(Squares 0000000000000000000000000000016F,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Pawn"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.GameplayStatics'",MemberName="GetPlayerPawn")
-   NodeComment="Pawn"
+Begin Object Class=/Script/BlueprintGraph.K2Node_Self Name="Squares_Self"
+   NodeComment="Squares_Self"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
-   NodePosX=6250
-   NodePosY=400
-   NodeGuid=00000000000000000000000000000187
-   CustomProperties Pin (PinId=00000000000000000000000000000188,PinName="PlayerIndex",PinType.PinCategory="int",DefaultValue="0",)
-   CustomProperties Pin (PinId=00000000000000000000000000000189,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Pawn'",LinkedTo=(AsPlayPawn 0000000000000000000000000000018A,),)
+   NodePosX=9000
+   NodePosY=200
+   NodeGuid=00000000000000000000000000000170
+   CustomProperties Pin (PinId=00000000000000000000000000000171,PinName="self",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategory="self",LinkedTo=(Squares 00000000000000000000000000000172,),)
 End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_DynamicCast Name="AsPlayPawn"
-   TargetType="/Script/CoreUObject.Class'/Script/ProjectArco.Pawn_Play'"
-   PureState=Pure
-   NodeComment="AsPlayPawn"
+Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Squares"
+   FunctionReference=(MemberParent="/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDVoyage.BPL_FDVoyage_C'",MemberName="DrawCellSquares")
+   NodeComment="Squares"
    bCommentBubblePinned=True
    bCommentBubbleVisible=True
-   NodePosX=6500
-   NodePosY=400
-   NodeGuid=0000000000000000000000000000018B
-   CustomProperties Pin (PinId=0000000000000000000000000000018A,PinName="Object",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Pawn'",LinkedTo=(Pawn 00000000000000000000000000000189,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000018C,PinName="AsPawn Play",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.Pawn_Play'",LinkedTo=(Focal 0000000000000000000000000000018D,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000018E,PinName="bSuccess",Direction="EGPD_Output",PinType.PinCategory="bool",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="Focal"
-   VariableReference=(MemberParent="/Script/CoreUObject.Class'/Script/ProjectArco.Pawn_Play'",MemberName="m_currentFocalPoint")
-   NodeComment="Focal"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=6750
-   NodePosY=400
-   NodeGuid=0000000000000000000000000000018F
-   CustomProperties Pin (PinId=0000000000000000000000000000018D,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/ProjectArco.Pawn_Play'",LinkedTo=(AsPlayPawn 0000000000000000000000000000018C,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000190,PinName="m_currentFocalPoint",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(FocalKey 00000000000000000000000000000191,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_VariableSet Name="SetCentre"
-   VariableReference=(MemberScope="DebugCells",MemberName="Centre")
-   NodeComment="SetCentre"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=6500
+   NodePosX=9000
    NodePosY=0
-   NodeGuid=00000000000000000000000000000192
-   CustomProperties Pin (PinId=00000000000000000000000000000186,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearLDone 00000000000000000000000000000185,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000193,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ForDX 00000000000000000000000000000194,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000195,PinName="Centre",PinType.PinCategory="int",LinkedTo=(FocalKey 00000000000000000000000000000196,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000197,PinName="Output_Get",Direction="EGPD_Output",PinType.PinCategory="int",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="FocalKey"
-   FunctionReference=(MemberName="CellKey",bSelfContext=True)
-   NodeComment="FocalKey"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=6750
-   NodePosY=550
-   NodeGuid=00000000000000000000000000000198
-   CustomProperties Pin (PinId=00000000000000000000000000000191,PinName="Pos",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(Focal 00000000000000000000000000000190,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000196,PinName="Key",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(SetCentre 00000000000000000000000000000195,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="NegR"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Multiply_IntInt")
-   NodeComment="NegR"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=6750
-   NodePosY=700
-   NodeGuid=00000000000000000000000000000199
-   CustomProperties Pin (PinId=00000000000000000000000000000025,PinName="A",PinType.PinCategory="int",LinkedTo=(GetRadius 00000000000000000000000000000024,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000019A,PinName="B",PinType.PinCategory="int",DefaultValue="-1",)
-   CustomProperties Pin (PinId=0000000000000000000000000000019B,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(ForDX 0000000000000000000000000000019C,ForDY 0000000000000000000000000000019D,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_MacroInstance Name="ForDX"
-   MacroGraphReference=(MacroGraph="/Script/Engine.EdGraph'/Engine/EditorBlueprintResources/StandardMacros.StandardMacros:ForLoop'",GraphBlueprint="/Script/Engine.Blueprint'/Engine/EditorBlueprintResources/StandardMacros.StandardMacros'",GraphGuid=0000000000000000000000000000019E)
-   NodeComment="ForDX"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=6750
-   NodePosY=0
-   NodeGuid=0000000000000000000000000000019F
-   CustomProperties Pin (PinId=00000000000000000000000000000194,PinName="execute",PinType.PinCategory="exec",LinkedTo=(SetCentre 00000000000000000000000000000193,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000019C,PinName="FirstIndex",PinType.PinCategory="int",LinkedTo=(NegR 0000000000000000000000000000019B,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000026,PinName="LastIndex",PinType.PinCategory="int",LinkedTo=(GetRadius 00000000000000000000000000000024,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001A0,PinName="LoopBody",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(ForDY 000000000000000000000000000001A1,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001A2,PinName="Index",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(DXOff 000000000000000000000000000001A3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001A4,PinName="Completed",Direction="EGPD_Output",PinType.PinCategory="exec",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_MacroInstance Name="ForDY"
-   MacroGraphReference=(MacroGraph="/Script/Engine.EdGraph'/Engine/EditorBlueprintResources/StandardMacros.StandardMacros:ForLoop'",GraphBlueprint="/Script/Engine.Blueprint'/Engine/EditorBlueprintResources/StandardMacros.StandardMacros'",GraphGuid=0000000000000000000000000000019E)
-   NodeComment="ForDY"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7000
-   NodePosY=0
-   NodeGuid=000000000000000000000000000001A5
-   CustomProperties Pin (PinId=000000000000000000000000000001A1,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ForDX 000000000000000000000000000001A0,),)
-   CustomProperties Pin (PinId=0000000000000000000000000000019D,PinName="FirstIndex",PinType.PinCategory="int",LinkedTo=(NegR 0000000000000000000000000000019B,),)
-   CustomProperties Pin (PinId=00000000000000000000000000000027,PinName="LastIndex",PinType.PinCategory="int",LinkedTo=(GetRadius 00000000000000000000000000000024,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001A6,PinName="LoopBody",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrBlocked 000000000000000000000000000001A7,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001A8,PinName="Index",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Key 000000000000000000000000000001A9,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001AA,PinName="Completed",Direction="EGPD_Output",PinType.PinCategory="exec",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="DXOff"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Multiply_IntInt")
-   NodeComment="DXOff"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7000
-   NodePosY=850
-   NodeGuid=000000000000000000000000000001AB
-   CustomProperties Pin (PinId=000000000000000000000000000001A3,PinName="A",PinType.PinCategory="int",LinkedTo=(ForDX 000000000000000000000000000001A2,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001AC,PinName="B",PinType.PinCategory="int",DefaultValue="4096",)
-   CustomProperties Pin (PinId=000000000000000000000000000001AD,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(KeyX 000000000000000000000000000001AE,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="KeyX"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_IntInt")
-   NodeComment="KeyX"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7250
-   NodePosY=850
-   NodeGuid=000000000000000000000000000001AF
-   CustomProperties Pin (PinId=00000000000000000000000000000033,PinName="A",PinType.PinCategory="int",LinkedTo=(GetCentre 00000000000000000000000000000032,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001AE,PinName="B",PinType.PinCategory="int",LinkedTo=(DXOff 000000000000000000000000000001AD,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001B0,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(Key 000000000000000000000000000001B1,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Key"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_IntInt")
-   NodeComment="Key"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7500
-   NodePosY=850
-   NodeGuid=000000000000000000000000000001B2
-   CustomProperties Pin (PinId=000000000000000000000000000001B1,PinName="A",PinType.PinCategory="int",LinkedTo=(KeyX 000000000000000000000000000001B0,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001A9,PinName="B",PinType.PinCategory="int",LinkedTo=(ForDY 000000000000000000000000000001A8,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001B3,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",LinkedTo=(CellCentre 000000000000000000000000000001B4,IsBlocked 000000000000000000000000000001B5,IsNear 000000000000000000000000000001B6,IsLand 000000000000000000000000000001B7,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CellCentre"
-   FunctionReference=(MemberName="CellPos",bSelfContext=True)
-   NodeComment="CellCentre"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7500
-   NodePosY=1000
-   NodeGuid=000000000000000000000000000001B8
-   CustomProperties Pin (PinId=000000000000000000000000000001B4,PinName="Key",PinType.PinCategory="int",LinkedTo=(Key 000000000000000000000000000001B3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001B9,PinName="Pos",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(CellXY 000000000000000000000000000001BA,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="CellXY"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="BreakVector")
-   NodeComment="CellXY"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7750
-   NodePosY=1000
-   NodeGuid=000000000000000000000000000001BB
-   CustomProperties Pin (PinId=000000000000000000000000000001BA,PinName="InVec",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(CellCentre 000000000000000000000000000001B9,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001BC,PinName="X",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Left 000000000000000000000000000001BD,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001BE,PinName="Y",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(SquareAt 000000000000000000000000000001BF,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001C0,PinName="Z",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Left"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Subtract_DoubleDouble")
-   NodeComment="Left"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=8000
-   NodePosY=1000
-   NodeGuid=000000000000000000000000000001C1
-   CustomProperties Pin (PinId=000000000000000000000000000001BD,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(CellXY 000000000000000000000000000001BC,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001C2,PinName="B",PinType.PinCategory="real",PinType.PinSubCategory="double",DefaultValue="45.0",)
-   CustomProperties Pin (PinId=000000000000000000000000000001C3,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(SquareAt 000000000000000000000000000001C4,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Lift"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="Add_DoubleDouble")
-   NodeComment="Lift"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=8000
-   NodePosY=1150
-   NodeGuid=000000000000000000000000000001C5
-   CustomProperties Pin (PinId=00000000000000000000000000000030,PinName="A",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(GetHeight 0000000000000000000000000000002F,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001C6,PinName="B",PinType.PinCategory="real",PinType.PinSubCategory="double",DefaultValue="1.0",)
-   CustomProperties Pin (PinId=000000000000000000000000000001C7,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(SquareAt 000000000000000000000000000001C8,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="SquareAt"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="MakeVector")
-   NodeComment="SquareAt"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=8250
-   NodePosY=1000
-   NodeGuid=000000000000000000000000000001C9
-   CustomProperties Pin (PinId=000000000000000000000000000001C4,PinName="X",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Left 000000000000000000000000000001C3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001BF,PinName="Y",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(CellXY 000000000000000000000000000001BE,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001C8,PinName="Z",PinType.PinCategory="real",PinType.PinSubCategory="double",LinkedTo=(Lift 000000000000000000000000000001C7,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001CA,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(Square 000000000000000000000000000001CB,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="Square"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.KismetMathLibrary'",MemberName="MakeTransform")
-   NodeComment="Square"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=8500
-   NodePosY=1000
-   NodeGuid=000000000000000000000000000001CC
-   CustomProperties Pin (PinId=000000000000000000000000000001CB,PinName="Location",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",LinkedTo=(SquareAt 000000000000000000000000000001CA,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001CD,PinName="Rotation",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Rotator'",)
-   CustomProperties Pin (PinId=000000000000000000000000000001CE,PinName="Scale",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'",DefaultValue="0.900000,90.000000,1.000000",)
-   CustomProperties Pin (PinId=000000000000000000000000000001CF,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",LinkedTo=(AddB 000000000000000000000000000001D0,AddL 000000000000000000000000000001D1,AddP 000000000000000000000000000001D2,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="IsBlocked"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.BlueprintSetLibrary'",MemberName="Set_Contains")
-   NodeComment="IsBlocked"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7750
-   NodePosY=1300
-   NodeGuid=000000000000000000000000000001D3
-   CustomProperties Pin (PinId=0000000000000000000000000000002A,PinName="TargetSet",PinType.PinCategory="int",PinType.ContainerType=Set,LinkedTo=(GetBlocked 00000000000000000000000000000029,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001B5,PinName="ItemToFind",PinType.PinCategory="int",LinkedTo=(Key 000000000000000000000000000001B3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001D4,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrBlocked 000000000000000000000000000001D5,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="IsNear"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.BlueprintMapLibrary'",MemberName="Map_Contains")
-   NodeComment="IsNear"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7750
-   NodePosY=1450
-   NodeGuid=000000000000000000000000000001D6
-   CustomProperties Pin (PinId=0000000000000000000000000000002D,PinName="TargetMap",PinType.PinCategory="int",PinType.ContainerType=Map,PinType.PinValueType=(TerminalCategory="int"),LinkedTo=(GetPenalty 0000000000000000000000000000002C,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001B6,PinName="Key",PinType.PinCategory="int",LinkedTo=(Key 000000000000000000000000000001B3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001D7,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrNear 000000000000000000000000000001D8,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="IsLand"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.BlueprintSetLibrary'",MemberName="Set_Contains")
-   NodeComment="IsLand"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7750
-   NodePosY=1600
-   NodeGuid=000000000000000000000000000001D9
-   CustomProperties Pin (PinId=00000000000000000000000000000022,PinName="TargetSet",PinType.PinCategory="int",PinType.ContainerType=Set,LinkedTo=(GetLand 00000000000000000000000000000021,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001B7,PinName="ItemToFind",PinType.PinCategory="int",LinkedTo=(Key 000000000000000000000000000001B3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001DA,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="bool",LinkedTo=(BrIsLand 000000000000000000000000000001DB,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrBlocked"
-   NodeComment="BrBlocked"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7250
-   NodePosY=0
-   NodeGuid=000000000000000000000000000001DC
-   CustomProperties Pin (PinId=000000000000000000000000000001A7,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ForDY 000000000000000000000000000001A6,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001D5,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(IsBlocked 000000000000000000000000000001D4,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001DD,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrIsLand 000000000000000000000000000001DE,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001DF,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(BrNear 000000000000000000000000000001E0,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrIsLand"
-   NodeComment="BrIsLand"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7375
-   NodePosY=-150
-   NodeGuid=000000000000000000000000000001E1
-   CustomProperties Pin (PinId=000000000000000000000000000001DE,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrBlocked 000000000000000000000000000001DD,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001DB,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(IsLand 000000000000000000000000000001DA,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001E2,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(AddL 000000000000000000000000000001E3,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001E4,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(AddB 000000000000000000000000000001E5,),)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="BrNear"
-   NodeComment="BrNear"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7500
-   NodePosY=150
-   NodeGuid=000000000000000000000000000001E6
-   CustomProperties Pin (PinId=000000000000000000000000000001E0,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrBlocked 000000000000000000000000000001DF,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001D8,PinName="Condition",PinType.PinCategory="bool",LinkedTo=(IsNear 000000000000000000000000000001D7,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001E7,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",LinkedTo=(AddP 000000000000000000000000000001E8,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001E9,PinName="else",Direction="EGPD_Output",PinType.PinCategory="exec",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="AddB"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="AddInstance")
-   NodeComment="AddB"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7500
-   NodePosY=-150
-   NodeGuid=000000000000000000000000000001EA
-   CustomProperties Pin (PinId=000000000000000000000000000001E5,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrIsLand 000000000000000000000000000001E4,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001EB,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
-   CustomProperties Pin (PinId=0000000000000000000000000000000F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetBlockedLayer 00000000000000000000000000000009,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001D0,PinName="InstanceTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",LinkedTo=(Square 000000000000000000000000000001CF,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001EC,PinName="bWorldSpace",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=000000000000000000000000000001ED,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="AddL"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="AddInstance")
-   NodeComment="AddL"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7500
-   NodePosY=-300
-   NodeGuid=000000000000000000000000000001EE
-   CustomProperties Pin (PinId=000000000000000000000000000001E3,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrIsLand 000000000000000000000000000001E2,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001EF,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
-   CustomProperties Pin (PinId=0000000000000000000000000000001F,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetLandLayer 00000000000000000000000000000019,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001D1,PinName="InstanceTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",LinkedTo=(Square 000000000000000000000000000001CF,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001F0,PinName="bWorldSpace",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=000000000000000000000000000001F1,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",)
-End Object
-Begin Object Class=/Script/BlueprintGraph.K2Node_CallFunction Name="AddP"
-   FunctionReference=(MemberParent="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",MemberName="AddInstance")
-   NodeComment="AddP"
-   bCommentBubblePinned=True
-   bCommentBubbleVisible=True
-   NodePosX=7750
-   NodePosY=150
-   NodeGuid=000000000000000000000000000001F2
-   CustomProperties Pin (PinId=000000000000000000000000000001E8,PinName="execute",PinType.PinCategory="exec",LinkedTo=(BrNear 000000000000000000000000000001E7,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001F3,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
-   CustomProperties Pin (PinId=00000000000000000000000000000017,PinName="self",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.InstancedStaticMeshComponent'",LinkedTo=(GetPenaltyLayer 00000000000000000000000000000011,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001D2,PinName="InstanceTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",LinkedTo=(Square 000000000000000000000000000001CF,),)
-   CustomProperties Pin (PinId=000000000000000000000000000001F4,PinName="bWorldSpace",PinType.PinCategory="bool",DefaultValue="true",AutogeneratedDefaultValue="false",)
-   CustomProperties Pin (PinId=000000000000000000000000000001F5,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="int",)
+   NodeGuid=00000000000000000000000000000173
+   CustomProperties Pin (PinId=0000000000000000000000000000016F,PinName="execute",PinType.PinCategory="exec",LinkedTo=(ClearLDone 0000000000000000000000000000016E,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000174,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000172,PinName="MapLoad",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C'",LinkedTo=(Squares_Self 00000000000000000000000000000171,),)
 End Object

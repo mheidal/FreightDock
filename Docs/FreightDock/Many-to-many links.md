@@ -48,19 +48,22 @@ A dock stores **which networks it belongs to, and in which role**, never which d
 - **Provide and request on the same network** is allowed. It is today's two-way pairing, and migration relies on it. Goods only bounce back and forth if one warehouse is both an input and an output on opposite ends; the panel can warn about that instead of forbidding it.
 - **Not included:** storage, buffer and active-provider roles (as in Factorio's logistic chests). Without a target amount, "storage" has no meaning here, and warehouses already do that job.
 
-### Bit layout (4 memberships of 7 bits)
+### Bit layout (3 memberships of 9 bits)
 
 ```
 stored = -(2 + packed)
-packed bits:  30     | 29       | 28           | 27..21 | 20..14 | 13..7  | 6..0
-              format | reserved | depart full  | memb 4 | memb 3 | memb 2 | memb 1
-membership (7 bits):  6..5 role (0 unused, 1 provide, 2 request, 3 both) | 4..0 network ID (0 = empty)
+packed bits:  30    | 29     | 28          | 27     | 26..18 | 17..9  | 8..0
+              clear | format | depart full | paused | memb 3 | memb 2 | memb 1
+membership (9 bits):  8..7 priority (0 Low, 1 Normal, 2 High, 3 Top) | 6..5 role (0 unused, 1 provide, 2 request,
+                      3 both) | 4..0 network ID (0 = empty)
 ```
 
-- **Format bit (30):** marks the new format. Old values (`-2 - dockId`, dock IDs far below 2^30) lack it and are converted on load.
-- **Reserved bit (29):** kept clear. With bits 30 and 29 both set, `packed` could reach 2^31 - 1 and `-(2 + packed)` would overflow int32.
+- **Format bit (29):** marks the network format. Old values (`-2 - dockId`, dock IDs far below 2^29) lack it and are converted on load.
+- **Bit 30 clear:** with every bit up to 30 set, `-(2 + packed)` would overflow int32. Bit 30 marked the first network layout (four 7-bit memberships, no priority or pause), which is still read: a dock keeps its three lowest-numbered networks there, at Normal priority, and is rewritten in this layout on its next change.
 - **Depart only when full (28):** a per-dock version of the global "Depart after: Never".
-- **Access:** keep all bit work behind two pure helpers, `Unpack(Int) -> memberships, flags, IsNew` and `Pack(...) -> Int`. Loom has `&`, `|`, `/` and `%` on ints, so this is straightforward.
+- **Paused (27):** the ship finishes its job and takes no new one.
+- **Priority:** weighs the dock's requests on that network in the dispatcher's score (×0.5, ×1, ×2, ×4).
+- **Access:** all bit work is behind pure helpers in `BPL_FDNet`: `Unpack`, `Pack`, `With`, `WithPrio`, `WithPaused`, `WithFull`.
 
 ### Roles and the native flags
 
@@ -83,7 +86,7 @@ All in the Loom panel (`WBP_FDPanel`), not injected into the game's dock window.
 
 - **Memberships on the panel:** the dock's networks with their roles, for example `1 (provide)`, `3 (both)`, or `none`.
 - **Network picker,** opened from there:
-  - a row per network, with a role choice per row; at most 4 memberships, so one must be removed before a fifth is added;
+  - a row per network, with a role choice per row; at most 3 memberships (the other rows' checkboxes are disabled at 3, saying why);
   - rows for every ID from 1 to the highest in use, plus the next one. Gaps left by demolished or unhooked docks (with 1, 2 and 5 in use: 3, 4 and 6) are still shown, so free numbers are easy to find;
   - beside each row: the number of providers and requesters, and the icons of the resources that have requests set on that network (from its requesters' output warehouses), whether or not they are met and regardless of amount;
   - the tooltip of a row: demand and satisfaction per resource.
@@ -300,6 +303,21 @@ Still to find out:
 - **Pointers** are arcs of no height from a dock straight up (6000 units). Untested: if the arc renderer can't draw them vertically, a thin vertical strip using the route line's material is the fallback.
 - **Long lists:** requested goods wrap onto more lines in their cell (`WrapBox`), so a row grows taller, not wider; the table's rows scroll once they would take more than 60% of the screen's height (`RowsMax`, set in `Place`), the header staying put. The dock GUI's NETWORKS labels wrap between entries.
 - **Buttons don't take keyboard focus** (`IsFocusable: false` on the checkboxes and warehouse links), so Space still pauses the game after a click.
+
+## Explaining and controlling (built, step 9)
+
+Everything is shown per dock, in its dock GUI; there is no colony-wide display and no toast.
+
+- **Storage:** 3 memberships of 9 bits, with a priority each, and a paused flag (see Bit layout).
+- **INCOMING** (dock GUI, for a dock that requests): per good its output warehouses want, how much is still wanted (less what is unloaded there), how much is on its way, and from where (loading at the provider, or sailing with the arrival time), or why nothing comes. The dispatcher records the reason per "<target>|<good>" left open after each pass (`BPL_FDDispatch.Explain`, `MapLoad.WhyNot`): no provider on its networks, no provider stock, below minimum load (n of m), or providers busy.
+- **Pause** (beside the SHIP heading): the ship finishes its job and takes no new one ("Idle: paused").
+- **Deliver now** sits beside it, disabled with the reason as its tooltip when it can't act; it no longer toasts.
+- **Dropped goods:** a good cut from the job as stalled is listed under the ship's state ("Dropped: 3 Flax (no hauler)") until the job ends (`MapLoad.JobDropped`). A good cut to nothing leaves the job; a loading job left with nothing is cancelled, freeing the dock.
+- **Priority** (network GUI column, while the dock requests there): Low, Normal, High, Top; weighs the dock's requests in the score (×0.5 to ×4, the highest of the networks the pair shares).
+- **Names:** a sign "[fn3] Food" anywhere names network 3 ("3 Food" in both GUIs); the ID header's tooltip says so. An unnamed dock's title says on hover how to name it ("[fd] Name" by the door). Both kinds of sign show their text only under the cursor.
+- **Minimum load with "Depart after: Never":** the waiting exemption applies after 10 minutes.
+- **Ping-pong:** a provider doesn't ship goods its own output warehouses still request.
+- **Crews off duty** (`BPL_FDNet.OnDuty`: at night, and in the morning until the dock's first worker is at work, `MapLoad.CrewArrived`; docks have no overtime): an off-duty provider is offered only what needs no haulers (aboard, or parked leftovers), so such a job can still sail at night; a job loading when the crew leaves keeps its goods, its stall and depart-after clocks wait ("Crew off duty"), and it doesn't grow. INCOMING says "Providers off duty" when only off-duty providers hold the good.
 
 ## If resumed
 

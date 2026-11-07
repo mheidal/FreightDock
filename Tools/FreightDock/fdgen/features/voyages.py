@@ -7,12 +7,12 @@ from fdgen.core.types import (
     MAP_INT_DOUBLE, MAP_INT_INT, MAP_INT_OBJ, MAP_INT_SHIP, MAP_INT_VECTOR, OBJ, SPLINE_SPACE, STRUCT)
 from fdgen.core.paths import (
     ACTOR, ACTORCOMP, CHILDCOMP, FD_FLING_CLASS, HIT, K2, MAPLIB, MATHLIB, MODAPI, NDOCK, NDOCKSTATE,
-    ROTATOR, SHIP, SHIPSTATE, SPLINE, SYSLIB, TRANSFORM, VECTOR, WORKDOCK)
+    ROTATOR, SHIP, SHIPSTATE, SPLINE, SYSLIB, TRANSFORM, VECTOR, VOYAGE_LIB, WORKDOCK)
 from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
     actor_loc, bnot, bop, branch, break_struct, clear_timer, dmath, dmath1, for_each,
-    get_local, get_member, get_self, int_op, is_valid, map_add, map_find, map_remove, set_local, set_pin_default,
-    start_timer, user_call)
+    get_local, get_member, get_self, int_op, is_valid, loom_call, map_add, map_find, map_remove, set_local,
+    set_pin_default, start_timer, user_call)
 from fdgen.core.text import fmt_to_string, log_msg
 from fdgen.features.docks import dock_id_call
 from fdgen.features.standins import PROXY_YAW, bob_pose, set_hidden, zoomed_child
@@ -176,285 +176,10 @@ def start_voyage():
 
 
 def voyage_tick():
-    """Timer target: move every stand-in; handle the wait at the target and hand arrivals to VoyageArrive.
-    A stand-in turns in place (at TurnRate) at the start of a course until it faces along it, and at the end until
-    it faces VoyageEndFwd, before it counts as arrived - so its heading never jumps. It bobs like a moored ship
-    (StandInBob), sailing or waiting; TurnRate only steers its yaw, so the bob's tilt doesn't build up."""
+    """VoyageTick (the voyage timer, every VOYAGE_TICK of game time): BPL_FDVoyage.VoyageTick - moves every stand-in,
+    waits at the target, turns for home and hands arrivals to VoyageArrive (see there)."""
     g = Graph()
-    F = "VoyageTick"
-    get_self(g, "GetVoyages", "Voyages", MAP_INT_ACTOR, 0, 400)
-    get_self(g, "GetVPhase", "VoyagePhase", MAP_INT_INT, 0, 700)
-    get_self(g, "GetVWait", "VoyageWait", MAP_INT_DOUBLE, 0, 800)
-    get_self(g, "GetSpeed", "ShipSpeed", DOUBLE, 0, 900)
-    get_local(g, "GetId", F, "Id", INT, 0, 1000)
-    get_local(g, "GetProxy", F, "Proxy", OBJ(ACTOR), 0, 1100)
-    get_local(g, "GetPhase", F, "Phase", INT, 0, 1200)
-    key = ("GetId", "Id")
-    proxy = ("GetProxy", "Proxy")
-
-    # no voyages left: stop the timer
-    g.call("Count", MAPLIB, "Map_Length", 0, 250,
-           [("TargetMap", "in", MAP_INT_ACTOR, None), ("ReturnValue", "out", INT, None)])
-    g.link(("GetVoyages", "Voyages"), ("Count", "TargetMap"))
-    none_left = int_op(g, "NoneLeft", "EqualEqual_IntInt", ("Count", "ReturnValue"), None, 250, 250, b_default="0")
-    branch(g, "BrNone", 0, 0)
-    g.link(none_left, ("BrNone", "Condition"))
-    clear_timer(g, "StopTick", "VoyageTick", 250, 0)
-    g.link(("BrNone", "then"), ("StopTick", "execute"))
-
-    g.call("Keys", MAPLIB, "Map_Keys", 250, -300,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
-            ("TargetMap", "in", MAP_INT_ACTOR, None), ("Keys", "out", INT_ARRAY_T, None)])
-    g.link(("BrNone", "else"), ("Keys", "execute"))
-    g.link(("GetVoyages", "Voyages"), ("Keys", "TargetMap"))
-    for_each(g, "ForIds", INT, 500, -300)
-    g.link(("Keys", "then"), ("ForIds", "Exec"))
-    g.link(("Keys", "Keys"), ("ForIds", "Array"))
-    set_local(g, "SetId", F, "Id", INT, 800, -300)
-    g.link(("ForIds", "LoopBody"), ("SetId", "execute"))
-    g.link(("ForIds", "Array Element"), ("SetId", "Id"))
-    map_find(g, "FindProxy", ("GetVoyages", "Voyages"), key, MAP_INT_ACTOR, OBJ(ACTOR), 800, -100, key_type=INT)
-    set_local(g, "SetProxy", F, "Proxy", OBJ(ACTOR), 1050, -300)
-    g.link(("SetId", "then"), ("SetProxy", "execute"))
-    g.link(("FindProxy", "Value"), ("SetProxy", "Proxy"))
-    map_find(g, "FindPhase", ("GetVPhase", "VoyagePhase"), key, MAP_INT_INT, INT, 1050, -100, key_type=INT)
-    set_local(g, "SetPhase", F, "Phase", INT, 1300, -300)
-    g.link(("SetProxy", "then"), ("SetPhase", "execute"))
-    g.link(("FindPhase", "Value"), ("SetPhase", "Phase"))
-
-    # phase 2: wait at the target, then turn for home (phase 3)
-    waiting = int_op(g, "IsWaiting", "EqualEqual_IntInt", ("GetPhase", "Phase"), None, 1550, -100, b_default="2")
-    branch(g, "BrWaiting", 1550, -300)
-    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 1300)
-    get_self(g, "GetVShip", "VoyageShip", MAP_INT_SHIP, 0, 1400)
-    map_find(g, "GFindShip", ("GetVShip", "VoyageShip"), key, MAP_INT_SHIP, OBJ(SHIP), 1300, -1000, key_type=INT)
-    is_valid(g, "GShipOk", SHIP, 1550, -1000)
-    g.link(("GFindShip", "Value"), ("GShipOk", "Object"))
-    get_member(g, "GShipState", SHIP, "State", STRUCT(SHIPSTATE), 1550, -900)
-    g.link(("GFindShip", "Value"), ("GShipState", "self"))
-    break_struct(g, "GBreak", SHIPSTATE, [("dockedDock", OBJ(NDOCK))], 1800, -900)
-    g.link(("GShipState", "State"), ("GBreak", "NauticalShipState"))
-    get_self(g, "GetVBerth", "VoyageBerth", MAP_INT_OBJ(NDOCK), 0, 1500)
-    map_find(g, "GFindBerth", ("GetVBerth", "VoyageBerth"), key, MAP_INT_OBJ(NDOCK), OBJ(NDOCK), 1800, -800, key_type=INT)
-    g.call("GDockedOk", MATHLIB, "EqualEqual_ObjectObject", 2050, -900,
-           [("A", "in", OBJ(NDOCK), None), ("B", "in", OBJ(NDOCK), None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("GBreak", "dockedDock"), ("GDockedOk", "A"))
-    g.link(("GFindBerth", "Value"), ("GDockedOk", "B"))
-    g.call("GBerthed", MATHLIB, "BooleanAND", 2050, -1000,
-           [("A", "in", BOOL, None), ("B", "in", BOOL, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("GShipOk", "ReturnValue"), ("GBerthed", "A"))
-    g.link(("GDockedOk", "ReturnValue"), ("GBerthed", "B"))
-    branch(g, "BrBerthed", 1300, -300)
-    g.link(("SetPhase", "then"), ("BrBerthed", "execute"))
-    g.link(("GBerthed", "ReturnValue"), ("BrBerthed", "Condition"))
-    g.link(("BrBerthed", "then"), ("BrWaiting", "execute"))
-    is_valid(g, "GProxyOk", ACTOR, 1550, -1150)
-    g.link(proxy, ("GProxyOk", "Object"))
-    branch(g, "BrGProxy", 1550, -1300)
-    g.link(("BrBerthed", "else"), ("BrGProxy", "execute"))
-    g.link(("GProxyOk", "ReturnValue"), ("BrGProxy", "Condition"))
-    g.call("GDestroy", f"/Script/CoreUObject.Class'{ACTOR}'", "K2_DestroyActor", 1800, -1300,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", OBJ(ACTOR), None)])
-    g.link(("BrGProxy", "then"), ("GDestroy", "execute"))
-    g.link(proxy, ("GDestroy", "self"))
-    s = fmt_to_string(g, "GFmt", "Dock {d}: ship left its berth - voyage cancelled, freight stays aboard",
-                      [("d", INT)], 2050, -1450)
-    g.link(key, ("GFmt", "d"))
-    log_msg(g, "GLog", "GetModAPI", 2050, -1300)
-    g.link(("GDestroy", "then"), ("GLog", "execute"))
-    g.link(("BrGProxy", "else"), ("GLog", "execute"))
-    g.link((s, "ReturnValue"), ("GLog", "Msg"))
-    user_call(g, "GArrive", "VoyageArrive", 2300, -1300, ins=[("Id", INT)])
-    g.link(("GLog", "then"), ("GArrive", "execute"))
-    g.link(key, ("GArrive", "Id"))
-    g.link(waiting, ("BrWaiting", "Condition"))
-    g.call("Now", SYSLIB, "GetGameTimeInSeconds", 1800, -600, [("ReturnValue", "out", DOUBLE, None)])
-    map_find(g, "FindWait", ("GetVWait", "VoyageWait"), key, MAP_INT_DOUBLE, DOUBLE, 1800, -500, key_type=INT)
-    g.call("WaitDone", MATHLIB, "GreaterEqual_DoubleDouble", 2050, -550,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("Now", "ReturnValue"), ("WaitDone", "A"))
-    g.link(("FindWait", "Value"), ("WaitDone", "B"))
-    branch(g, "BrWaitDone", 1800, -800)
-    g.link(("BrWaiting", "then"), ("BrWaitDone", "execute"))
-    g.link(("WaitDone", "ReturnValue"), ("BrWaitDone", "Condition"))
-    map_add(g, "TurnHome", ("GetVPhase", "VoyagePhase"), key, None, MAP_INT_INT, INT, 2050, -800, key_type=INT)
-    g.link(("BrWaitDone", "then"), ("TurnHome", "execute"))
-    set_pin_default(g, "TurnHome", "Value", "3")
-    # homeward course: drop the outbound spline, build one ending at the berth, start it from 0
-    get_self(g, "GetVSpline2", "VoyageSpline", MAP_INT_OBJ(SPLINE), 2050, -1600)
-    get_self(g, "GetVDist2", "VoyageDist", MAP_INT_DOUBLE, 2050, -1700)
-    map_find(g, "OutSpline", ("GetVSpline2", "VoyageSpline"), key, MAP_INT_OBJ(SPLINE), OBJ(SPLINE), 2300, -650, key_type=INT)
-    g.call("DropOut", f"/Script/CoreUObject.Class'{ACTORCOMP}'", "K2_DestroyComponent", 2300, -800,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", OBJ(ACTORCOMP), None),
-            ("Object", "in", OBJ("/Script/CoreUObject.Object"), None)])
-    g.link(("TurnHome", "then"), ("DropOut", "execute"))
-    g.link(("OutSpline", "Value"), ("DropOut", "self"))
-    user_call(g, "HomeCourse", "MakeCourse", 2550, -800,
-              ins=[("Id", INT), ("Ship", OBJ(SHIP)), ("ToHome", BOOL)], outs=[("Course", OBJ(SPLINE))])
-    g.link(("DropOut", "then"), ("HomeCourse", "execute"))
-    g.link(key, ("HomeCourse", "Id"))
-    g.link(("GFindShip", "Value"), ("HomeCourse", "Ship"))
-    set_pin_default(g, "HomeCourse", "ToHome", "true")
-    map_add(g, "SetHomeCourse", ("GetVSpline2", "VoyageSpline"), key, ("HomeCourse", "Course"), MAP_INT_OBJ(SPLINE),
-            OBJ(SPLINE), 2800, -800, key_type=INT)
-    g.link(("HomeCourse", "then"), ("SetHomeCourse", "execute"))
-    map_add(g, "ResetDist", ("GetVDist2", "VoyageDist"), key, None, MAP_INT_DOUBLE, DOUBLE, 3050, -800, key_type=INT)
-    set_pin_default(g, "ResetDist", "Value", "0.0")
-    g.link(("SetHomeCourse", "then"), ("ResetDist", "execute"))
-
-    # phases 1 and 3: advance along the voyage spline (1: out, distance up; 3: home, distance down)
-    get_self(g, "GetVSpline", "VoyageSpline", MAP_INT_OBJ(SPLINE), 0, 1600)
-    get_self(g, "GetVDist", "VoyageDist", MAP_INT_DOUBLE, 0, 1700)
-    SPL = f"/Script/CoreUObject.Class'{SPLINE}'"
-    map_find(g, "FindSpline", ("GetVSpline", "VoyageSpline"), key, MAP_INT_OBJ(SPLINE), OBJ(SPLINE), 1800, 100, key_type=INT)
-    spline = ("FindSpline", "Value")
-    map_find(g, "FindDist", ("GetVDist", "VoyageDist"), key, MAP_INT_DOUBLE, DOUBLE, 1800, 250, key_type=INT)
-    g.call("Len", SPL, "GetSplineLength", 2050, 100, [("self", "in", OBJ(SPLINE), None), ("ReturnValue", "out", FLOAT, None)])
-    g.link(spline, ("Len", "self"))
-    g.call("StepLen", MATHLIB, "Multiply_DoubleDouble", 2050, 450,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, f'DefaultValue="{VOYAGE_TICK}"'), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("GetSpeed", "ShipSpeed"), ("StepLen", "A"))
-    g.call("Moved", MATHLIB, "Add_DoubleDouble", 2800, 300,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("FindDist", "Value"), ("Moved", "A"))
-    g.link(("StepLen", "ReturnValue"), ("Moved", "B"))
-
-    def yaw_of(p_, dir_src, x, y):
-        """The stand-in's rotation for heading dir_src."""
-        g.call(p_ + "X", MATHLIB, "MakeRotFromX", x, y,
-               [("X", "in", STRUCT(VECTOR), None), ("ReturnValue", "out", STRUCT(ROTATOR), None)])
-        g.link(dir_src, (p_ + "X", "X"))
-        g.call(p_, MATHLIB, "ComposeRotators", x + 250, y,
-               [("A", "in", STRUCT(ROTATOR), 'DefaultValue="0.000000,' + PROXY_YAW + ',0.000000"'),
-                ("B", "in", STRUCT(ROTATOR), None), ("ReturnValue", "out", STRUCT(ROTATOR), None)])
-        g.link((p_ + "X", "ReturnValue"), (p_, "B"))
-        return (p_, "ReturnValue")
-
-    def lined_up(p_, rot_a, rot_b, x, y):
-        """rot_a and rot_b within 3 degrees of yaw."""
-        g.call(p_ + "Delta", MATHLIB, "NormalizedDeltaRotator", x, y,
-               [("A", "in", STRUCT(ROTATOR), None), ("B", "in", STRUCT(ROTATOR), None), ("ReturnValue", "out", STRUCT(ROTATOR), None)])
-        g.link(rot_a, (p_ + "Delta", "A"))
-        g.link(rot_b, (p_ + "Delta", "B"))
-        g.call(p_ + "Break", MATHLIB, "BreakRotator", x + 250, y,
-               [("InRot", "in", STRUCT(ROTATOR), None), ("Roll", "out", FLOAT, None), ("Pitch", "out", FLOAT, None),
-                ("Yaw", "out", FLOAT, None)])
-        g.link((p_ + "Delta", "ReturnValue"), (p_ + "Break", "InRot"))
-        absyaw = dmath1(g, p_ + "Abs", "Abs", (p_ + "Break", "Yaw"), x + 500, y)
-        return dmath(g, p_, "Less_DoubleDouble", absyaw, None, x + 750, y, b_default="3.0", out=BOOL)
-
-    get_self(g, "GetEndFwds", "VoyageEndFwd", MAP_INT_VECTOR, 2050, 1100)
-    map_find(g, "FindEndFwd", ("GetEndFwds", "VoyageEndFwd"), key, MAP_INT_VECTOR, STRUCT(VECTOR), 2300, 1100, key_type=INT)
-    end_rot = yaw_of("EndRot", ("FindEndFwd", "Value"), 2550, 1100)
-    g.call("NowRot", f"/Script/CoreUObject.Class'{ACTOR}'", "K2_GetActorRotation", 3550, 950,
-           [("self", "in", OBJ(ACTOR), None), ("ReturnValue", "out", STRUCT(ROTATOR), None)])
-    g.link(proxy, ("NowRot", "self"))
-    # at the start of the course: hold position until facing along it
-    g.call("StartDir", SPL, "GetDirectionAtDistanceAlongSpline", 2300, 1300,
-           [("self", "in", OBJ(SPLINE), None), ("Distance", "in", FLOAT, 'DefaultValue="0.0"'),
-            ("CoordinateSpace", "in", SPLINE_SPACE, 'DefaultValue="World"'), ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(spline, ("StartDir", "self"))
-    start_aligned = lined_up("StartAligned", ("NowRot", "ReturnValue"), yaw_of("StartRot", ("StartDir", "ReturnValue"), 2550, 1300), 3050, 1300)
-    at_start = dmath(g, "AtStart", "Less_DoubleDouble", ("FindDist", "Value"), None, 2550, 1450, b_default="0.5", out=BOOL)
-    hold = bop(g, "Hold", "BooleanAND", at_start, bnot(g, "NotAligned", start_aligned, 3800, 1350), 4050, 1400)
-    g.call("Advance", MATHLIB, "SelectFloat", 3050, 450,
-           [("A", "in", DOUBLE, 'DefaultValue="0.0"'), ("B", "in", DOUBLE, None), ("bPickA", "in", BOOL, None),
-            ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Moved", "ReturnValue"), ("Advance", "B"))
-    g.link(hold, ("Advance", "bPickA"))
-    g.call("NewDist", MATHLIB, "FMin", 3300, 300,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Advance", "ReturnValue"), ("NewDist", "A"))
-    g.link(("Len", "ReturnValue"), ("NewDist", "B"))
-    dist = ("NewDist", "ReturnValue")
-    # at the end: turn to VoyageEndFwd; arrived once facing it
-    g.call("LenLess", MATHLIB, "Subtract_DoubleDouble", 3300, 450,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, 'DefaultValue="0.5"'), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Len", "ReturnValue"), ("LenLess", "A"))
-    at_end = dmath(g, "AtEnd", "GreaterEqual_DoubleDouble", dist, ("LenLess", "ReturnValue"), 3550, 450, out=BOOL)
-    g.call("Pos", SPL, "GetLocationAtDistanceAlongSpline", 3050, 600,
-           [("self", "in", OBJ(SPLINE), None), ("Distance", "in", FLOAT, None), ("CoordinateSpace", "in", SPLINE_SPACE, 'DefaultValue="World"'),
-            ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(spline, ("Pos", "self"))
-    g.link(dist, ("Pos", "Distance"))
-    g.call("Tangent", SPL, "GetDirectionAtDistanceAlongSpline", 3050, 750,
-           [("self", "in", OBJ(SPLINE), None), ("Distance", "in", FLOAT, None), ("CoordinateSpace", "in", SPLINE_SPACE, 'DefaultValue="World"'),
-            ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(spline, ("Tangent", "self"))
-    g.link(dist, ("Tangent", "Distance"))
-    g.call("WantDir", MATHLIB, "SelectVector", 3300, 750,
-           [("A", "in", STRUCT(VECTOR), None), ("B", "in", STRUCT(VECTOR), None), ("bPickA", "in", BOOL, None),
-            ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(("FindEndFwd", "Value"), ("WantDir", "A"))
-    g.link(("Tangent", "ReturnValue"), ("WantDir", "B"))
-    g.link(at_end, ("WantDir", "bPickA"))
-    heading = yaw_of("Heading", ("WantDir", "ReturnValue"), 3300, 600)
-    # turn toward it at no more than TurnRate degrees per second
-    get_self(g, "GetTurnRate", "TurnRate", DOUBLE, 3300, 950)
-    g.call("Turned", MATHLIB, "RInterpTo_Constant", 3800, 800,
-           [("Current", "in", STRUCT(ROTATOR), None), ("Target", "in", STRUCT(ROTATOR), None),
-            ("deltaTime", "in", FLOAT, f'DefaultValue="{VOYAGE_TICK}"'), ("InterpSpeed", "in", FLOAT, None),
-            ("ReturnValue", "out", STRUCT(ROTATOR), None)])
-    g.call("NowParts", MATHLIB, "BreakRotator", 3550, 1050,
-           [("InRot", "in", STRUCT(ROTATOR), None), ("Roll", "out", FLOAT, None), ("Pitch", "out", FLOAT, None), ("Yaw", "out", FLOAT, None)])
-    g.link(("NowRot", "ReturnValue"), ("NowParts", "InRot"))
-    g.call("NowYaw", MATHLIB, "MakeRotator", 3800, 1050,
-           [("Roll", "in", FLOAT, 'DefaultValue="0.0"'), ("Pitch", "in", FLOAT, 'DefaultValue="0.0"'), ("Yaw", "in", FLOAT, None),
-            ("ReturnValue", "out", STRUCT(ROTATOR), None)])
-    g.link(("NowParts", "Yaw"), ("NowYaw", "Yaw"))
-    g.link(("NowYaw", "ReturnValue"), ("Turned", "Current"))
-    g.link(heading, ("Turned", "Target"))
-    g.link(("GetTurnRate", "TurnRate"), ("Turned", "InterpSpeed"))
-
-    # stand-in and course still there?
-    is_valid(g, "ProxyOk", ACTOR, 1800, 0)
-    g.link(proxy, ("ProxyOk", "Object"))
-    is_valid(g, "SplineOk", SPLINE, 1800, -50)
-    g.link(spline, ("SplineOk", "Object"))
-    both = bop(g, "BothOk", "BooleanAND", ("ProxyOk", "ReturnValue"), ("SplineOk", "ReturnValue"), 2050, 0)
-    # waiting at the target: bob in place at the course's end
-    branch(g, "BrBobWait", 2050, -600)
-    g.link(both, ("BrBobWait", "Condition"))
-    g.link(("BrWaitDone", "else"), ("BrBobWait", "execute"))
-    g.call("WaitPos", SPL, "GetLocationAtDistanceAlongSpline", 2300, -500,
-           [("self", "in", OBJ(SPLINE), None), ("Distance", "in", FLOAT, None), ("CoordinateSpace", "in", SPLINE_SPACE, 'DefaultValue="World"'),
-            ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(spline, ("WaitPos", "self"))
-    g.link(("Len", "ReturnValue"), ("WaitPos", "Distance"))
-    wait_pos, wait_rot = bob_pose(g, "Moored", key, ("WaitPos", "ReturnValue"), ("NowYaw", "ReturnValue"), 2550, -500)
-    g.call("BobWait", f"/Script/CoreUObject.Class'{ACTOR}'", "K2_SetActorLocationAndRotation", 2300, -650,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", OBJ(ACTOR), None),
-            ("NewLocation", "in", STRUCT(VECTOR), None), ("NewRotation", "in", STRUCT(ROTATOR), None),
-            ("bSweep", "in", BOOL, 'DefaultValue="false"'), ("SweepHitResult", "out", STRUCT(HIT), None),
-            ("bTeleport", "in", BOOL, 'DefaultValue="true"'), ("ReturnValue", "out", BOOL, None)])
-    g.link(("BrBobWait", "then"), ("BobWait", "execute"))
-    g.link(proxy, ("BobWait", "self"))
-    g.link(wait_pos, ("BobWait", "NewLocation"))
-    g.link(wait_rot, ("BobWait", "NewRotation"))
-    branch(g, "BrProxy", 1800, -150)
-    g.link(("BrWaiting", "else"), ("BrProxy", "execute"))
-    g.link(both, ("BrProxy", "Condition"))
-    g.call("MoveProxy", f"/Script/CoreUObject.Class'{ACTOR}'", "K2_SetActorLocationAndRotation", 2050, -150,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", OBJ(ACTOR), None),
-            ("NewLocation", "in", STRUCT(VECTOR), None), ("NewRotation", "in", STRUCT(ROTATOR), None),
-            ("bSweep", "in", BOOL, 'DefaultValue="false"'), ("SweepHitResult", "out", STRUCT(HIT), None),
-            ("bTeleport", "in", BOOL, 'DefaultValue="true"'), ("ReturnValue", "out", BOOL, None)])
-    g.link(("BrProxy", "then"), ("MoveProxy", "execute"))
-    g.link(proxy, ("MoveProxy", "self"))
-    sail_pos, sail_rot = bob_pose(g, "Sailing", key, ("Pos", "ReturnValue"), ("Turned", "ReturnValue"), 4300, 600)
-    g.link(sail_pos, ("MoveProxy", "NewLocation"))
-    g.link(sail_rot, ("MoveProxy", "NewRotation"))
-    map_add(g, "SaveDist", ("GetVDist", "VoyageDist"), key, dist, MAP_INT_DOUBLE, DOUBLE, 2300, -150, key_type=INT)
-    g.link(("MoveProxy", "then"), ("SaveDist", "execute"))
-    branch(g, "BrArrived", 2550, -150)
-    g.link(("SaveDist", "then"), ("BrArrived", "execute"))
-    end_aligned = lined_up("EndAligned", ("Turned", "ReturnValue"), end_rot, 3800, 1100)
-    g.link(bop(g, "Arrived", "BooleanAND", at_end, end_aligned, 4050, 1100), ("BrArrived", "Condition"))
-    user_call(g, "Arrive", "VoyageArrive", 2800, -150, ins=[("Id", INT)])
-    g.link(("BrArrived", "then"), ("Arrive", "execute"))
-    g.link(key, ("Arrive", "Id"))
-    # stand-in or course gone (e.g. destroyed): finish the voyage so the ship is shown again
-    g.link(("BrProxy", "else"), ("Arrive", "execute"))
+    loom_call(g, "Call", VOYAGE_LIB, "VoyageTick", 0, 0)
     return g.render()
 
 
@@ -615,7 +340,7 @@ def voyage_arrive():
 
 
 SPECS = {
-    "VoyageTick": fn_spec(("BrNone", "execute"), locals_=[("Id", INT), ("Proxy", OBJ(ACTOR)), ("Phase", INT)]),
+    "VoyageTick": fn_spec(("Call", "execute")),
     "StartVoyage": fn_spec(("SetId", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP))],
                            locals_=[("Id", INT), ("Proxy", OBJ(ACTOR)), ("BerthTo", OBJ(NDOCK))]),
     "VoyageArrive": fn_spec(("BrDeliver", "execute"), inputs=[("Id", INT)],

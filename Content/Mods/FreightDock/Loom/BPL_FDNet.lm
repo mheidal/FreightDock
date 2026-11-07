@@ -4,10 +4,12 @@ blueprint BPL_FDNet : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BP
 // WorkDock.activeTradePartnerId (it survives a save). See Docs/FreightDock/Many-to-many links.md.
 //
 //   stored = -(2 + packed)
-//   packed bits:  30 format | 29 reserved (clear) | 28 depart only when full | 27..21, 20..14, 13..7, 6..0 memberships
-//   membership (7 bits): 6..5 role (1 provide, 2 request, 3 both) | 4..0 network ID (1..31; 0 = empty)
+//   packed bits:  30 clear | 29 format (V2Bit) | 28 depart only when full | 27 paused | 26..18, 17..9, 8..0 memberships
+//   membership (9 bits): 8..7 priority (0 Low, 1 Normal, 2 High, 3 Top) | 6..5 role (1 provide, 2 request, 3 both) |
+//                        4..0 network ID (1..31; 0 = empty)
 //
-// Older values (mod 1.x, one-to-one pairs) are -2 - targetDockId: no format bit. -1 (or anything above -2) is
+// The earlier network layout (bit 30 set, four 7-bit memberships, no priority or pause) is still read: its three
+// lowest-numbered networks are kept. Older values (mod 1.x, one-to-one pairs) are -2 - targetDockId: no format bit. -1 (or anything above -2) is
 // "no target", as the game uses it. Nothing is cached: queries decode every freight dock's value each time.
 
 pure fn DockId(Dock: WorkDock) -> int {
@@ -62,15 +64,27 @@ fn ShipAtDock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
 }
 
 pure fn Slots() -> int {
-    return 4
+    return 3
 }
 
 pure fn FormatBit() -> int {
     return 1073741824
 }
 
+// Marks a network value in the 3-slot layout (9 bits a membership, with priority). FormatBit marks the old 4 x 7-bit
+// layout instead, which is still read. The two never share a value, and the 3-slot layout stays within 30 bits: with
+// FormatBit too, a value with every bit set wouldn't fit in -2 - packed.
+pure fn V2Bit() -> int {
+    return 536870912
+}
+
 pure fn FullBit() -> int {
     return 268435456
+}
+
+// The ship takes no new jobs (BPL_FDDispatch); the current one is finished.
+pure fn PausedBit() -> int {
+    return 134217728
 }
 
 pure fn Provide() -> int {
@@ -89,8 +103,29 @@ pure fn MaxNet() -> int {
     return 31
 }
 
-// 128 to the power of a membership's index: where its 7 bits start.
+// Priority levels of a membership (what its requests weigh, BPL_FDDispatch.PriorityWeight): 0 Low, 1 Normal, 2 High,
+// 3 Top.
+pure fn Normal() -> int {
+    return 1
+}
+
+pure fn MaxPriority() -> int {
+    return 3
+}
+
+// 512 to the power of a membership's index: where its 9 bits start (net 5 bits, role 2, priority 2).
 pure fn Place(Index: int) -> int {
+    let p = 1
+    let i = 0
+    while i < Index {
+        p = p * 512
+        i += 1
+    }
+    return p
+}
+
+// 128 to the power of Index: where a membership of the old 4 x 7-bit layout starts.
+pure fn OldPlace(Index: int) -> int {
     let p = 1
     let i = 0
     while i < Index {
@@ -101,56 +136,113 @@ pure fn Place(Index: int) -> int {
 }
 
 // The stored value decoded. IsNew: in the network format. OldTarget: the target's dock ID of a 1.x pair, else -1.
-// Nets and Roles always have Slots() entries; an empty membership is net 0, role 0.
-pure fn Unpack(Stored: int, out Nets: array<int>, out Roles: array<int>, out Full: bool, out IsNew: bool, out OldTarget: int) {
+// Nets, Roles and Prios always have Slots() entries, lowest network first; an empty membership is net 0, role 0
+// (priority Normal). A value in the old 4-slot layout keeps its 3 lowest-numbered networks, at priority Normal.
+pure fn Unpack(Stored: int, out Nets: array<int>, out Roles: array<int>, out Prios: array<int>, out Full: bool, out Paused: bool, out IsNew: bool, out OldTarget: int) {
     Nets = []
     Roles = []
+    Prios = []
     Full = false
+    Paused = false
     IsNew = false
     OldTarget = -1
     let packed = -1
     if Stored <= -2 {
         packed = 0 - Stored - 2
     }
+    let v2 = false
     if packed >= 0 && (packed & FormatBit()) != 0 {
         IsNew = true
         Full = (packed & FullBit()) != 0
+    } else if packed >= 0 && (packed & V2Bit()) != 0 {
+        IsNew = true
+        v2 = true
+        Full = (packed & FullBit()) != 0
+        Paused = (packed & PausedBit()) != 0
     } else if packed >= 0 {
         OldTarget = packed
     }
-    let i = 0
-    while i < Slots() {
-        let net = 0
-        let role = 0
-        if IsNew {
-            let m = (packed / Place(i)) % 128
-            net = m % 32
-            role = m / 32
-            if net == 0 || role == 0 {
-                net = 0
-                role = 0
+    let nets: array<int> = []
+    let roles: array<int> = []
+    let prios: array<int> = []
+    if IsNew {
+        let slots = if v2 { Slots() } else { 4 }
+        let i = 0
+        while i < slots {
+            if v2 {
+                let m = (packed / Place(i)) % 512
+                let net = m % 32
+                let role = (m / 32) % 4
+                if net != 0 && role != 0 {
+                    nets.Add(net)
+                    roles.Add(role)
+                    prios.Add(m / 128)
+                }
+            } else {
+                let old = (packed / OldPlace(i)) % 128
+                let oldNet = old % 32
+                let oldRole = old / 32
+                if oldNet != 0 && oldRole != 0 {
+                    nets.Add(oldNet)
+                    roles.Add(oldRole)
+                    prios.Add(Normal())
+                }
             }
+            i += 1
         }
-        Nets.Add(net)
-        Roles.Add(role)
-        i += 1
+    }
+    // lowest network first, so the old layout's highest-numbered fourth is the one left out
+    let k = 0
+    while k < nets.Length() {
+        let best = k
+        let j = k + 1
+        while j < nets.Length() {
+            if nets[j] < nets[best] {
+                best = j
+            }
+            j += 1
+        }
+        if best != k {
+            nets.Swap(k, best)
+            roles.Swap(k, best)
+            prios.Swap(k, best)
+        }
+        k += 1
+    }
+    let n = 0
+    while n < Slots() {
+        if n < nets.Length() {
+            Nets.Add(nets[n])
+            Roles.Add(roles[n])
+            Prios.Add(prios[n])
+        } else {
+            Nets.Add(0)
+            Roles.Add(0)
+            Prios.Add(Normal())
+        }
+        n += 1
     }
 }
 
 // The stored value for these memberships. Entries past Slots(), with a network outside 1..MaxNet(), or with a role
-// outside 1..3 are left out.
-pure fn Pack(Nets: array<int>, Roles: array<int>, Full: bool) -> int {
-    let packed = FormatBit()
+// outside 1..3 are left out; a missing or out-of-range priority is Normal.
+pure fn Pack(Nets: array<int>, Roles: array<int>, Prios: array<int>, Full: bool, Paused: bool) -> int {
+    let packed = V2Bit()
     if Full {
         packed += FullBit()
+    }
+    if Paused {
+        packed += PausedBit()
     }
     let slot = 0
     let i = 0
     while i < Nets.Length() && slot < Slots() {
         let net = Nets[i]
         let role = if i < Roles.Length() { Roles[i] } else { 0 }
+        let given = if i < Prios.Length() { Prios[i] } else { Normal() }
+        let prio = if given >= 0 && given <= MaxPriority() { given } else { Normal() }
         if net >= 1 && net <= MaxNet() && role >= 1 && role <= 3 {
-            packed += (role * 32 + net) * Place(slot)
+            packed += (prio * 128 + role * 32 + net) * Place(slot)
             slot += 1
         }
         i += 1
@@ -190,6 +282,7 @@ pure fn With(Stored: int, Net: int, Role: int, out Ok: bool) -> int {
     let u = Unpack(Stored)
     let nets = u.Nets
     let roles = u.Roles
+    let prios = u.Prios
     let found = -1
     let free = -1
     let i = 0
@@ -210,16 +303,75 @@ pure fn With(Stored: int, Net: int, Role: int, out Ok: bool) -> int {
         Ok = true
         return Stored
     }
+    if found < 0 {
+        prios[at] = Normal()
+    }
     nets[at] = if Role == 0 { 0 } else { Net }
     roles[at] = Role
     Ok = true
-    return Pack(nets, roles, u.Full)
+    return Pack(nets, roles, prios, u.Full, u.Paused)
+}
+
+// The highest priority of Requester's memberships on the networks where Provider provides and Requester requests
+// (Normal when they share none).
+pure fn SharedPriority(Provider: int, Requester: int) -> int {
+    let pu = Unpack(Provider)
+    let ru = Unpack(Requester)
+    let best = -1
+    let i = 0
+    while i < Slots() {
+        let net = ru.Nets[i]
+        if net > 0 && (ru.Roles[i] & Request()) != 0 && Provides(Provider, net) {
+            best = KismetMathLibrary.Max(best, ru.Prios[i])
+        }
+        i += 1
+    }
+    return if best < 0 { Normal() } else { best }
+}
+
+// The dock's priority on Net (Normal when not a member).
+pure fn PrioOn(Stored: int, Net: int) -> int {
+    let u = Unpack(Stored)
+    let i = 0
+    while i < Slots() {
+        if u.Nets[i] == Net && Net > 0 {
+            return u.Prios[i]
+        }
+        i += 1
+    }
+    return Normal()
+}
+
+// The stored value with the dock's priority on Net set to Prio (0..MaxPriority()); unchanged when it isn't a member.
+pure fn WithPrio(Stored: int, Net: int, Prio: int) -> int {
+    let u = Unpack(Stored)
+    let prios = u.Prios
+    let changed = false
+    let i = 0
+    while i < Slots() {
+        if u.Nets[i] == Net && Net > 0 && Prio >= 0 && Prio <= MaxPriority() {
+            prios[i] = Prio
+            changed = true
+        }
+        i += 1
+    }
+    return if changed { Pack(u.Nets, u.Roles, prios, u.Full, u.Paused) } else { Stored }
+}
+
+// The stored value with the ship paused or not; a value in no network takes the network format to hold the flag.
+pure fn WithPaused(Stored: int, Paused: bool) -> int {
+    let u = Unpack(Stored)
+    return Pack(u.Nets, u.Roles, u.Prios, u.Full, Paused)
+}
+
+pure fn IsPaused(Stored: int) -> bool {
+    return Unpack(Stored).Paused
 }
 
 // The stored value with the "depart only when full" flag set or cleared.
 pure fn WithFull(Stored: int, Full: bool) -> int {
     let u = Unpack(Stored)
-    return Pack(u.Nets, u.Roles, Full)
+    return Pack(u.Nets, u.Roles, u.Prios, Full, u.Paused)
 }
 
 // Whether the dock belongs to any network.
@@ -364,14 +516,15 @@ fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
                     continue
                 }
                 let both = Both()
-                d.activeTradePartnerId = Pack([free], [both], false)
+                let normal: array<int> = [Normal()]
+                d.activeTradePartnerId = Pack([free], [both], normal, false, false)
                 let pu = Unpack(target.activeTradePartnerId)
                 if pu.IsNew {
                     let w = With(target.activeTradePartnerId, free, both)
                     target.activeTradePartnerId = w.ReturnValue
                 } else {
                     // the target's own value (its pair with d, or with another dock) is replaced
-                    target.activeTradePartnerId = Pack([free], [both], false)
+                    target.activeTradePartnerId = Pack([free], [both], normal, false, false)
                 }
                 made += 1
             }
@@ -413,17 +566,71 @@ fn TargetOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkD
     return none
 }
 
-// The value for a dock left in no network: -1, or an empty network value when it keeps "depart only when full".
+// The value for a dock left in no network: -1, or an empty network value when it keeps "depart only when full" or
+// is paused.
 pure fn Emptied(Stored: int) -> int {
     let u = Unpack(Stored)
-    let none4: array<int> = []
-    return if u.Full { Pack(none4, none4, true) } else { -1 }
+    let noNets: array<int> = []
+    return if u.Full || u.Paused { Pack(noNets, noNets, noNets, u.Full, u.Paused) } else { -1 }
 }
 
 // Whether the dock is paired: in a network, or holding a 1.x pair.
 pure fn IsPaired(Stored: int) -> bool {
     let u = Unpack(Stored)
     return IsMember(Stored) || u.OldTarget >= 0
+}
+
+// Whether the dock's crew is at work: by day, from when its first worker is at the dock (MapLoad.CrewArrived) until
+// nightfall. Off duty (at night, or in the morning before anyone has walked in), nobody hauls its cargo. Docks have
+// no overtime.
+fn OnDuty(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> bool {
+    let wt = cast(GameplayStatics.GetActorOfClass(WorldTime), WorldTime)
+    if wt == none || Dock == none {
+        return true
+    }
+    let id = DockId(Dock)
+    if wt.GetDayPhase() != EDayPhase.MID_DAY {
+        MapLoad.CrewArrived.Remove(id)
+        return false
+    }
+    if MapLoad.CrewArrived.Contains(id) {
+        return true
+    }
+    for slot in Dock.m_workers.m_workerSlots {
+        if slot.present {
+            MapLoad.CrewArrived[id] = true
+            return true
+        }
+    }
+    return false
+}
+
+// Network names from signs reading "[fn<id>] Name" (anywhere; the first for an ID counts): ID -> name.
+fn NetNames(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> map<int, string> {
+    let out: map<int, string> = {}
+    for a in GameplayStatics.GetAllActorsOfClass(signPost).OutActors {
+        let s = cast(a, signPost)
+        if s != none {
+            let msg = s.Signpost.shownMessage
+            if KismetStringLibrary.StartsWith(msg, "[fn", ESearchCase.IgnoreCase) {
+                let close = KismetStringLibrary.FindSubstring(msg, "]", false, false, -1)
+                if close > 3 {
+                    let id = KismetStringLibrary.Conv_StringToInt(KismetStringLibrary.Trim(KismetStringLibrary.Mid(msg, 3, close - 3)))
+                    let label = KismetStringLibrary.TrimTrailing(KismetStringLibrary.Trim(KismetStringLibrary.RightChop(msg, close + 1)))
+                    if id >= 1 && id <= MaxNet() && label != "" && !out.Contains(id) {
+                        out[id] = label
+                    }
+                }
+            }
+        }
+    }
+    return out
+}
+
+// "3 Food" for a named network, "3" otherwise.
+pure fn NetLabel(Net: int, Names: map<int, string>) -> string {
+    let n = Names.Find(Net)
+    return if n.ReturnValue { BPL_FDText.T2("freightdock.net.label", "net", string(Net), "name", n.Value) } else { string(Net) }
 }
 
 // What a network's requesters ask for, for the panel's picker: per resource, the request levels (minHold) set in
@@ -548,6 +755,7 @@ fn DropJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
     }
     MapLoad.JobTo.Remove(Id)
     MapLoad.JobSailed.Remove(Id)
+    MapLoad.JobDropped.Remove(Id)
 }
 
 // Moves up to Units of Res from the hold of the dock's ship to its delivered-goods store. Returns the units moved.

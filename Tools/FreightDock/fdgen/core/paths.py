@@ -111,6 +111,7 @@ OPTIONS_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loo
 SETUP_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDSetup.BPL_FDSetup_C'"
 TEXT_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDText.BPL_FDText_C'"
 LOAD_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDLoad.BPL_FDLoad_C'"
+VOYAGE_LIB = "/Script/Engine.BlueprintGeneratedClass'/Game/Mods/FreightDock/Loom/BPL_FDVoyage.BPL_FDVoyage_C'"
 # Loom-built (Content/Mods/FreightDock/Loom/BP_FDFling.lm): goods flying from the ship to the dock on unloading
 FD_FLING_CLASS = "/Game/Mods/FreightDock/Loom/BP_FDFling.BP_FDFling_C"
 

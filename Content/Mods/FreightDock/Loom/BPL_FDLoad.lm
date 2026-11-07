@@ -79,6 +79,7 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
     }
     let held = MapLoad.HoldCounts(Ship)
     let hold = held.Counts
+    let onDuty = BPL_FDNet.OnDuty(MapLoad, Dock)
 
     for res, units in BPL_FDNet.Manifest(MapLoad, id) {
         let h = hold.Find(res)
@@ -99,7 +100,8 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
         }
         let since = MapLoad.PickupSince.Find(key)
         let sinceT = if since.ReturnValue { since.Value } else { now }
-        if before < 0 || got > before || got >= units {
+        // the stall clock doesn't run while the crew is off duty (nobody hauls at night)
+        if before < 0 || got > before || got >= units || !onDuty {
             sinceT = now
         }
         MapLoad.PickupSeen[key] = got
@@ -109,8 +111,18 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
         if got < units && now - sinceT > Stall() {
             goal = got
             cut = true
-            MapLoad.JobGoods[BPL_FDNet.JobKey(id, res)] = got
+            if got > 0 {
+                MapLoad.JobGoods[BPL_FDNet.JobKey(id, res)] = got
+            } else {
+                // nothing of it got: it leaves the job (a job left with nothing is cancelled, BPL_FDDispatch.Upkeep)
+                MapLoad.JobGoods.Remove(BPL_FDNet.JobKey(id, res))
+                MapLoad.JobGoods.Remove(BPL_FDNet.ParkKey(id, res))
+            }
             MapLoad.PickupSince[key] = now
+            // for the dock GUI ("good=units,..." until the job ends)
+            let was = MapLoad.JobDropped.Find(id)
+            let note = string(res) + "=" + string(units - got)
+            MapLoad.JobDropped[id] = if was.ReturnValue { was.Value + "," + note } else { note }
             // the dispatcher leaves the good with this dock until its input warehouses' free stock changes
             let left = BPL_FDNet.SourceStock(MapLoad, Dock).Stock.Find(res)
             MapLoad.CutStock[BPL_FDNet.JobKey(id, res)] = if left.ReturnValue { left.Value } else { 0 }
@@ -176,19 +188,15 @@ fn RequestFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
 
 // The panel's Deliver now button (BP_MapLoad.DeliverSelected, ported from fdgen): the selected freight dock's ship sails
 // now with what it has - its loading clock (LoadingSince) is set far back so FreightTick's max-wait check passes. Ship
-// away or nothing loaded yet: a toast.
+// away or nothing loaded yet: nothing (the button is disabled then).
 fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let dock = MapLoad.FindDockUnderCursor().Dock
     if dock == none {
         return
     }
     let id = BPL_FDNet.DockId(dock)
-    if MapLoad.Voyages.Contains(id) {
-        MapLoad.Toast(BPL_FDText.T("freightdock.toast.underWay"))
-        return
-    }
-    if !MapLoad.LoadingSince.Contains(id) {
-        MapLoad.Toast(BPL_FDText.T("freightdock.toast.nothingLoaded"))
+    // the dock GUI disables the button then, with the reason as its tooltip
+    if MapLoad.Voyages.Contains(id) || !MapLoad.LoadingSince.Contains(id) {
         return
     }
     MapLoad.LoadingSince[id] = -1000000000000000.0

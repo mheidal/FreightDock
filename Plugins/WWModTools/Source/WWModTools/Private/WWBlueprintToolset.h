@@ -79,4 +79,23 @@ public:
 	 */
 	UFUNCTION(meta = (AICallable), Category = "WWBlueprintToolset")
 	static FString CompileAndSave(const FString& BlueprintPath, bool Save);
+
+	/**
+	 * Starts the same Cook & Install as the Content Browser's Mod Tools menu, and returns at once (a cook takes
+	 * minutes); follow it with CookStatus. Refuses while a cook is running, while a mod asset has unsaved changes (a
+	 * cook only sees saved files), or while the installed pak is in use (the game is running).
+	 * @param ModName Mod folder under /Game/Mods, e.g. "FreightDock".
+	 * @return "started", or why not.
+	 */
+	UFUNCTION(meta = (AICallable), Category = "WWBlueprintToolset")
+	static FString CookAndInstall(const FString& ModName);
+
+	/**
+	 * The latest Cook & Install (started here or from the menu): running with its stage and elapsed time, or done with
+	 * the result and the installed pak's time. On failure, the last lines of the cook's output. Also warns when a
+	 * subscribed Steam Workshop copy of the mod would load instead of the local install.
+	 * @return The status, one item per line.
+	 */
+	UFUNCTION(meta = (AICallable), Category = "WWBlueprintToolset")
+	static FString CookStatus();
 };

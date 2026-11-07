@@ -40,9 +40,24 @@ struct FModInfo
 	bool Has(const FString& Key) const { return Values.Contains(Key); }
 };
 
+// Progress of the latest Cook & Install, for the editor toolset (UWWBlueprintToolset::CookStatus)
+struct FCookStatus
+{
+	FString ModName;
+	bool bRunning = false;
+	bool bSuccess = false;
+	FString Stage; // the toast's status line while running, the final message when done
+	FDateTime Started;
+	FDateTime Finished;
+	TArray<FString> RecentOutput; // the last UAT output lines
+};
+
 namespace ModActions
 {
 	const TArray<FModFieldDef>& GetModFieldDefs();
+
+	// A copy of the latest Cook & Install's status (empty ModName when none has run since the editor started)
+	FCookStatus GetCookStatus();
 
 	// Expands {ModName} in a field default
 	FString ResolveFieldDefault(const FModFieldDef& Def, const FString& ModName);

@@ -1,0 +1,1087 @@
+blueprint BPL_FDVoyage : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDVoyage
+
+// The stand-ins' courses and sailing, ported from fdgen (BP_MapLoad's VoyageTick just calls VoyageTick here; its
+// MakeCourse adds the spline component - which Loom can't - and calls FillCourse).
+// Ships whose model faces another way than usual (WSS Allhands) are handled by taking the berthed heading from the
+// ship actor and turning each stand-in by its own model's offset (FacingOffset), not a fixed -90 degrees.
+
+// --- route cells: the water map (BP_MapLoad's Blocked footprints and land, Penalty near-shore cells, DockZone dock
+// outlines). A cell key is (floor(x / CellSize) + 2048) * 4096 + (floor(y / CellSize) + 2048), as BP_MapLoad.CellKey.
+// Ported from fdgen: BP_MapLoad's FindPath, ClearLine and RouteStillClear just call these.
+
+pure fn KeyAt(CX: int, CY: int) -> int {
+    return (CX + 2048) * 4096 + (CY + 2048)
+}
+
+// Penalty (near-shore) cost per level for a step, against 10 for a straight step: such cells are crossed only where
+// it saves a real detour (to reach a berth on the shore).
+pure fn ShoreCost() -> int {
+    return 40
+}
+
+// Every waterfront building's outline - the cells under its meshes (pier, crane, sheds; static, instanced or
+// skeletal, shown or not: the game hides most of a freight dock's), not helpers or effects (a facing arrow, a
+// waterfall's foam) - as cells of DockZone (cell -> building ID), and the berths of freight and other work docks
+// (DockBerths). A waterfront building is one with a WorkDock, or with a mesh over open near-shore water (Penalty, not
+// land, not any building's footprint: cells under buildings are often not terrain, and buildings penalise around
+// them): the tax dock, shipyards, anything built out over the water. A
+// building without a WorkDock gets a negative ID, so no route counts it as its own. Built on load and again whenever
+// the building scan's blocked cells change (construction or demolition): DockZoneSeen holds the Blocked count it was
+// built for. Footprints alone (Blocked) leave a crane or pier over the water as open water. Then the berthed ships
+// (RefreshShips).
+fn RefreshZones(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    RefreshShips(MapLoad)
+    if MapLoad.Blocked.Length() == MapLoad.DockZoneSeen {
+        return
+    }
+    let started = KismetMathLibrary.Now()
+    MapLoad.DockZoneSeen = MapLoad.Blocked.Length()
+    MapLoad.DockZone.Clear()
+    MapLoad.DockBerths.Clear()
+    let found = 0
+    let other = 0
+    let checked = 0
+    for a in GameplayStatics.GetAllActorsOfClass(GridActor).OutActors {
+        let wd = cast(a.GetComponentByClass(WorkDock), WorkDock)
+        // only a work dock, or a building whose bounds reach open near-shore water, is looked at part by part
+        let look = if wd != none { true } else { BoundsNearWater(MapLoad, a) }
+        if look {
+            checked += 1
+            let cells = MeshCells(MapLoad, a)
+            let waterfront = wd != none
+            for key, _ in cells {
+                if waterfront {
+                    break
+                }
+                if OpenWater(MapLoad, key) {
+                    waterfront = true
+                }
+            }
+            if waterfront {
+                found += 1
+                let id = 0
+                if wd != none {
+                    id = BPL_FDNet.DockId(wd)
+                    let berth = MapLoad.NauticalDockAt(wd).Best
+                    if berth != none {
+                        MapLoad.DockBerths[id] = berth.State.berthLocation
+                    }
+                } else {
+                    other += 1
+                    id = 0 - other
+                }
+                for key, _ in cells {
+                    MapLoad.DockZone[key] = id
+                }
+            }
+        }
+    }
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Waterfront outlines: " + string(found) + " buildings (" + string(checked) + " looked at part by part), " + string(MapLoad.DockZone.Length()) + " cells, " + string(MsSince(started)) + " ms", false)
+}
+
+// Milliseconds of wall-clock time since Start (KismetMathLibrary.Now), to time work done within a single frame.
+fn MsSince(Start: DateTime) -> int {
+    return KismetMathLibrary.Round(KismetMathLibrary.GetTotalMilliseconds(KismetMathLibrary.Subtract_DateTimeDateTime(KismetMathLibrary.Now(), Start)))
+}
+
+// Whether a ship could be in the cell were nothing built over it: near-shore (Penalty), not land, not a footprint.
+fn OpenWater(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Key: int) -> bool {
+    return MapLoad.Penalty.Contains(Key) && !MapLoad.LandNext.Contains(Key) && !MapLoad.Blocked.Contains(Key)
+}
+
+// Whether Actor's bounds (all its parts at once, effects included, so never smaller than its meshes) cover an
+// OpenWater cell: the quick test before MeshCells.
+fn BoundsNearWater(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Actor: Actor) -> bool {
+    let size = KismetMathLibrary.FMax(MapLoad.CellSize, 1.0)
+    let b = Actor.GetActorBounds(false, false)
+    let cx = KismetMathLibrary.FFloor((b.Origin.X - b.BoxExtent.X) / size)
+    let x1 = KismetMathLibrary.FFloor((b.Origin.X + b.BoxExtent.X) / size)
+    let y0 = KismetMathLibrary.FFloor((b.Origin.Y - b.BoxExtent.Y) / size)
+    let y1 = KismetMathLibrary.FFloor((b.Origin.Y + b.BoxExtent.Y) / size)
+    while cx <= x1 {
+        let cy = y0
+        while cy <= y1 {
+            if OpenWater(MapLoad, KeyAt(cx, cy)) {
+                return true
+            }
+            cy += 1
+        }
+        cx += 1
+    }
+    return false
+}
+
+// Whether a part of a building counts towards its outline: a mesh (static, instanced or skeletal), shown or not.
+fn Solid(Prim: PrimitiveComponent) -> bool {
+    if cast(Prim, StaticMeshComponent) != none {
+        return true
+    }
+    return cast(Prim, SkeletalMeshComponent) != none
+}
+
+// The cells under Actor's solid parts (Solid), as map keys, each part's bounds pulled in by 10 units, so a part
+// reaching only a little past a cell's edge (a window frame, a support) leaves the next cell out. Smaller parts count
+// for nothing.
+fn MeshCells(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Actor: Actor) -> map<int, bool> {
+    let size = KismetMathLibrary.FMax(MapLoad.CellSize, 1.0)
+    let out: map<int, bool> = {}
+    for c in Actor.K2_GetComponentsByClass(PrimitiveComponent) {
+        let prim = cast(c, PrimitiveComponent)
+        if prim != none {
+            let b = KismetSystemLibrary.GetComponentBounds(prim)
+            let ex = b.BoxExtent.X - 10.0
+            let ey = b.BoxExtent.Y - 10.0
+            let solid = Solid(prim)
+            if solid && ex > 0.0 && ey > 0.0 {
+                let cx = KismetMathLibrary.FFloor((b.Origin.X - ex) / size)
+                while cx <= KismetMathLibrary.FFloor((b.Origin.X + ex) / size) {
+                    let cy = KismetMathLibrary.FFloor((b.Origin.Y - ey) / size)
+                    while cy <= KismetMathLibrary.FFloor((b.Origin.Y + ey) / size) {
+                        out[KeyAt(cx, cy)] = true
+                        cy += 1
+                    }
+                    cx += 1
+                }
+            }
+        }
+    }
+    return out
+}
+
+// The cells under every berthed ship's hull (ShipCells: cell -> the ship's position), gathered at most once a second.
+fn RefreshShips(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let now = GameplayStatics.GetRealTimeSeconds()
+    if now < MapLoad.ShipCellsAt {
+        return
+    }
+    MapLoad.ShipCellsAt = now + 1.0
+    let hadCells = MapLoad.ShipCells.Length()
+    MapLoad.ShipCells.Clear()
+    let ships = 0
+    let berthed = 0
+    let size = KismetMathLibrary.FMax(MapLoad.CellSize, 1.0)
+    for a in GameplayStatics.GetAllActorsOfClass(NauticalShip).OutActors {
+        let ship = cast(a, NauticalShip)
+        if ship != none {
+            ships += 1
+            if ship.State.dockedDock != none {
+                berthed += 1
+                // its hull: 90 units either way along its heading, 25 either side (a scout caravel is about 3.5 by 1
+                // tiles), round its model (the ship actor can sit off it), sampled at least every half cell, edges
+                // included (its bounds can take in far more, e.g. effects)
+                let model = ship.zoomedActor.ChildActor
+                let at = if model != none { model.K2_GetActorLocation() } else { ship.K2_GetActorLocation() }
+                let fwd = ship.GetActorForwardVector()
+                let side = ship.GetActorRightVector()
+                let na = KismetMathLibrary.Max(KismetMathLibrary.FCeil(180.0 / (size * 0.5)), 1)
+                let nc = KismetMathLibrary.Max(KismetMathLibrary.FCeil(50.0 / (size * 0.5)), 1)
+                let i = 0
+                while i <= na {
+                    let along = -90.0 + 180.0 * float(i) / float(na)
+                    let j = 0
+                    while j <= nc {
+                        let across = -25.0 + 50.0 * float(j) / float(nc)
+                        let pt = KismetMathLibrary.Add_VectorVector(at, KismetMathLibrary.Add_VectorVector(KismetMathLibrary.Multiply_VectorFloat(fwd, along), KismetMathLibrary.Multiply_VectorFloat(side, across)))
+                        MapLoad.ShipCells[KeyAt(KismetMathLibrary.FFloor(pt.X / size), KismetMathLibrary.FFloor(pt.Y / size))] = at
+                        j += 1
+                    }
+                    i += 1
+                }
+            }
+        }
+    }
+    if MapLoad.ShipCells.Length() != hadCells {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Berthed ships: " + string(berthed) + " of " + string(ships) + " ships, " + string(MapLoad.ShipCells.Length()) + " cells", false)
+    }
+}
+
+// Whether a point (a dock's berth, a berthed ship) belongs to one end of the line being planned: within a stand-off
+// and 150 units of PlanStart or PlanGoal (a route's ends are the stand-off points; a course's home end is the berth).
+fn AtEnd(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Point: Vector) -> bool {
+    let r = MapLoad.StandOff + 150.0
+    return KismetMathLibrary.Vector_Distance2D(Point, MapLoad.PlanStart) <= r || KismetMathLibrary.Vector_Distance2D(Point, MapLoad.PlanGoal) <= r
+}
+
+// Whether dock Id is one end of the line being planned: its berth at PlanStart or PlanGoal (a route's ends are the
+// stand-off points, StandOff out from the berths; a course's home end is the berth itself). Its outline is open to
+// that line, so its ship can reach the berth and arc out of it; its footprint (Blocked) never is.
+fn OwnDock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> bool {
+    let b = MapLoad.DockBerths.Find(Id)
+    if !b.ReturnValue {
+        return false
+    }
+    return AtEnd(MapLoad, b.Value)
+}
+
+// Why a ship may not be in the cell ("" when it may): land or a building's footprint, another dock's structure, or a
+// ship berthed there that isn't at either end of the line being planned.
+fn Why(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Key: int) -> string {
+    if MapLoad.Blocked.Contains(Key) {
+        return "land or footprint"
+    }
+    let z = MapLoad.DockZone.Find(Key)
+    if z.ReturnValue {
+        if !OwnDock(MapLoad, z.Value) {
+            return "dock " + string(z.Value) + "'s structure"
+        }
+    }
+    let sh = MapLoad.ShipCells.Find(Key)
+    if sh.ReturnValue {
+        if !AtEnd(MapLoad, sh.Value) {
+            return "a berthed ship"
+        }
+    }
+    return ""
+}
+
+fn Passable(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Key: int) -> bool {
+    return Why(MapLoad, Key) == ""
+}
+
+// Why a cell fails SegmentClear ("" when it doesn't): Why (a berthed ship named, with its distance from the line's
+// start), or (Shore) a near-shore cell not within 150 units of an end.
+fn CellWhy(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, CX: int, CY: int, Shore: bool) -> string {
+    let key = KeyAt(CX, CY)
+    let why = Why(MapLoad, key)
+    if why != "" {
+        let sh = MapLoad.ShipCells.Find(key)
+        if why == "a berthed ship" && sh.ReturnValue {
+            why += " (" + ShipNameAt(sh.Value) + ", " + string(KismetMathLibrary.Round(KismetMathLibrary.Vector_Distance2D(sh.Value, MapLoad.PlanStart))) + " from the start)"
+        }
+        return why + " at cell (" + string(CX) + ", " + string(CY) + ")"
+    }
+    if Shore && MapLoad.Penalty.Contains(key) {
+        let centre = Vector(X: (float(CX) + 0.5) * MapLoad.CellSize, Y: (float(CY) + 0.5) * MapLoad.CellSize, Z: 0.0)
+        let near = 150.0
+        let byStart = KismetMathLibrary.Vector_Distance2D(centre, MapLoad.PlanStart) <= near
+        let byGoal = KismetMathLibrary.Vector_Distance2D(centre, MapLoad.PlanGoal) <= near
+        if !byStart && !byGoal {
+            return "near-shore at cell (" + string(CX) + ", " + string(CY) + ")"
+        }
+    }
+    return ""
+}
+
+// The ship at At (a ShipCells value) and the building its dock belongs to, for the modlog.
+fn ShipNameAt(At: Vector) -> string {
+    for a in GameplayStatics.GetAllActorsOfClass(NauticalShip).OutActors {
+        let ship = cast(a, NauticalShip)
+        if ship != none {
+            if KismetMathLibrary.Vector_Distance2D(ship.K2_GetActorLocation(), At) < 1.0 {
+                let dock = ship.State.dockedDock
+                let owner = if dock != none { dock.GetOwner() } else { none }
+                return KismetSystemLibrary.GetDisplayName(ship) + (if owner != none { " at " + KismetSystemLibrary.GetDisplayName(owner) } else { "" })
+            }
+        }
+    }
+    return "unknown ship"
+}
+
+fn SegmentClear(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, A: Vector, B: Vector, Shore: bool) -> bool {
+    return SegmentWhy(MapLoad, A, B, Shore) == ""
+}
+
+// Why the segment A -> B is not clear ("" when it is): the first cell it touches that a ship can't be in (CellWhy), the
+// cells of A and B themselves excepted. Every cell it touches is found by walking the grid along it (where it passes
+// exactly through a corner, both cells beside the corner count), so no corner is cut between samples.
+fn SegmentWhy(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, A: Vector, B: Vector, Shore: bool) -> string {
+    let size = KismetMathLibrary.FMax(MapLoad.CellSize, 1.0)
+    let x0 = A.X / size
+    let y0 = A.Y / size
+    let x1 = B.X / size
+    let y1 = B.Y / size
+    let cx = KismetMathLibrary.FFloor(x0)
+    let cy = KismetMathLibrary.FFloor(y0)
+    let sx = cx
+    let sy = cy
+    let ex = KismetMathLibrary.FFloor(x1)
+    let ey = KismetMathLibrary.FFloor(y1)
+    let dx = x1 - x0
+    let dy = y1 - y0
+    let stepX = if dx > 0.0 { 1 } else if dx < 0.0 { -1 } else { 0 }
+    let stepY = if dy > 0.0 { 1 } else if dy < 0.0 { -1 } else { 0 }
+    let big = 1000000000.0
+    let tMaxX = if stepX > 0 { (float(cx) + 1.0 - x0) / dx } else if stepX < 0 { (x0 - float(cx)) / (0.0 - dx) } else { big }
+    let tMaxY = if stepY > 0 { (float(cy) + 1.0 - y0) / dy } else if stepY < 0 { (y0 - float(cy)) / (0.0 - dy) } else { big }
+    let tDeltaX = if stepX != 0 { 1.0 / KismetMathLibrary.Abs(dx) } else { big }
+    let tDeltaY = if stepY != 0 { 1.0 / KismetMathLibrary.Abs(dy) } else { big }
+    let guard = 0
+    while guard < 20000 {
+        guard += 1
+        let isEnd = cx == ex && cy == ey
+        let isStart = cx == sx && cy == sy
+        if !isEnd && !isStart {
+            let w = CellWhy(MapLoad, cx, cy, Shore)
+            if w != "" {
+                return w
+            }
+        }
+        if isEnd {
+            return ""
+        }
+        if KismetMathLibrary.Abs(tMaxX - tMaxY) < 0.000001 {
+            // exactly through a corner: both cells beside it
+            let sideX = cx + stepX
+            let sideY = cy + stepY
+            let sideXEnd = sideX == ex && cy == ey
+            if !sideXEnd {
+                let wx = CellWhy(MapLoad, sideX, cy, Shore)
+                if wx != "" {
+                    return wx
+                }
+            }
+            let sideYEnd = cx == ex && sideY == ey
+            if !sideYEnd {
+                let wy = CellWhy(MapLoad, cx, sideY, Shore)
+                if wy != "" {
+                    return wy
+                }
+            }
+            cx = sideX
+            cy = sideY
+            tMaxX += tDeltaX
+            tMaxY += tDeltaY
+        } else if tMaxX < tMaxY {
+            cx += stepX
+            tMaxX += tDeltaX
+        } else {
+            cy += stepY
+            tMaxY += tDeltaY
+        }
+        if tMaxX > 1.0 + tDeltaX && tMaxY > 1.0 + tDeltaY {
+            // past B without meeting its cell (rounding): done
+            return ""
+        }
+    }
+    return ""
+}
+
+// ClearLine(A, B): no blocked, other dock's or (away from the ends) near-shore cell on the straight line.
+fn ClearLine(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, A: Vector, B: Vector) -> bool {
+    RefreshZones(MapLoad)
+    return SegmentClear(MapLoad, A, B, true)
+}
+
+// RouteStillClear(Id): dock Id has a stored route and no leg crosses a cell a ship can't be in (near-shore cells
+// don't count, so routes through narrow passages aren't replanned every rescan).
+fn RouteStillClear(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> bool {
+    RefreshZones(MapLoad)
+    let nf = MapLoad.RouteLen.Find(Id)
+    if !nf.ReturnValue || nf.Value <= 1 {
+        return false
+    }
+    let n = nf.Value
+    let base = Id * 1000
+    MapLoad.PlanStart = MapLoad.RoutePts.Find(base).Value
+    MapLoad.PlanGoal = MapLoad.RoutePts.Find(base + n - 1).Value
+    let i = 0
+    while i < n - 1 {
+        let a = MapLoad.RoutePts.Find(base + i).Value
+        let b = MapLoad.RoutePts.Find(base + i + 1).Value
+        if !SegmentClear(MapLoad, a, b, false) {
+            return false
+        }
+        i += 1
+    }
+    return true
+}
+
+// FindPath(Start, Goal): A* over route cells; prepends the path (start .. goal) to PathCells. Steps cost 10 straight,
+// 14 diagonal, plus ShoreCost() per near-shore level of the cell entered. A cell must be Passable (the goal cell
+// always is); a diagonal step also needs both cells beside it passable, so no corner is cut. At most MaxExpand cells
+// are expanded.
+fn FindPath(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Start: Vector, Goal: Vector) -> bool {
+    RefreshZones(MapLoad)
+    let started = KismetMathLibrary.Now()
+    let startKey = MapLoad.CellKey(Start).Key
+    let goalKey = MapLoad.CellKey(Goal).Key
+    let gx = goalKey / 4096
+    let gy = goalKey % 4096
+    let open: array<int> = [startKey]
+    let openF: array<int> = [0]
+    let costs: map<int, int> = {}
+    let came: map<int, int> = {}
+    let closed: map<int, bool> = {}
+    costs[startKey] = 0
+    let found = false
+    let loops = 0
+    while loops <= MapLoad.MaxExpand && open.Length() > 0 {
+        loops += 1
+        let pick = KismetMathLibrary.MinOfIntArray(openF)
+        let best = open[pick.IndexOfMinValue]
+        open.Remove(pick.IndexOfMinValue)
+        openF.Remove(pick.IndexOfMinValue)
+        if best == goalKey {
+            found = true
+            break
+        }
+        if closed.Contains(best) {
+            continue
+        }
+        closed[best] = true
+        let bx = best / 4096
+        let by = best % 4096
+        let gBest = costs.Find(best).Value
+        let ddx = -1
+        while ddx <= 1 {
+            let ddy = -1
+            while ddy <= 1 {
+                let nb = best + ddx * 4096 + ddy
+                let isSelf = ddx == 0 && ddy == 0
+                if !isSelf && !closed.Contains(nb) {
+                    let ok = nb == goalKey
+                    if !ok {
+                        ok = Passable(MapLoad, nb)
+                    }
+                    let diagonal = ddx != 0 && ddy != 0
+                    if ok && diagonal {
+                        // no corner cutting: both cells beside the diagonal step must be open
+                        if !Passable(MapLoad, best + ddx * 4096) {
+                            ok = false
+                        } else if !Passable(MapLoad, best + ddy) {
+                            ok = false
+                        }
+                    }
+                    if ok {
+                        let pen = MapLoad.Penalty.Find(nb)
+                        let stepCost = (if diagonal { 14 } else { 10 }) + (if pen.ReturnValue { pen.Value * ShoreCost() } else { 0 })
+                        let tent = gBest + stepCost
+                        let had = costs.Find(nb)
+                        if !had.ReturnValue || tent < had.Value {
+                            costs[nb] = tent
+                            came[nb] = best
+                            let hx = KismetMathLibrary.Abs_Int(bx + ddx - gx)
+                            let hy = KismetMathLibrary.Abs_Int(by + ddy - gy)
+                            let h = KismetMathLibrary.Max(hx, hy) * 10 + KismetMathLibrary.Min(hx, hy) * 4
+                            open.Add(nb)
+                            openF.Add(tent + h)
+                        }
+                    }
+                }
+                ddy += 1
+            }
+            ddx += 1
+        }
+    }
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "FindPath: " + (if found { "found" } else { "no path" }) + " after " + string(loops) + " pops, " + string(closed.Length()) + " cells expanded, " + string(open.Length()) + " left open (limit " + string(MapLoad.MaxExpand) + ")" + ", " + string(MsSince(started)) + " ms", false)
+    if !found {
+        return false
+    }
+    // walk back from the goal
+    let cur = goalKey
+    let walk = 0
+    while walk <= MapLoad.MaxExpand {
+        walk += 1
+        MapLoad.PathCells.Insert(cur, 0)
+        if cur == startKey {
+            break
+        }
+        let back = came.Find(cur)
+        if !back.ReturnValue {
+            break
+        }
+        cur = back.Value
+    }
+    return true
+}
+
+// The circle for a turn leaving Pos along heading H (flat, unit) on side S (+1 left, -1 right) at radius R: its centre
+// (CX, CY), the angle of Pos on it (Theta0), the sweep (0..2 pi) round to where the heading points at Target, and
+// whether Target is outside it (Valid).
+pure fn TurnCircle(Pos: Vector, H: Vector, Target: Vector, S: float, R: float, out CX: float, out CY: float, out Theta0: float, out Sweep: float, out Valid: bool) {
+    CX = Pos.X - H.Y * S * R
+    CY = Pos.Y + H.X * S * R
+    let vx = Target.X - CX
+    let vy = Target.Y - CY
+    let d = KismetMathLibrary.Sqrt(vx * vx + vy * vy)
+    Valid = d > R + 1.0
+    let phi = KismetMathLibrary.Atan2(vy, vx)
+    let alpha = KismetMathLibrary.Acos(KismetMathLibrary.FMin(R / KismetMathLibrary.FMax(d, 1.0), 1.0))
+    Theta0 = KismetMathLibrary.Atan2(Pos.Y - CY, Pos.X - CX)
+    Sweep = KismetMathLibrary.FWrap(S * ((phi - S * alpha) - Theta0), 0.0, 6.283185)
+}
+
+// TurnArc(Pos, Fwd, Target, Backward): leaving Pos along Fwd, a circle round to where the heading points at Target
+// (then straight on). Up to six tries - the shorter turn direction then the other, each at TurnRadius, TightTurn1 x and
+// TightTurn2 x it (a ship turns tighter slowly) - and the first whose arc and straight on to Target cross no cell a
+// ship can't be in (ArcWhy) wins. A try fails too if Target is inside its circle. Used is the radius that worked, 0 if
+// none did (no points: the ship turns in place, VoyageTick), and Why then says why each try failed. Points are every
+// CourseSpacing / 2 along the arc (Pos excluded); Backward lists them in reverse (an arrival: pass the end pose with
+// Fwd reversed and the previous point as Target).
+fn TurnArc(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pos: Vector, Fwd: Vector, Target: Vector, Backward: bool, out Pts: array<Vector>, out Used: float, out Why: string) {
+    let h = KismetMathLibrary.Normal(Vector(X: Fwd.X, Y: Fwd.Y, Z: 0.0), 0.0001)
+    let base = MapLoad.TurnRadius
+    // the preferred side: the shorter valid turn at full radius
+    let l = TurnCircle(Pos, h, Target, 1.0, base)
+    let r = TurnCircle(Pos, h, Target, -1.0, base)
+    let pref = if l.Valid && (l.Sweep <= r.Sweep || !r.Valid) { 1.0 } else { -1.0 }
+    let step = MapLoad.CourseSpacing * 0.5
+    let k = 0
+    while k <= 5 {
+        let level = k / 2
+        let factor = if level == 0 { 1.0 } else if level == 1 { MapLoad.TightTurn1 } else { MapLoad.TightTurn2 }
+        let radius = base * factor
+        let side = if k % 2 == 1 { 0.0 - pref } else { pref }
+        let label = "r=" + string(KismetMathLibrary.Round(radius)) + (if side > 0.0 { " left" } else { " right" })
+        let c = TurnCircle(Pos, h, Target, side, radius)
+        if !c.Valid {
+            Why += "; " + label + ": aim inside the circle"
+        } else {
+            let n = KismetMathLibrary.Max(KismetMathLibrary.FCeil(radius * c.Sweep / step), 1)
+            let arc: array<Vector> = []
+            let i = 1
+            while i <= n {
+                let ang = c.Theta0 + side * c.Sweep * float(i) / float(n)
+                arc.Add(Vector(X: c.CX + radius * KismetMathLibrary.Cos(ang), Y: c.CY + radius * KismetMathLibrary.Sin(ang), Z: Pos.Z))
+                i += 1
+            }
+            let w = ArcWhy(MapLoad, Pos, arc, Target)
+            if w == "" {
+                if Backward {
+                    arc.Reverse()
+                }
+                Pts = arc
+                Used = radius
+                Why = ""
+                return
+            }
+            Why += "; " + label + " crosses " + w
+        }
+        k += 1
+    }
+}
+
+// The spacing of the extra aim points FillCourse adds along a route's first and last legs.
+pure fn AimSpacing() -> float {
+    return 200.0
+}
+
+// Points every AimSpacing along A -> B, from A's end, A and B themselves left out (and none within half a spacing of B).
+pure fn LegPoints(A: Vector, B: Vector) -> array<Vector> {
+    let out: array<Vector> = []
+    let len = KismetMathLibrary.Vector_Distance2D(A, B)
+    let k = 1
+    while float(k) * AimSpacing() < len - AimSpacing() * 0.5 {
+        out.Add(KismetMathLibrary.VLerp(A, B, float(k) * AimSpacing() / len))
+        k += 1
+    }
+    return out
+}
+
+// Why a turn isn't clear ("" when it is): the arc from Pos through its points, then straight on to Aim, crossing no
+// cell a ship can't be in.
+fn ArcWhy(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pos: Vector, Pts: array<Vector>, Aim: Vector) -> string {
+    let line: array<Vector> = [Pos]
+    line.Append(Pts)
+    line.Add(Aim)
+    let i = 0
+    while i < line.Length() - 1 {
+        let why = SegmentWhy(MapLoad, line[i], line[i + 1], false)
+        if why != "" {
+            return why
+        }
+        i += 1
+    }
+    return ""
+}
+
+// Seconds of game time per VoyageTick (its timer, set by StartVoyage).
+pure fn TickStep() -> float {
+    return 0.016
+}
+
+// The yaw to add to a heading so the stand-in's bow points along it: the model's yaw against its ship's (the ship
+// actor's forward is its bow). -90 for the usual models, +90 for one built facing the other way.
+fn FacingOffset(Ship: NauticalShip) -> float {
+    if Ship == none {
+        return -90.0
+    }
+    let model = Ship.zoomedActor.ChildActor
+    if model == none {
+        return -90.0
+    }
+    return model.K2_GetActorRotation().Yaw - Ship.K2_GetActorRotation().Yaw
+}
+
+// The stand-in's rotation for heading Dir.
+pure fn ProxyRot(Dir: Vector, Offset: float) -> Rotator {
+    return KismetMathLibrary.ComposeRotators(Rotator(Roll: 0.0, Pitch: 0.0, Yaw: Offset), KismetMathLibrary.MakeRotFromX(Dir))
+}
+
+// A and B within 3 degrees of yaw.
+pure fn Lined(A: Rotator, B: Rotator) -> bool {
+    return KismetMathLibrary.Abs(KismetMathLibrary.NormalizedDeltaRotator(A, B).Yaw) < 3.0
+}
+
+// A stand-in's pose with its bob added: height BobHeight * sin(a), the hull rolling BobRoll degrees (cos a) and the
+// bow pitching BobPitch degrees (sin a), a = 2 pi t / BobPeriod over game time, offset per dock Id so stand-ins
+// don't bob in step. The usual model's bow is its Y axis, so the actor's pitch rolls the hull and its roll pitches the
+// bow. Yaw from Rot.
+fn BobPose(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Pos: Vector, Rot: Rotator, out OutPos: Vector, out OutRot: Rotator) {
+    let a = GameplayStatics.GetTimeSeconds() * (6.283185 / KismetMathLibrary.FMax(MapLoad.BobPeriod, 0.01)) + float(Id) * 0.731
+    let s = KismetMathLibrary.Sin(a)
+    let c = KismetMathLibrary.Cos(a)
+    OutPos = Vector(X: Pos.X, Y: Pos.Y, Z: Pos.Z + MapLoad.BobHeight * s)
+    OutRot = Rotator(Roll: MapLoad.BobPitch * s, Pitch: MapLoad.BobRoll * c, Yaw: Rot.Yaw)
+}
+
+// The F7 overlay's squares (DebugCells makes and clears the layers, then calls this): every cell within CellsRadius of
+// the camera's focal point - land (LandNext) on LandLayer, other blocked cells (buildings) on BlockedLayer, near-shore
+// cells on PenaltyLayer - each a flat square 90% of a cell (SM_RouteStrip runs 100 units along X, 1 across Y).
+fn DrawCellSquares(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let pawn = cast(GameplayStatics.GetPlayerPawn(0), Pawn_Play)
+    if pawn == none {
+        return
+    }
+    let size = MapLoad.CellSize
+    let focal = pawn.m_currentFocalPoint
+    let fx = KismetMathLibrary.FFloor(focal.X / size)
+    let fy = KismetMathLibrary.FFloor(focal.Y / size)
+    let r = MapLoad.CellsRadius
+    let scale = Vector(X: size * 0.009, Y: size * 0.9, Z: 1.0)
+    let dx = 0 - r
+    while dx <= r {
+        let dy = 0 - r
+        while dy <= r {
+            let key = KeyAt(fx + dx, fy + dy)
+            let layer: InstancedStaticMeshComponent = none
+            if MapLoad.Blocked.Contains(key) {
+                layer = if MapLoad.LandNext.Contains(key) { MapLoad.LandLayer } else { MapLoad.BlockedLayer }
+            } else {
+                if MapLoad.Penalty.Contains(key) {
+                    layer = MapLoad.PenaltyLayer
+                }
+            }
+            if layer != none {
+                let at = Vector(X: (float(fx + dx) + 0.05) * size, Y: (float(fy + dy) + 0.5) * size, Z: MapLoad.RouteLineHeight + 1.0)
+                layer.AddInstance(KismetMathLibrary.MakeTransform(at, Rotator(Roll: 0.0, Pitch: 0.0, Yaw: 0.0), scale), true)
+            }
+            dy += 1
+        }
+        dx += 1
+    }
+}
+
+// Blocked cells (land and buildings) a polyline crosses, sampled every half cell, each cell counted once: logged
+// when there are any, with where the first one is, which leg it's on (from point to point) and whether it is land or
+// a building's footprint. Label says which line.
+fn LogCrossings(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Label: string, Pts: array<Vector>) {
+    let step = KismetMathLibrary.FMax(MapLoad.CellSize * 0.5, 1.0)
+    let seenCells: map<int, bool> = {}
+    let hits = 0
+    let first = ""
+    let p = 0
+    while p < Pts.Length() - 1 {
+        let a = Pts[p]
+        let b = Pts[p + 1]
+        let n = KismetMathLibrary.Max(KismetMathLibrary.FCeil(KismetMathLibrary.Vector_Distance2D(a, b) / step), 1)
+        let s = 0
+        while s <= n {
+            let at = KismetMathLibrary.VLerp(a, b, float(s) / float(n))
+            let key = MapLoad.CellKey(at).Key
+            if MapLoad.Blocked.Contains(key) && !seenCells.Contains(key) {
+                seenCells[key] = true
+                hits += 1
+                if hits == 1 {
+                    first = "(" + string(KismetMathLibrary.Round(at.X)) + ", " + string(KismetMathLibrary.Round(at.Y)) + "), " + (if MapLoad.LandNext.Contains(key) { "land" } else { "a building's footprint" })
+                    first += ", on leg " + string(p) + " of " + string(Pts.Length() - 1) + " (" + string(KismetMathLibrary.Round(a.X)) + ", " + string(KismetMathLibrary.Round(a.Y)) + " to " + string(KismetMathLibrary.Round(b.X)) + ", " + string(KismetMathLibrary.Round(b.Y)) + ")"
+                }
+            }
+            s += 1
+        }
+        p += 1
+    }
+    if hits > 0 {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Blocked cells: " + Label + " crosses " + string(hits) + ", first at " + first, false)
+    }
+}
+
+// The stand-off point of Dock (a WorkDock): StandOff units out from its berth, at Z = 0. Of the 18 directions every
+// 20 degrees round the berth, the ones whose way out (SegmentWhy) and whose point itself (Why) cross no cell a ship
+// can't be in (land, a footprint, another dock's outline, a ship berthed elsewhere) count; of those, the one in the
+// most open water (lowest near-shore level, Penalty) wins, then the one nearest the berth's out-direction (which can
+// point at the quay). Logged when it isn't straight out, or when every way is blocked (then straight out is kept).
+fn StandOffPoint(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> Vector {
+    let berth = MapLoad.NauticalDockAt(Dock).Best
+    if berth == none {
+        return Vector(X: 0.0, Y: 0.0, Z: 0.0)
+    }
+    let at = berth.State.berthLocation
+    let out = berth.State.berthOutDirection
+    let pick = KismetMathLibrary.Add_VectorVector(at, KismetMathLibrary.Multiply_VectorFloat(out, MapLoad.StandOff))
+    RefreshZones(MapLoad)
+    // this dock's end: its own outline and ship don't count
+    let keepStart = MapLoad.PlanStart
+    let keepGoal = MapLoad.PlanGoal
+    MapLoad.PlanStart = at
+    MapLoad.PlanGoal = at
+    let best = -1
+    let bestDeg = 0
+    let why = ""
+    let k = 0
+    while k < 18 {
+        // 0, 20, -20, 40, -40 ... 160, -160, 180
+        let deg = if k % 2 == 1 { 20 * ((k + 1) / 2) } else { 0 - 20 * (k / 2) }
+        let dir = KismetMathLibrary.RotateAngleAxis(out, float(deg), Vector(X: 0.0, Y: 0.0, Z: 1.0))
+        let cand = KismetMathLibrary.Add_VectorVector(at, KismetMathLibrary.Multiply_VectorFloat(dir, MapLoad.StandOff))
+        let w = SegmentWhy(MapLoad, at, cand, false)
+        if w == "" {
+            w = Why(MapLoad, MapLoad.CellKey(cand).Key)
+        }
+        if w == "" {
+            let pen = MapLoad.Penalty.Find(MapLoad.CellKey(cand).Key)
+            let score = (if pen.ReturnValue { pen.Value } else { 0 }) * 1000 + KismetMathLibrary.Abs_Int(deg)
+            if best < 0 || score < best {
+                best = score
+                bestDeg = deg
+                pick = cand
+            }
+        } else if k == 0 {
+            why = "; straight out crosses " + w
+        }
+        k += 1
+    }
+    let id = string(BPL_FDNet.DockId(Dock))
+    if best < 0 {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Stand-off for dock " + id + ": every way out is blocked, kept straight out" + why, false)
+    } else if bestDeg != 0 {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Stand-off for dock " + id + " turned " + string(bestDeg) + " degrees (open water)" + why, false)
+    }
+    MapLoad.PlanStart = keepStart
+    MapLoad.PlanGoal = keepGoal
+    return Vector(X: pick.X, Y: pick.Y, Z: 0.0)
+}
+
+// Spline points along one leg A -> B, every Spacing. Each end that meets another leg is cut back by
+// R = min(Corner, half the leg), so the spline curves round the corner instead of through it. The leg's start point
+// is added unless it's the first leg (already added) or uncut. A leg used up by its two cuts adds just one point (its
+// midpoint), never a duplicate, which would leave a cusp.
+fn CornerLeg(Course: SplineComponent, A: Vector, B: Vector, Leg: int, LastLeg: int, Spacing: float, Corner: float) {
+    let length = KismetMathLibrary.FMax(KismetMathLibrary.Vector_Distance2D(A, B), 1.0)
+    let r = KismetMathLibrary.FMin(Corner, length * 0.5)
+    let trim = r / length
+    let notFirst = Leg > 0
+    let notLast = Leg < LastLeg
+    let t0 = if notFirst { trim } else { 0.0 }
+    let t1 = 1.0 - (if notLast { trim } else { 0.0 })
+    let span = t1 - t0
+    let spare = KismetMathLibrary.FMax(span * length - 1.0, 0.0)
+    let steps = KismetMathLibrary.FCeil(spare / KismetMathLibrary.FMax(Spacing, 1.0))
+    let steps1 = KismetMathLibrary.Max(steps, 1)
+    let first = if notFirst && r >= 1.0 { 0 } else { 1 }
+    let k = first
+    while k <= steps {
+        let alpha = t0 + float(k) / float(steps1) * span
+        Course.AddSplinePoint(KismetMathLibrary.VLerp(A, B, alpha), ESplineCoordinateSpace.World, false)
+        k += 1
+    }
+}
+
+// Fills Course (a new spline, added by BP_MapLoad.MakeCourse) for dock Id's stand-in. It runs from a start pose to an end pose - the home berth (position and
+// berthed heading) and the target's stand-off point (WaitHeading), swapped when homeward - through the planned
+// route's points between them (or straight when there is no route). It leaves the start pose and reaches the end pose
+// along TurnArc circles, so the heading never jumps; each turn is aimed at the farthest route point in straight sight
+// of its pose (at least 2 x TurnRadius away, so the turns have room). Where a turn would clip land there is no arc:
+// the course runs straight from / to the pose and the ship turns in place (VoyageTick, using the end heading saved in
+// VoyageEndFwd). If a turn finds no clean arc and straight to that point, nearer points are tried in turn (down to the
+// nearest 2 x TurnRadius away) before turning in place. The route's first point, the home berth's stand-off point,
+// isn't aimed at (it is beside the berthed ship, too near to turn towards); where the home end turns in place, the
+// course runs via it. Resampled every CourseSpacing with corners rounded (CornerLeg); tangents by SmoothTangents.
+fn FillCourse(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Ship: NauticalShip, ToHome: bool, Course: SplineComponent) {
+    let started = KismetMathLibrary.Now()
+    // the stored route still clear of everything now (a ship may have berthed on it since it was planned)?
+    if !RouteStillClear(MapLoad, Id) {
+        let dock = BPL_FDNet.DockIn(MapLoad, Id)
+        if dock != none {
+            ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(Id) + ": route no longer clear, planned again", false)
+            MapLoad.PlanRoute(dock)
+        }
+    }
+    // the berth: the berthed ship's (hidden) model's position, and the ship actor's forward (its bow)
+    let model = Ship.zoomedActor.ChildActor
+    let home = if model != none { model.K2_GetActorLocation() } else { Ship.K2_GetActorLocation() }
+    let homeFwd = Ship.GetActorForwardVector()
+    let z = home.Z
+
+    // the two poses
+    let n = 0
+    let nf = MapLoad.RouteLen.Find(Id)
+    if nf.ReturnValue {
+        n = nf.Value
+    }
+    let hasRoute = n > 1
+    let base = Id * 1000
+    let lastPt = n - 1
+    let routeEnd = MapLoad.RoutePts.Find(base + lastPt)
+    let target = MapLoad.VoyageTarget.Find(Id)
+    let awayRaw = if hasRoute { routeEnd.Value } else { target.Value }
+    let away = Vector(X: awayRaw.X, Y: awayRaw.Y, Z: z)
+    let wait = MapLoad.WaitHeading(Id, homeFwd).Fwd
+    let startPos = if ToHome { away } else { home }
+    let startFwd = if ToHome { wait } else { homeFwd }
+    let endPos = if ToHome { home } else { away }
+    let endFwd = if ToHome { homeFwd } else { wait }
+
+    // Mid: the route points between the two ends (not its last, the target's stand-off point, an end pose; nor its
+    // first, the home berth's stand-off point), reversed when homeward
+    let mid: array<Vector> = []
+    let i = 1
+    while i <= n - 2 {
+        let idx = if ToHome { lastPt - i } else { i }
+        let p = MapLoad.RoutePts.Find(base + idx)
+        mid.Add(Vector(X: p.Value.X, Y: p.Value.Y, Z: z))
+        i += 1
+    }
+    // more aim points: every AimSpacing along the route's first leg (from the start's stand-off point to Mid's first)
+    // and its last (Mid's last to the end's stand-off point), so a turn that can't reach a far route point can still
+    // join the route's own clear leg nearer the dock
+    if mid.Length() > 0 {
+        let leadIn = MapLoad.RoutePts.Find(base + (if ToHome { lastPt } else { 0 })).Value
+        let leadOut = MapLoad.RoutePts.Find(base + (if ToHome { 0 } else { lastPt })).Value
+        let before = LegPoints(Vector(X: leadIn.X, Y: leadIn.Y, Z: z), mid[0])
+        before.Append(mid)
+        mid = before
+        mid.Append(LegPoints(mid[mid.Length() - 1], Vector(X: leadOut.X, Y: leadOut.Y, Z: z)))
+    }
+    let midLen = mid.Length()
+    let lastI = midLen - 1
+    let hasMid = midLen > 0
+    let room = MapLoad.TurnRadius * 2.0
+
+    // StartIdx / EndIdx: the first / last Mid point at least 2 x TurnRadius from the start / end
+    let startIdx = lastI
+    let endIdx = 0
+    let j = 0
+    while j <= lastI {
+        if KismetMathLibrary.Vector_Distance2D(startPos, mid[j]) >= room {
+            startIdx = j
+            break
+        }
+        j += 1
+    }
+    let e = 0
+    while e <= lastI {
+        let back = lastI - e
+        if KismetMathLibrary.Vector_Distance2D(endPos, mid[back]) >= room {
+            endIdx = back
+            break
+        }
+        e += 1
+    }
+    endIdx = KismetMathLibrary.Max(endIdx, startIdx)
+
+    // aim each turn at the farthest route point in straight sight of its pose (ClearLine, which exempts the docks'
+    // surroundings via PlanStart / PlanGoal), so the course turns straight onto the long leg
+    let outFloor = startIdx
+    let inCeil = endIdx
+    MapLoad.PlanStart = startPos
+    MapLoad.PlanGoal = endPos
+    RefreshZones(MapLoad)
+    if hasMid {
+        let f = startIdx + 1
+        while f <= endIdx {
+            if ClearLine(MapLoad, startPos, mid[f]) {
+                startIdx = f
+            } else {
+                break
+            }
+            f += 1
+        }
+        let anchor = endIdx
+        let b = 1
+        while b <= anchor - startIdx {
+            let bi = anchor - b
+            if ClearLine(MapLoad, endPos, mid[bi]) {
+                endIdx = bi
+            } else {
+                break
+            }
+            b += 1
+        }
+    }
+
+    // the turns: try the chosen route point, then each one nearer the pose (down to the nearest 2 x TurnRadius away)
+    // until TurnArc finds a clean arc and straight; if none does, that end turns in place and keeps all its points
+    let arcOut: array<Vector> = []
+    let usedOut = 0.0
+    // why each departure try failed, logged when the ship turns in place
+    let tries = ""
+    let outFrom = startIdx
+    let outTries = if hasMid { KismetMathLibrary.Max(outFrom - outFloor, 0) } else { 0 }
+    let t = 0
+    while t <= outTries {
+        let cand = outFrom - t
+        let aimOut = if hasMid { mid[cand] } else { endPos }
+        let arc = TurnArc(MapLoad, startPos, startFwd, aimOut, false)
+        let arcOk = arc.Used > 0.0
+        if !arcOk {
+            tries += "; point " + string(cand) + " (" + string(KismetMathLibrary.Round(KismetMathLibrary.Vector_Distance2D(startPos, aimOut))) + " away)" + arc.Why
+        }
+        if arcOk {
+            arcOut = arc.Pts
+            startIdx = cand
+            usedOut = arc.Used
+            break
+        }
+        t += 1
+    }
+    if usedOut <= 0.0 {
+        arcOut.Clear()
+        startIdx = 0
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Departure for dock " + string(Id) + (if ToHome { " (home)" } else { " (out)" }) + " turns in place" + tries, false)
+    }
+    let arcIn: array<Vector> = []
+    let usedIn = 0.0
+    let inFrom = endIdx
+    let inTries = if hasMid { KismetMathLibrary.Max(inCeil - inFrom, 0) } else { 0 }
+    let backFwd = KismetMathLibrary.Multiply_VectorFloat(endFwd, -1.0)
+    let u = 0
+    while u <= inTries {
+        let candIn = inFrom + u
+        let aimIn = if hasMid { mid[candIn] } else { startPos }
+        let arcB = TurnArc(MapLoad, endPos, backFwd, aimIn, true)
+        let arcBOk = arcB.Used > 0.0
+        if arcBOk {
+            arcIn = arcB.Pts
+            endIdx = candIn
+            usedIn = arcB.Used
+            break
+        }
+        u += 1
+    }
+    if usedIn <= 0.0 {
+        arcIn.Clear()
+        endIdx = lastI
+    }
+
+    // Raw: start, turn out, Mid[StartIdx..EndIdx], turn in, end; where the home end turns in place, via the home
+    // stand-off point (checked clear by the planner)
+    let so = MapLoad.RoutePts.Find(base)
+    let standOff = Vector(X: so.Value.X, Y: so.Value.Y, Z: z)
+    let raw: array<Vector> = [startPos]
+    raw.Append(arcOut)
+    if usedOut <= 0.0 && !ToHome && hasRoute {
+        raw.Add(standOff)
+    }
+    if hasMid {
+        let kk = startIdx
+        while kk <= endIdx {
+            raw.Add(mid[kk])
+            kk += 1
+        }
+    }
+    raw.Append(arcIn)
+    if usedIn <= 0.0 && ToHome && hasRoute {
+        raw.Add(standOff)
+    }
+    raw.Add(endPos)
+    // the heading to turn to at the end (VoyageTick)
+    MapLoad.VoyageEndFwd[Id] = endFwd
+    LogCrossings(MapLoad, "course for dock " + string(Id) + (if ToHome { " (home)" } else { " (out)" }), raw)
+    let outHow = if usedOut <= 0.0 { "turn in place" } else { "arc r=" + string(KismetMathLibrary.Round(usedOut)) }
+    let inHow = if usedIn <= 0.0 { "turn in place" } else { "arc r=" + string(KismetMathLibrary.Round(usedIn)) }
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Course for dock " + string(Id) + " (" + (if ToHome { "home" } else { "out" }) + "): departure " + outHow + " to point " + string(startIdx) + ", arrival " + inHow + " from point " + string(endIdx) + " of " + string(midLen) + ", " + string(MsSince(started)) + " ms", false)
+
+    // the spline: the first raw point, then each leg cut into CourseSpacing steps
+    Course.ClearSplinePoints(false)
+    Course.AddSplinePoint(raw[0], ESplineCoordinateSpace.World, false)
+    let lastLeg = raw.Length() - 2
+    let leg = 0
+    while leg <= lastLeg {
+        CornerLeg(Course, raw[leg], raw[leg + 1], leg, lastLeg, MapLoad.CourseSpacing, MapLoad.CornerRadius)
+        leg += 1
+    }
+    MapLoad.SmoothTangents(Course)
+    Course.UpdateSpline()
+}
+
+// The voyage timer (every TickStep of game time): move every stand-in; handle the wait at the target and hand arrivals
+// to VoyageArrive. A stand-in turns in place (at TurnRate) at the start of a course until it faces along it, and at the
+// end until it faces VoyageEndFwd, before it counts as arrived - so its heading never jumps. It bobs like a moored
+// ship (BobPose), sailing or waiting; TurnRate only steers its yaw, so the bob's tilt doesn't build up.
+fn VoyageTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    // no voyages left: stop the timer
+    if MapLoad.Voyages.Length() == 0 {
+        KismetSystemLibrary.K2_ClearTimer(MapLoad, "VoyageTick")
+        return
+    }
+    let ids: array<int> = []
+    for vid, actor in MapLoad.Voyages {
+        ids.Add(vid)
+    }
+    for id in ids {
+        let pf = MapLoad.Voyages.Find(id)
+        let proxy = pf.Value
+        let ph = MapLoad.VoyagePhase.Find(id)
+        let phase = if ph.ReturnValue { ph.Value } else { 0 }
+        let sf = MapLoad.VoyageShip.Find(id)
+        let ship = sf.Value
+        // the ship must still be at its berth (hidden there): if it left, the voyage ends here
+        let berthed = false
+        if KismetSystemLibrary.IsValid(ship) {
+            berthed = ship.State.dockedDock == MapLoad.VoyageBerth.Find(id).Value
+        }
+        if !berthed {
+            if KismetSystemLibrary.IsValid(proxy) {
+                proxy.K2_DestroyActor()
+            }
+            ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(id) + ": ship left its berth - voyage cancelled, freight stays aboard", false)
+            MapLoad.VoyageArrive(id)
+            continue
+        }
+        let spline = MapLoad.VoyageSpline.Find(id).Value
+        let ok = KismetSystemLibrary.IsValid(proxy) && KismetSystemLibrary.IsValid(spline)
+        let offset = FacingOffset(ship)
+
+        // phase 2: wait at the target, then turn for home (phase 3) on a new course from 0
+        if phase == 2 {
+            let wf = MapLoad.VoyageWait.Find(id)
+            if GameplayStatics.GetTimeSeconds() >= wf.Value {
+                MapLoad.VoyagePhase[id] = 3
+                if KismetSystemLibrary.IsValid(spline) {
+                    spline.K2_DestroyComponent()
+                }
+                MapLoad.VoyageSpline[id] = MapLoad.MakeCourse(id, ship, true).Course
+                MapLoad.VoyageDist[id] = 0.0
+            } else if ok {
+                // waiting: bob in place at the course's end
+                let waitPos = spline.GetLocationAtDistanceAlongSpline(spline.GetSplineLength(), ESplineCoordinateSpace.World)
+                let nowYaw = Rotator(Roll: 0.0, Pitch: 0.0, Yaw: proxy.K2_GetActorRotation().Yaw)
+                let moored = BobPose(MapLoad, id, waitPos, nowYaw)
+                proxy.K2_SetActorLocationAndRotation(moored.OutPos, moored.OutRot, false, true)
+            }
+            continue
+        }
+
+        // phases 1 and 3: advance along the course (gone, e.g. destroyed: finish so the ship is shown again)
+        if !ok {
+            MapLoad.VoyageArrive(id)
+            continue
+        }
+        let len = spline.GetSplineLength()
+        let df = MapLoad.VoyageDist.Find(id)
+        let dist = if df.ReturnValue { df.Value } else { 0.0 }
+        let endFwd = MapLoad.VoyageEndFwd.Find(id).Value
+        let endRot = ProxyRot(endFwd, offset)
+        let nowRot = proxy.K2_GetActorRotation()
+        // at the start of the course: hold position until facing along it
+        let startDir = spline.GetDirectionAtDistanceAlongSpline(0.0, ESplineCoordinateSpace.World)
+        let hold = dist < 0.5 && !Lined(nowRot, ProxyRot(startDir, offset))
+        let advance = if hold { 0.0 } else { dist + MapLoad.ShipSpeed * TickStep() }
+        let newDist = KismetMathLibrary.FMin(advance, len)
+        // at the end: turn to VoyageEndFwd; arrived once facing it
+        let atEnd = newDist >= len - 0.5
+        let pos = spline.GetLocationAtDistanceAlongSpline(newDist, ESplineCoordinateSpace.World)
+        let tangent = spline.GetDirectionAtDistanceAlongSpline(newDist, ESplineCoordinateSpace.World)
+        let heading = ProxyRot(if atEnd { endFwd } else { tangent }, offset)
+        // turn toward it at no more than TurnRate degrees per second
+        let current = Rotator(Roll: 0.0, Pitch: 0.0, Yaw: nowRot.Yaw)
+        let turned = KismetMathLibrary.RInterpTo_Constant(current, heading, TickStep(), MapLoad.TurnRate)
+        let sailing = BobPose(MapLoad, id, pos, turned)
+        proxy.K2_SetActorLocationAndRotation(sailing.OutPos, sailing.OutRot, false, true)
+        MapLoad.VoyageDist[id] = newDist
+        if atEnd && Lined(turned, endRot) {
+            MapLoad.VoyageArrive(id)
+        }
+    }
+}

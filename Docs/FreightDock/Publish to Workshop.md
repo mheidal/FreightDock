@@ -18,7 +18,7 @@ mod whose `.uplugin` lacks `"EngineVersion": "5.8"` or later (reason written to 
 ## Releasing
 
 1. Bump `Version` in `FreightDock.uplugin`.
-2. In the editor: right-click `Content/Mods/FreightDock` > **Cook & Install**. Test in game.
+2. In the editor: right-click `Content/Mods/FreightDock` > **Cook & Install** (or `WWBlueprintToolset.CookAndInstall`, see `Tools/FreightDock/README.md`). Close the game first: it holds the installed pak open, so the install fails. Test in game.
 3. Stage:
    `powershell -ExecutionPolicy Bypass -File Tools/FreightDock/stage_workshop.ps1`
    It warns if a mod asset was saved after the pak was cooked.

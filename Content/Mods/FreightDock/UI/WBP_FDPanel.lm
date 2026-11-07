@@ -51,6 +51,13 @@ var HiKind: int = 0
 var HiGood: name
 // the camera's zoom target while the cursor is over the network GUI (-1: not held)
 var HeldZoom: float = -1.0
+var IncomingRows: array<WBP_FDIncomingRow>
+// tooltips: Pause's, Deliver now's (why it can't act), the title's (how to name the dock)
+var PauseTip: WBP_FDTip
+var PauseOn: soft<Texture2D> = /Game/Assets/Icons/icons8-pause-100.icons8-pause-100
+var PlayOn: soft<Texture2D> = /Game/Assets/Icons/icons8-play-100.icons8-play-100
+var DeliverTip: WBP_FDTip
+var TitleTip: WBP_FDTip
 
 widget Width: SizeBox(WidthOverride: 500.0) {
     widget Stack: Overlay {
@@ -63,18 +70,34 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 widget NetHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 widget NetLine: HorizontalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0)) {
                     widget NetSummary: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
-                    widget NetEntries: WrapBox slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+                    // one membership a line, a long name wrapping
+                    widget NetEntries: VerticalBox slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
                     widget EditBtn: Arco_Button_CommonRound slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
                 }
                 widget DivNet: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
-                widget ShipHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
+                widget ShipBar: HorizontalBox {
+                    widget ShipHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
+                    widget PauseBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 8, Top: 0, Right: 0, Bottom: 0)) {
+                        widget PauseIcon: Image
+                    }
+                    widget ShipGap: Spacer slot(Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+                    widget Deliver: Arco_Button_CommonRound slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 6, Top: 0, Right: 0, Bottom: 0))
+                }
                 // the job: "Delivery to <requester>", clickable (pans there); collapsed without one
                 widget TargetBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 widget ShipText: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
+                // goods dropped from the job (no hauler picked them up); collapsed without
+                widget DroppedText: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#d98a5fff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                 // the job's manifest (WBP_FDWantRow rows), part of the ship section; collapsed without a job
                 widget ManifestHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff") slot(Padding: Margin(Left: 0, Top: 8, Right: 0, Bottom: 0))
                 widget ManifestBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
                 widget Div2: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                // what this dock's output warehouses want and what comes (WBP_FDIncomingRow); only for a dock that requests
+                widget IncomingBox: VerticalBox {
+                    widget IncomingHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
+                    widget IncomingRowsBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
+                    widget DivIncoming: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
+                }
                 widget UnloadBox: VerticalBox {
                     widget UnloadHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                     widget UnloadIcons: ResourceCollectionAsRowOfIcons slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
@@ -84,7 +107,6 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 widget DestBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
                 widget SrcHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 widget SrcBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
-                widget Deliver: Arco_Button_CommonRound slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 0))
             }
         }
     }
@@ -95,8 +117,14 @@ on Construct {
     // a widget tree has a single root.
     Frame.NamedSlot_93.SetContent(Inner)
     HideFrameIcon()
+    PauseTip = create_widget(WBP_FDTip)
+    DeliverTip = create_widget(WBP_FDTip)
+    TitleTip = create_widget(WBP_FDTip)
+    PauseBtn.SetToolTip(PauseTip)
+    PauseIcon.SetDesiredSizeOverride(Vector2D(X: 24.0, Y: 24.0))
     Labels()
     Deliver.OnClicked.bind(DeliverClicked)
+    PauseBtn.OnClicked.bind(PauseClicked)
     EditBtn.OnClicked.bind(EditClicked)
     SetVisibility(ESlateVisibility.Collapsed)
 }
@@ -107,6 +135,16 @@ fn Labels() {
     ShipHead.SetText(text(BPL_FDText.T("freightdock.panel.ship")))
     UnloadHead.SetText(text(BPL_FDText.T("freightdock.panel.waitingToUnload")))
     ManifestHead.SetText(text(BPL_FDText.T("freightdock.panel.manifest")))
+    IncomingHead.SetText(text(BPL_FDText.T("freightdock.panel.incoming")))
+    let paused = false
+    if ShownDock != none {
+        paused = BPL_FDNet.IsPaused(ShownDock.activeTradePartnerId)
+    }
+    // pause icon while it works, play icon while paused
+    PauseIcon.SetBrushFromTexture(if paused { PlayOn.load() } else { PauseOn.load() }, false)
+    PauseIcon.SetColorAndOpacity(LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0))
+    PauseTip.Setup(BPL_FDText.T(if paused { "freightdock.panel.resumeTip" } else { "freightdock.panel.pauseTip" }), SmallFont)
+    TitleTip.Setup(BPL_FDText.T("freightdock.panel.nameHint"), SmallFont)
     DestHead.SetText(text(BPL_FDText.T("freightdock.panel.targetOutput")))
     SrcHead.SetText(text(BPL_FDText.T("freightdock.panel.thisInput")))
     Deliver.SetLabelText(BPL_FDText.T("freightdock.panel.deliverNow"))
@@ -156,6 +194,19 @@ fn DeliverClicked() {
     if MapLoad != none {
         MapLoad.DeliverSelected()
     }
+    // show the result (leaving, or waiting for the goods being carried) at once
+    NextRefresh = 0.0
+}
+
+// Pause / Resume: the ship finishes its job, then takes no new one (BPL_FDDispatch skips a paused dock).
+fn PauseClicked() {
+    if MapLoad == none || ShownDock == none {
+        return
+    }
+    let paused = !BPL_FDNet.IsPaused(ShownDock.activeTradePartnerId)
+    ShownDock.activeTradePartnerId = BPL_FDNet.WithPaused(ShownDock.activeTradePartnerId, paused)
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(DockId(ShownDock)) + (if paused { ": paused" } else { ": resumed" }), false)
+    NextRefresh = 0.0
 }
 
 // Every frame, from BP_MapLoad.PanelTick.
@@ -168,7 +219,9 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted", false)
     }
     let found = Owner.FindDockUnderCursor()
-    SignStep(found.HitLoc)
+    // tagged signs show their text while pointed at (the mouse ray; a trace under the cursor doesn't hit signs)
+    let ray = GameplayStatics.GetPlayerController(0).DeprojectMousePositionToWorld()
+    SignStep(ray.WorldLocation, ray.WorldDirection)
     let dock = found.Dock
     let show = false
     if dock != none {
@@ -249,7 +302,7 @@ fn ShowNetPanel() {
 
 // Dock name signs ("[fd] Name", BPL_FDNet.DockName) keep their text panel hidden unless the cursor is over the
 // sign's tile or one next to it. The signs are looked for again every half second (new, renamed, reloaded).
-fn SignStep(Cursor: Vector) {
+fn SignStep(RayStart: Vector, RayDir: Vector) {
     let now = GameplayStatics.GetRealTimeSeconds()
     if now >= NextSignScan {
         NextSignScan = now + 0.5
@@ -257,7 +310,9 @@ fn SignStep(Cursor: Vector) {
         for a in GameplayStatics.GetAllActorsOfClass(signPost).OutActors {
             let s = cast(a, signPost)
             if s != none {
-                if KismetStringLibrary.StartsWith(s.Signpost.shownMessage, "[fd]", ESearchCase.IgnoreCase) {
+                let msg = s.Signpost.shownMessage
+                // dock names ([fd] Name) and network names ([fn3] Name)
+                if KismetStringLibrary.StartsWith(msg, "[fd]", ESearchCase.IgnoreCase) || KismetStringLibrary.StartsWith(msg, "[fn", ESearchCase.IgnoreCase) {
                     found.Add(s)
                 }
             }
@@ -280,7 +335,14 @@ fn SignStep(Cursor: Vector) {
     while k < FdSigns.Length() {
         let sign = FdSigns[k]
         if KismetSystemLibrary.IsValid(sign) {
-            let near = KismetMathLibrary.Vector_Distance2D(Cursor, sign.K2_GetActorLocation()) <= 75.0
+            // where the mouse ray crosses the height of the sign's board
+            let at = sign.K2_GetActorLocation()
+            let near = false
+            if KismetMathLibrary.Abs(RayDir.Z) > 0.0001 {
+                let t = (at.Z + 50.0 - RayStart.Z) / RayDir.Z
+                let point = KismetMathLibrary.Add_VectorVector(RayStart, KismetMathLibrary.Multiply_VectorFloat(RayDir, t))
+                near = t > 0.0 && KismetMathLibrary.Vector_Distance2D(point, at) <= 100.0
+            }
             if near != FdSignShown[k] {
                 sign.Widget.SetVisibility(near, true)
                 FdSignShown[k] = near
@@ -558,6 +620,8 @@ fn TakeFonts() {
     HaveFonts = true
     Title.SetFont(TitleFont)
     ShipHead.SetFont(HeadFont)
+    IncomingHead.SetFont(HeadFont)
+    DroppedText.SetFont(SmallFont)
     UnloadHead.SetFont(HeadFont)
     NetHead.SetFont(HeadFont)
     NetSummary.SetFont(BodyFont)
@@ -614,7 +678,12 @@ fn Refresh(Dock: WorkDock) {
     let target = MapLoad.TargetOf(Dock).Target
     let pid = if target == none { -1 } else { DockId(target) }
     Labels()
-    Title.SetText(text(KismetStringLibrary.ToUpper(BPL_FDNet.DockName(MapLoad, Dock))))
+    let dockName = BPL_FDNet.DockName(MapLoad, Dock)
+    Title.SetText(text(KismetStringLibrary.ToUpper(dockName)))
+    // unnamed: the title says on hover how to name the dock
+    let unnamed = dockName == BPL_FDText.T1("freightdock.dock.unnamed", "id", string(id))
+    Title.SetToolTip(if unnamed { TitleTip } else { none })
+    Title.SetVisibility(if unnamed { ESlateVisibility.Visible } else { ESlateVisibility.SelfHitTestInvisible })
 
     let destIds: array<int> = []
     if target != none {
@@ -656,9 +725,21 @@ fn Refresh(Dock: WorkDock) {
         line = if line == "" { idle } else { idle + "\n" + line }
     }
     ShipText.SetText(text(line))
+    Dropped(id)
+    // Pause for a dock whose ship has work (or is paused); Deliver now only works while loading
+    let paused = BPL_FDNet.IsPaused(Dock.activeTradePartnerId)
+    PauseBtn.SetVisibility(if provides || paused { ESlateVisibility.Visible } else { ESlateVisibility.Collapsed })
+    let away = MapLoad.Voyages.Contains(id)
+    let loading = MapLoad.LoadingSince.Contains(id)
+    let leaving = MapLoad.DepartingSince.Contains(id)
+    let canDeliver = !away && loading && !leaving
+    Deliver.SetIsEnabled(canDeliver)
+    DeliverTip.Setup(BPL_FDText.T(if away { "freightdock.deliver.underWay" } else if leaving { "freightdock.deliver.leaving" } else { "freightdock.deliver.nothingLoaded" }), SmallFont)
+    Deliver.SetToolTip(if canDeliver { none } else { DeliverTip })
     FillNetworks(Dock)
     FillUnload(Dock)
     FillManifest(Dock, id, target != none)
+    FillIncoming(Dock, id)
     // the target's sections only while it has one
     let hasTarget = if target == none { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible }
     let targetParts: array<Widget> = [DestHead, DestBox, Deliver]
@@ -744,6 +825,8 @@ fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
             if HasJob {
                 if MapLoad.DepartingSince.Contains(Id) {
                     s = BPL_FDText.T("freightdock.ship.leaving") + "\n"
+                } else if !BPL_FDNet.OnDuty(MapLoad, Dock) {
+                    s = BPL_FDText.T("freightdock.ship.offDuty") + "\n"
                 } else if MapLoad.LoadingSince.Contains(Id) {
                     let waited = Clock(int(GameplayStatics.GetTimeSeconds() - MapLoad.LoadingSince[Id]))
                     let limit = MapLoad.MaxWaitSeconds
@@ -771,9 +854,11 @@ fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
 // editing, the network GUI's table.
 fn FillNetworks(Dock: WorkDock) {
     let names: array<string> = ["", BPL_FDText.T("freightdock.role.provide"), BPL_FDText.T("freightdock.role.request"), BPL_FDText.T("freightdock.role.both")]
+    let netNames = BPL_FDNet.NetNames(MapLoad)
     let u = BPL_FDNet.Unpack(Dock.activeTradePartnerId)
     let nets: array<int> = []
     let roles: array<int> = []
+    let labels: array<string> = []
     let key = ""
     let net = 1
     while net <= BPL_FDNet.MaxNet() {
@@ -782,8 +867,15 @@ fn FillNetworks(Dock: WorkDock) {
             if u.Nets[i] == net {
                 nets.Add(net)
                 roles.Add(u.Roles[i])
-                // the role's text too, so a language change rebuilds the labels
-                key += string(net) + ":" + names[u.Roles[i]] + " "
+                // "3 Food: request (High)": the priority only when the dock requests there and it isn't Normal
+                let shown = BPL_FDNet.NetLabel(net, netNames)
+                let entry = BPL_FDText.T2("freightdock.panel.membership", "net", shown, "role", names[u.Roles[i]])
+                if (u.Roles[i] & BPL_FDNet.Request()) != 0 && u.Prios[i] != BPL_FDNet.Normal() {
+                    entry = BPL_FDText.Fill(BPL_FDText.T2("freightdock.panel.membershipPrio", "net", shown, "role", names[u.Roles[i]]), "prio", BPL_FDText.T(name("freightdock.prio." + string(u.Prios[i]))))
+                }
+                labels.Add(entry)
+                // the label's text, so a rename, a priority or a language change rebuilds the labels
+                key += entry + "|"
             }
             i += 1
         }
@@ -799,16 +891,17 @@ fn FillNetworks(Dock: WorkDock) {
         let k = 0
         while k < nets.Length() {
             let label = construct(TextBlock, self)
-            label.SetText(text(BPL_FDText.T2("freightdock.panel.membership", "net", string(nets[k]), "role", names[roles[k]])))
+            label.SetText(text(labels[k]))
             label.SetColorAndOpacity(SlateColor(SpecifiedColor: BPL_FDNet.NetLinear(nets[k])))
             label.SetFont(BodyFont)
+            label.SetAutoWrapText(true)
             let box = construct(Border, self)
             box.SetBrushColor(LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 0.0))
-            box.SetPadding(Margin(Left: 0, Top: 0, Right: 14, Bottom: 0))
+            box.SetPadding(Margin(Left: 0, Top: 0, Right: 8, Bottom: 0))
             box.SetContent(label)
             let tip = create_widget(WBP_FDMembersTip)
             box.SetToolTip(tip)
-            NetEntries.AddChildToWrapBox(box)
+            NetEntries.AddChildToVerticalBox(box)
             NetEntryBoxes.Add(box)
             NetEntryNets.Add(nets[k])
             NetEntryTips.Add(tip)
@@ -884,6 +977,105 @@ fn FillUnload(Dock: WorkDock) {
     } else {
         UnloadBox.SetVisibility(ESlateVisibility.Collapsed)
     }
+}
+
+// The goods dropped from the job (MapLoad.JobDropped, "good=units,..."), by their names in the player's language.
+fn Dropped(Id: int) {
+    let d = MapLoad.JobDropped.Find(Id)
+    let parts: array<string> = []
+    if d.ReturnValue {
+        for entry in KismetStringLibrary.ParseIntoArray(d.Value, ",", true) {
+            let kv = KismetStringLibrary.Split(entry, "=", ESearchCase.CaseSensitive, ESearchDir.FromStart)
+            let def = ArcoGameInstance.GetResourceDefCopy(self, name(kv.LeftS))
+            let word = LocManager.GetWordFromKey(def.stringKey)
+            parts.Add(kv.RightS + " " + (if word == "" { kv.LeftS } else { word }))
+        }
+    }
+    DroppedText.SetText(text(BPL_FDText.T1("freightdock.ship.dropped", "goods", KismetStringLibrary.JoinStringArray(parts, ", "))))
+    DroppedText.SetVisibility(if parts.Length() > 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
+}
+
+// For a dock that requests: a row per good its output warehouses still want or that is on its way (WBP_FDIncomingRow):
+// how much is wanted (less what is unloaded here), how much is coming (jobs to this dock not yet delivered), and
+// where from - loading at the provider, or sailing with the arrival time - or why nothing comes (MapLoad.WhyNot).
+fn FillIncoming(Dock: WorkDock, Id: int) {
+    let u = BPL_FDNet.Unpack(Dock.activeTradePartnerId)
+    let requests = false
+    for role in u.Roles {
+        if (role & BPL_FDNet.Request()) != 0 {
+            requests = true
+        }
+    }
+    let wanted: map<name, int> = {}
+    let coming: map<name, int> = {}
+    let notes: map<name, string> = {}
+    if requests {
+        for res, deficit in MapLoad.DeficitsFor(Dock).Want.counts {
+            let atDock = Dock.m_stockpile_goodsFromSea.Slots.Find(res)
+            let open = deficit - (if atDock.ReturnValue { atDock.Value.count } else { 0 })
+            if open > 0 {
+                wanted[res] = open
+            }
+        }
+        for pid, rid in MapLoad.JobTo {
+            if rid == Id {
+                let ph = MapLoad.VoyagePhase.Find(pid)
+                let sailing = MapLoad.Voyages.Contains(pid) && ph.ReturnValue
+                let delivered = sailing && ph.Value >= 2
+                if !delivered {
+                    let from = BPL_FDNet.DockName(MapLoad, BPL_FDNet.DockIn(MapLoad, pid))
+                    let note = BPL_FDText.T1("freightdock.incoming.loading", "dock", from)
+                    if sailing {
+                        let course = MapLoad.VoyageSpline.Find(pid)
+                        let done = MapLoad.VoyageDist.Find(pid)
+                        let secs = 0
+                        if course.ReturnValue && done.ReturnValue && MapLoad.ShipSpeed > 0.0 {
+                            if course.Value != none {
+                                secs = int(KismetMathLibrary.FMax(float(course.Value.GetSplineLength()) - done.Value, 0.0) / MapLoad.ShipSpeed)
+                            }
+                        }
+                        note = BPL_FDText.T2("freightdock.incoming.sailing", "dock", from, "time", Clock(secs))
+                    }
+                    for res, units in BPL_FDNet.Manifest(MapLoad, pid) {
+                        let c = coming.Find(res)
+                        coming[res] = (if c.ReturnValue { c.Value } else { 0 }) + units
+                        let had = notes.Find(res)
+                        notes[res] = if had.ReturnValue { had.Value + "; " + note } else { note }
+                    }
+                }
+            }
+        }
+    }
+    let goods: array<name> = []
+    for res, n in wanted {
+        goods.Add(res)
+    }
+    for res, n in coming {
+        goods.AddUnique(res)
+    }
+    let k = 0
+    for good in goods {
+        if k >= IncomingRows.Length() {
+            let made = create_widget(WBP_FDIncomingRow)
+            IncomingRowsBox.AddChildToVerticalBox(made)
+            IncomingRows.Add(made)
+        }
+        let w = wanted.Find(good)
+        let cg = coming.Find(good)
+        let inbound = if cg.ReturnValue { cg.Value } else { 0 }
+        let why = MapLoad.WhyNot.Find(BPL_FDNet.JobKey(Id, good))
+        let n = notes.Find(good)
+        let note = if inbound > 0 && n.ReturnValue { n.Value } else if why.ReturnValue { why.Value } else { BPL_FDText.T("freightdock.incoming.waiting") }
+        IncomingRows[k].SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+        IncomingRows[k].Show(good, if w.ReturnValue { w.Value } else { 0 }, inbound, note, BodyFont, SmallFont)
+        k += 1
+    }
+    let i = k
+    while i < IncomingRows.Length() {
+        IncomingRows[i].SetVisibility(ESlateVisibility.Collapsed)
+        i += 1
+    }
+    IncomingBox.SetVisibility(if k > 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
 }
 
 // The job's manifest, a row per good (WBP_FDWantRow), in the order goods move: free in this dock's input warehouses,

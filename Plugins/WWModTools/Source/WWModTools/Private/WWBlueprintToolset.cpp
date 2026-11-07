@@ -1,4 +1,5 @@
 #include "WWBlueprintToolset.h"
+#include "ModActions.h"
 
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
@@ -7,6 +8,8 @@
 #include "EdGraphUtilities.h"
 #include "Engine/Blueprint.h"
 #include "FileHelpers.h"
+#include "HAL/FileManager.h"
+#include "HAL/PlatformFileManager.h"
 #include "K2Node_FunctionEntry.h"
 #include "K2Node_FunctionResult.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -165,6 +168,51 @@ namespace
 		{
 			Node->RemoveUserDefinedPinByName(Name);
 		}
+	}
+
+	FString InstalledPakPath(const FString& ModName)
+	{
+		return ModActions::GetModsInstallRoot() / ModName / (ModName + TEXT(".pak"));
+	}
+
+	// Local time, for comparing with the editor log and modlog.txt
+	FString LocalTime(const FDateTime& Time)
+	{
+		return Time.ToString(TEXT("%Y-%m-%d %H:%M:%S"));
+	}
+
+	// Subscribed Workshop copies of the mod: <steamapps>/workshop/content/2489330/<item>/<ModName>.pak, with steamapps
+	// found from the game folder named in the project's GameInstallDirectory.txt
+	TArray<FString> WorkshopCopies(const FString& ModName)
+	{
+		TArray<FString> Found;
+		TArray<FString> Lines;
+		FFileHelper::LoadFileToStringArray(Lines, *(FPaths::ProjectDir() / TEXT("GameInstallDirectory.txt")));
+		FString GameDir;
+		for (const FString& Line : Lines)
+		{
+			const FString Trimmed = Line.TrimStartAndEnd();
+			if (!Trimmed.IsEmpty() && !Trimmed.StartsWith(TEXT(";")))
+			{
+				GameDir = Trimmed;
+			}
+		}
+		if (GameDir.IsEmpty())
+		{
+			return Found;
+		}
+		const FString ItemsDir = FPaths::ConvertRelativePathToFull(GameDir / TEXT("../../workshop/content/2489330"));
+		TArray<FString> Items;
+		IFileManager::Get().FindFiles(Items, *(ItemsDir / TEXT("*")), false, true);
+		for (const FString& Item : Items)
+		{
+			const FString Pak = ItemsDir / Item / (ModName + TEXT(".pak"));
+			if (FPaths::FileExists(Pak))
+			{
+				Found.Add(Pak);
+			}
+		}
+		return Found;
 	}
 }
 
@@ -504,6 +552,96 @@ FString UWWBlueprintToolset::CompileAndSave(const FString& BlueprintPath, bool S
 	{
 		const bool bSaved = UEditorLoadingAndSavingUtils::SavePackages({ Blueprint->GetPackage() }, false);
 		Lines.Add(bSaved ? TEXT("saved") : TEXT("save failed"));
+	}
+	return FString::Join(Lines, TEXT("\n"));
+}
+
+FString UWWBlueprintToolset::CookAndInstall(const FString& ModName)
+{
+	if (ModActions::GetCookStatus().bRunning)
+	{
+		return TEXT("not started: a cook is already running (see CookStatus)");
+	}
+
+	// a cook only sees what is saved
+	const FString ModRoot = FString::Printf(TEXT("/Game/Mods/%s/"), *ModName);
+	TArray<UPackage*> Dirty;
+	FEditorFileUtils::GetDirtyContentPackages(Dirty);
+	TArray<FString> Unsaved;
+	for (const UPackage* Package : Dirty)
+	{
+		if (Package && Package->GetName().StartsWith(ModRoot))
+		{
+			Unsaved.Add(Package->GetName());
+		}
+	}
+	if (Unsaved.Num() > 0)
+	{
+		return TEXT("not started: unsaved changes in ") + FString::Join(Unsaved, TEXT(", "));
+	}
+
+	// the running game holds the installed pak open, so the install's copy would fail after the cook
+	const FString Pak = InstalledPakPath(ModName);
+	if (FPaths::FileExists(Pak))
+	{
+		IFileHandle* Handle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*Pak, true, true);
+		if (!Handle)
+		{
+			return TEXT("not started: ") + Pak + TEXT(" is in use (is the game running?)");
+		}
+		delete Handle;
+	}
+
+	ModActions::CookAndInstallMod(ModName);
+	const FCookStatus Status = ModActions::GetCookStatus();
+	if (Status.ModName == ModName && Status.bRunning)
+	{
+		return TEXT("started");
+	}
+	return TEXT("not started: ") + Status.Stage;
+}
+
+FString UWWBlueprintToolset::CookStatus()
+{
+	const FCookStatus Status = ModActions::GetCookStatus();
+	if (Status.ModName.IsEmpty())
+	{
+		return TEXT("idle: no cook since the editor started");
+	}
+
+	TArray<FString> Lines;
+	if (Status.bRunning)
+	{
+		const int32 Seconds = FMath::RoundToInt((FDateTime::Now() - Status.Started).GetTotalSeconds());
+		Lines.Add(FString::Printf(TEXT("running: %s, %d s (started %s)"), *Status.Stage, Seconds, *LocalTime(Status.Started)));
+	}
+	else
+	{
+		const int32 Seconds = FMath::RoundToInt((Status.Finished - Status.Started).GetTotalSeconds());
+		Lines.Add(FString::Printf(TEXT("%s: %s (finished %s, took %d s)"),
+			Status.bSuccess ? TEXT("succeeded") : TEXT("failed"), *Status.Stage, *LocalTime(Status.Finished), Seconds));
+	}
+
+	const FString Pak = InstalledPakPath(Status.ModName);
+	if (FPaths::FileExists(Pak))
+	{
+		const FDateTime Written = IFileManager::Get().GetTimeStamp(*Pak) + (FDateTime::Now() - FDateTime::UtcNow());
+		Lines.Add(FString::Printf(TEXT("installed pak: %s, written %s"), *Pak, *LocalTime(Written)));
+	}
+	else
+	{
+		Lines.Add(TEXT("installed pak: none at ") + Pak);
+	}
+
+	for (const FString& Copy : WorkshopCopies(Status.ModName))
+	{
+		Lines.Add(TEXT("warning: a subscribed Workshop copy loads instead of the local install: ") + Copy);
+	}
+
+	if (!Status.bRunning && !Status.bSuccess && Status.RecentOutput.Num() > 0)
+	{
+		Lines.Add(TEXT("last cook output:"));
+		Lines.Append(Status.RecentOutput);
 	}
 	return FString::Join(Lines, TEXT("\n"));
 }

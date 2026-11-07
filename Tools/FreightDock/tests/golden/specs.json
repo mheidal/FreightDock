@@ -17,19 +17,53 @@
   "returnValues": [],
   "returns": []
  },
+ "ClearLine": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "A",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "B",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "LineClear",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Call",
+    "ReturnValue",
+    "LineClear"
+   ]
+  ],
+  "returns": [
+   [
+    "Call",
+    "then"
+   ]
+  ]
+ },
  "DebugCells": {
   "entry": [
    "BrToggled",
    "execute"
   ],
   "inputs": [],
-  "locals": [
-   {
-    "default": "",
-    "name": "Centre",
-    "type": "(PinCategory=\"int\")"
-   }
-  ],
+  "locals": [],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -168,6 +202,46 @@
   "pure": false,
   "returnValues": [],
   "returns": []
+ },
+ "FindPath": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Start",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   },
+   {
+    "default": "",
+    "name": "Goal",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Found",
+    "type": "(PinCategory=\"bool\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Call",
+    "ReturnValue",
+    "Found"
+   ]
+  ],
+  "returns": [
+   [
+    "Call",
+    "then"
+   ]
+  ]
  },
  "FreightCounts": {
   "entry": [
@@ -398,7 +472,7 @@
  },
  "MakeCourse": {
   "entry": [
-   "ClearRaw",
+   "NewSpline",
    "execute"
   ],
   "inputs": [
@@ -418,73 +492,7 @@
     "type": "(PinCategory=\"bool\")"
    }
   ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Raw",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
-   },
-   {
-    "default": "",
-    "name": "CourseSpline",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
-   },
-   {
-    "default": "",
-    "name": "Mid",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
-   },
-   {
-    "default": "",
-    "name": "StartIdx",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "EndIdx",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "ArcOut",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
-   },
-   {
-    "default": "",
-    "name": "ArcIn",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
-   },
-   {
-    "default": "",
-    "name": "Anchor",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "OutFloor",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "InCeil",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "TryFrom",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "UsedOut",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   },
-   {
-    "default": "",
-    "name": "UsedIn",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   }
-  ],
+  "locals": [],
   "outputs": [
    {
     "default": "",
@@ -495,14 +503,14 @@
   "pure": false,
   "returnValues": [
    [
-    "GetCourseForReturn",
-    "CourseSpline",
+    "NewSpline",
+    "ReturnValue",
     "Course"
    ]
   ],
   "returns": [
    [
-    "Finish",
+    "Call",
     "then"
    ]
   ]
@@ -904,7 +912,7 @@
  },
  "RouteStillClear": {
   "entry": [
-   "NotYet",
+   "Call",
    "execute"
   ],
   "inputs": [
@@ -914,13 +922,7 @@
     "type": "(PinCategory=\"int\")"
    }
   ],
-  "locals": [
-   {
-    "default": "false",
-    "name": "StillClear",
-    "type": "(PinCategory=\"bool\")"
-   }
-  ],
+  "locals": [],
   "outputs": [
    {
     "default": "",
@@ -931,19 +933,15 @@
   "pure": false,
   "returnValues": [
    [
-    "GetClearForReturn",
-    "StillClear",
+    "Call",
+    "ReturnValue",
     "Ok"
    ]
   ],
   "returns": [
    [
-    "Legs",
-    "Completed"
-   ],
-   [
-    "BrHas",
-    "else"
+    "Call",
+    "then"
    ]
   ]
  },
@@ -1204,6 +1202,41 @@
   "returnValues": [],
   "returns": []
  },
+ "StandOffPoint": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Pos",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Call",
+    "ReturnValue",
+    "Pos"
+   ]
+  ],
+  "returns": [
+   [
+    "Call",
+    "then"
+   ]
+  ]
+ },
  "StartVoyage": {
   "entry": [
    "SetId",
@@ -1382,97 +1415,6 @@
    ]
   ]
  },
- "TurnArc": {
-  "entry": [
-   "ClearArc",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Pos",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Fwd",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Target",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Backward",
-    "type": "(PinCategory=\"bool\")"
-   }
-  ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Arc",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
-   },
-   {
-    "default": "",
-    "name": "Hits",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Radius",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   },
-   {
-    "default": "",
-    "name": "Side",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   },
-   {
-    "default": "",
-    "name": "PrefSide",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   },
-   {
-    "default": "",
-    "name": "UsedRadius",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   }
-  ],
-  "outputs": [
-   {
-    "default": "",
-    "name": "Pts",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
-   },
-   {
-    "default": "",
-    "name": "Used",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   }
-  ],
-  "pure": false,
-  "returnValues": [
-   [
-    "GetArcForReturn",
-    "Arc",
-    "Pts"
-   ],
-   [
-    "GetUsedForReturn",
-    "UsedRadius",
-    "Used"
-   ]
-  ],
-  "returns": [
-   [
-    "Done",
-    "then_0"
-   ]
-  ]
- },
  "UpdateRequest": {
   "entry": [
    "Plan",
@@ -1568,27 +1510,11 @@
  },
  "VoyageTick": {
   "entry": [
-   "BrNone",
+   "Call",
    "execute"
   ],
   "inputs": [],
-  "locals": [
-   {
-    "default": "",
-    "name": "Id",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Proxy",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
-   },
-   {
-    "default": "",
-    "name": "Phase",
-    "type": "(PinCategory=\"int\")"
-   }
-  ],
+  "locals": [],
   "outputs": [],
   "pure": false,
   "returnValues": [],

@@ -8,12 +8,12 @@ from fdgen.core.types import (
     INTVECTOR_T, ISM_ARRAY, MAP_INT_INT, MAP_INT_VECTOR, OBJ, STR, STRUCT, T)
 from fdgen.core.paths import (
     ACTOR, ACTORCOMP, FOOTCELL, FOOTPRINT, GRIDACTOR, ISM, K2, MAPLIB, MATHLIB, MODAPI,
-    SETLIB, SMC, STATICS, STRLIB, SYSLIB, TERRAIN, TRANSFORM, VECTOR, WORKDOCK)
+    SETLIB, SMC, STATICS, STRLIB, SYSLIB, TERRAIN, TRANSFORM, VECTOR, VOYAGE_LIB, WORKDOCK)
 from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
     actor_loc, all_actors, arr_item, arrfn, bnot, bop, branch, break_struct, break_vec,
-    chain, dmath, for_each, for_loop, get_local, get_member, get_self, ii, inc_self, is_valid, map_find, set_add,
-    set_clear, set_contains, set_local, set_pin_default, set_self, user_call)
+    chain, dmath, for_each, for_loop, get_local, get_member, get_self, ii, inc_self, is_valid, loom_call, map_find,
+    set_add, set_clear, set_contains, set_local, set_pin_default, set_self, user_call)
 from fdgen.core.text import concat_parts, fmt_to_string, log_msg, to_str
 from fdgen.features.docks import dock_id_call
 from fdgen.routes.cells import KEY_MUL, add_penalty, cell_key_call, near_end
@@ -533,94 +533,13 @@ def scan_building_step():
 
 
 def route_still_clear():
-    """RouteStillClear(Id) -> Ok: dock Id has a stored route and no leg crosses a Blocked cell (near-shore cells
-    don't count, so routes through narrow passages aren't replanned every rescan; near either end is exempt, as in
-    ClearLine - PlanStart / PlanGoal are set to the route's ends). Local: StillClear (Boolean).
-    Wire Legs.Completed and BrHas.False -> Return, GetClearForReturn -> Ok."""
+    """RouteStillClear(Id) -> Ok: BPL_FDVoyage.RouteStillClear - dock Id has a stored route and no leg crosses a
+    blocked cell or another dock's outline (near-shore cells don't count, so routes through narrow passages aren't
+    replanned every rescan)."""
     g = Graph()
-    F = "RouteStillClear"
-    get_local(g, "GetId", F, "Id", INT, 0, 600)
-    get_local(g, "GetStill", F, "StillClear", BOOL, 0, 700)
-    get_self(g, "GetRoutePts", "RoutePts", MAP_INT_VECTOR, 0, 800)
-    get_self(g, "GetRouteLen", "RouteLen", MAP_INT_INT, 0, 900)
-    get_self(g, "GetBlocked", "Blocked", INT_SET, 0, 1000)
-    get_self(g, "GetSize", "CellSize", DOUBLE, 0, 1100)
-    set_local(g, "NotYet", F, "StillClear", BOOL, 0, 0)
-    set_pin_default(g, "NotYet", "StillClear", "false")
-    map_find(g, "N", ("GetRouteLen", "RouteLen"), ("GetId", "Id"), MAP_INT_INT, INT, 250, 300, key_type=INT)
-    has = ii(g, "Has", "Greater_IntInt", ("N", "Value"), None, 500, 300, b_default="1", out=BOOL)
-    branch(g, "BrHas", 250, 0)
-    g.link(("NotYet", "then"), ("BrHas", "execute"))
-    g.link(has, ("BrHas", "Condition"))
-    set_local(g, "Assume", F, "StillClear", BOOL, 500, 0)
-    set_pin_default(g, "Assume", "StillClear", "true")
-    g.link(("BrHas", "then"), ("Assume", "execute"))
-    base0 = ii(g, "Base0", "Multiply_IntInt", ("GetId", "Id"), None, 500, 1300, b_default="1000")
-    end_slot = ii(g, "EndSlot", "Add_IntInt", base0, ii(g, "LastPt", "Subtract_IntInt", ("N", "Value"), None, 500, 1400, b_default="1"), 750, 1350)
-    map_find(g, "First", ("GetRoutePts", "RoutePts"), base0, MAP_INT_VECTOR, STRUCT(VECTOR), 1000, 1300, key_type=INT)
-    map_find(g, "Last", ("GetRoutePts", "RoutePts"), end_slot, MAP_INT_VECTOR, STRUCT(VECTOR), 1000, 1450, key_type=INT)
-    set_self(g, "SetPlanStart", "PlanStart", STRUCT(VECTOR), 600, -150)
-    g.link(("First", "Value"), ("SetPlanStart", "PlanStart"))
-    set_self(g, "SetPlanGoal", "PlanGoal", STRUCT(VECTOR), 700, -150)
-    g.link(("Last", "Value"), ("SetPlanGoal", "PlanGoal"))
-    chain(g, "Assume", "SetPlanStart", "SetPlanGoal")
-    last = ii(g, "LastLeg", "Subtract_IntInt", ("N", "Value"), None, 750, 300, b_default="2")
-    for_loop(g, "Legs", 750, 0, first=0, with_break=True)
-    g.link(last, ("Legs", "LastIndex"))
-    g.link(("SetPlanGoal", "then"), ("Legs", "Exec"))
-    base = ii(g, "Base", "Multiply_IntInt", ("GetId", "Id"), None, 750, 450, b_default="1000")
-    sa = ii(g, "SlotA", "Add_IntInt", base, ("Legs", "Index"), 1000, 450)
-    sb = ii(g, "SlotB", "Add_IntInt", sa, None, 1250, 450, b_default="1")
-    map_find(g, "PtA", ("GetRoutePts", "RoutePts"), sa, MAP_INT_VECTOR, STRUCT(VECTOR), 1250, 600, key_type=INT)
-    map_find(g, "PtB", ("GetRoutePts", "RoutePts"), sb, MAP_INT_VECTOR, STRUCT(VECTOR), 1500, 600, key_type=INT)
-    g.call("LegLen", MATHLIB, "Vector_Distance2D", 1750, 600,
-           [("v1", "in", STRUCT(VECTOR), None), ("v2", "in", STRUCT(VECTOR), None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("PtA", "Value"), ("LegLen", "v1"))
-    g.link(("PtB", "Value"), ("LegLen", "v2"))
-    g.call("HalfCell", MATHLIB, "Multiply_DoubleDouble", 1750, 750,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, 'DefaultValue="0.5"'), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("GetSize", "CellSize"), ("HalfCell", "A"))
-    g.call("Ratio", MATHLIB, "Divide_DoubleDouble", 2000, 650,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("LegLen", "ReturnValue"), ("Ratio", "A"))
-    g.link(("HalfCell", "ReturnValue"), ("Ratio", "B"))
-    g.call("NSamp", MATHLIB, "FCeil", 2250, 650, [("A", "in", DOUBLE, None), ("ReturnValue", "out", INT, None)])
-    g.link(("Ratio", "ReturnValue"), ("NSamp", "A"))
-    for_loop(g, "Samples", 1000, 0, first=0, with_break=True)
-    g.link(("NSamp", "ReturnValue"), ("Samples", "LastIndex"))
-    g.link(("Legs", "LoopBody"), ("Samples", "Exec"))
-    g.call("SampD", MATHLIB, "Conv_IntToDouble", 1250, 900, [("inInt", "in", INT, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Samples", "Index"), ("SampD", "inInt"))
-    g.call("NSampD", MATHLIB, "Conv_IntToDouble", 2500, 650, [("inInt", "in", INT, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("NSamp", "ReturnValue"), ("NSampD", "inInt"))
-    g.call("NSampSafe", MATHLIB, "FMax", 2750, 650,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, 'DefaultValue="1.0"'), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("NSampD", "ReturnValue"), ("NSampSafe", "A"))
-    g.call("Alpha", MATHLIB, "Divide_DoubleDouble", 1500, 900,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("SampD", "ReturnValue"), ("Alpha", "A"))
-    g.link(("NSampSafe", "ReturnValue"), ("Alpha", "B"))
-    g.call("P", MATHLIB, "VLerp", 1750, 900,
-           [("A", "in", STRUCT(VECTOR), None), ("B", "in", STRUCT(VECTOR), None), ("Alpha", "in", FLOAT, None),
-            ("ReturnValue", "out", STRUCT(VECTOR), None)])
-    g.link(("PtA", "Value"), ("P", "A"))
-    g.link(("PtB", "Value"), ("P", "B"))
-    g.link(("Alpha", "ReturnValue"), ("P", "Alpha"))
-    hit = set_contains(g, "Hit", ("GetBlocked", "Blocked"), cell_key_call(g, "PKey", ("P", "ReturnValue"), 2000, 900), 2250, 900)
-    near = near_end(g, "E", ("P", "ReturnValue"), 2000, 1100)
-    hit = bop(g, "HitHere", "BooleanAND", hit, bnot(g, "NotNear", near, 2500, 1100), 2500, 950)
-    branch(g, "BrHit", 1250, 0)
-    g.link(("Samples", "LoopBody"), ("BrHit", "execute"))
-    g.link(hit, ("BrHit", "Condition"))
-    set_local(g, "Broken", F, "StillClear", BOOL, 1500, 0)
-    set_pin_default(g, "Broken", "StillClear", "false")
-    g.link(("BrHit", "then"), ("Broken", "execute"))
-    g.link(("Broken", "then"), ("Samples", "Break"))
-    branch(g, "BrStop", 1250, -300)
-    g.link(("Samples", "Completed"), ("BrStop", "execute"))
-    g.link(bnot(g, "Failed", ("GetStill", "StillClear"), 1250, -150), ("BrStop", "Condition"))
-    g.link(("BrStop", "then"), ("Legs", "Break"))
-    get_local(g, "GetClearForReturn", F, "StillClear", BOOL, 1000, -500)
+    get_local(g, "GetId", "RouteStillClear", "Id", INT, 0, 250)
+    loom_call(g, "Call", VOYAGE_LIB, "RouteStillClear", 250, 0, ins=[("Id", INT)], outs=[("ReturnValue", BOOL)])
+    g.link(("GetId", "Id"), ("Call", "Id"))
     return g.render()
 
 
@@ -817,10 +736,8 @@ SPECS = {
     "ScanTerrainStep": fn_spec(("BrDone", "execute")),
     "ScanCoastStep": fn_spec(("BrDone", "execute")),
     "ScanBuildingStep": fn_spec(("BrDone", "execute")),
-    "RouteStillClear": fn_spec(("NotYet", "execute"), inputs=[("Id", INT)], outputs=[("Ok", BOOL)],
-                               locals_=[("StillClear", BOOL, "false")],
-                               returns=[("Legs", "Completed"), ("BrHas", "else")],
-                               values=[("GetClearForReturn", "StillClear", "Ok")]),
+    "RouteStillClear": fn_spec(("Call", "execute"), inputs=[("Id", INT)], outputs=[("Ok", BOOL)],
+                               returns=[("Call", "then")], values=[("Call", "ReturnValue", "Ok")]),
     "ScanRouteStep": fn_spec(("BrDone", "execute")),
     "ScanStep": fn_spec(("BrP1", "execute")),
     "ScanFrame": fn_spec(("Work", "execute")),

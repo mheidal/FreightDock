@@ -3,19 +3,18 @@ F7 cell overlay (DebugCells: blocked, penalty and land cells).
 """
 from fdgen.core.graph import Graph, local_var
 from fdgen.core.types import (
-    BOOL, CLASSPIN, DOUBLE, EXEC, INT, INT_ARRAY, INT_SET, KEY, MAP_INT_INT, MAP_NAME_TO,
+    BOOL, CLASSPIN, DOUBLE, EXEC, INT, INT_ARRAY, INT_SET, KEY, MAP_NAME_TO,
     NAME, NAME_ARRAY, OBJ, STR, STRUCT, T, TEXT, struct_obj)
 from fdgen.core.paths import (
     ACTOR, ACTORCOMP, CARGO, FOREACH, GRIDACTOR, ISMC, K2, LINKER, MAPLIB, MATHLIB, MATLIB,
-    MID, MODAPI, NDOCK, NDOCKSTATE, PC, PLAYPAWN, ROTATOR, ROUTE_LINE_MAT, ROUTE_STRIP, SETLIB, SHIP, SHIPSTATE,
-    STATICS, STRLIB, SYSLIB, TEXTLIB, TRANSFORM, VECTOR, WORKDOCK)
+    MID, MODAPI, NDOCK, NDOCKSTATE, PC, ROUTE_LINE_MAT, ROUTE_STRIP, SETLIB, SHIP, SHIPSTATE,
+    STATICS, STRLIB, SYSLIB, TEXTLIB, TRANSFORM, VECTOR, VOYAGE_LIB, WORKDOCK)
 from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
-    actor_loc, all_actors, all_ships, bnot, branch, break_struct, break_vec, comp_owner,
-    display_name, dmath, for_each, for_loop, get_local, get_member, get_self, ii, is_valid, make_vec, self_call,
-    set_contains, set_local, set_self)
+    actor_loc, all_actors, all_ships, bnot, branch, break_struct, comp_owner,
+    display_name, dmath, for_each, get_local, get_member, get_self, is_valid, loom_call, self_call,
+    set_local, set_self)
 from fdgen.core.text import LOG_PREFIX, fmt_to_string, int_text, log_msg
-from fdgen.routes.cells import KEY_MUL, cell_key_call, cell_pos_call
 
 
 def cargo_to_string():
@@ -285,21 +284,13 @@ def debug_cells():
     """DebugCells (every tick while debugging; not called in release - add it to PairKeyTick): CELLS_KEY toggles an overlay of the water map around the camera's
     focal point - land cells (LandNext) in LandCellColor, other Blocked cells (buildings) in BlockedCellColor,
     near-shore (Penalty) cells in PenaltyCellColor - as flat squares (SM_RouteStrip instances), CellsRadius cells each
-    way, redrawn once a second.
-    Locals: Centre, Key (Integer), Layer (Instanced Static Mesh Component)."""
+    way, redrawn once a second. This makes and clears the layers; BPL_FDVoyage.DrawCellSquares adds the squares."""
     g = Graph()
-    F = "DebugCells"
     get_self(g, "GetShow", "ShowCells", BOOL, 0, 400)
     get_self(g, "GetNext", "NextCellsDraw", DOUBLE, 0, 500)
     get_self(g, "GetBlockedLayer", "BlockedLayer", OBJ(ISMC), 0, 600)
     get_self(g, "GetPenaltyLayer", "PenaltyLayer", OBJ(ISMC), 0, 700)
     get_self(g, "GetLandLayer", "LandLayer", OBJ(ISMC), 0, 750)
-    get_self(g, "GetLand", "LandNext", INT_SET, 0, 1050)
-    get_self(g, "GetRadius", "CellsRadius", INT, 0, 800)
-    get_self(g, "GetBlocked", "Blocked", INT_SET, 0, 900)
-    get_self(g, "GetPenalty", "Penalty", MAP_INT_INT, 0, 1000)
-    get_self(g, "GetHeight", "RouteLineHeight", DOUBLE, 0, 1100)
-    get_local(g, "GetCentre", F, "Centre", INT, 0, 1200)
     ISM_C = f"/Script/CoreUObject.Class'{ISMC}'"
 
     # the key: toggle; off -> clear both layers
@@ -420,65 +411,9 @@ def debug_cells():
     in_l, mid_p = clear_layer("ClearL", ("GetLandLayer", "LandLayer"), 8250, 0)
     g.link(mid_p0, in_l)
 
-    # the centre cell: the camera's focal point
-    g.call("Pawn", STATICS, "GetPlayerPawn", 6250, 400,
-           [("PlayerIndex", "in", INT, 'DefaultValue="0"'), ("ReturnValue", "out", OBJ("/Script/Engine.Pawn"), None)])
-    g.node("AsPlayPawn", K2 + "K2Node_DynamicCast",
-           [f"TargetType=\"/Script/CoreUObject.Class'{PLAYPAWN}'\"", "PureState=Pure"], 6500, 400,
-           [("Object", "in", OBJ("/Script/Engine.Pawn"), None), ("AsPawn Play", "out", OBJ(PLAYPAWN), None), ("bSuccess", "out", BOOL, None)])
-    g.link(("Pawn", "ReturnValue"), ("AsPlayPawn", "Object"))
-    get_member(g, "Focal", PLAYPAWN, "m_currentFocalPoint", STRUCT(VECTOR), 6750, 400)
-    g.link(("AsPlayPawn", "AsPawn Play"), ("Focal", "self"))
-    set_local(g, "SetCentre", F, "Centre", INT, 6500, 0)
-    g.link(mid_p, ("SetCentre", "execute"))
-    g.link(cell_key_call(g, "FocalKey", ("Focal", "m_currentFocalPoint"), 6750, 550), ("SetCentre", "Centre"))
-
-    # every cell in the square
-    neg = ii(g, "NegR", "Multiply_IntInt", ("GetRadius", "CellsRadius"), None, 6750, 700, b_default="-1")
-    for_loop(g, "ForDX", 6750, 0)
-    for_loop(g, "ForDY", 7000, 0)
-    for lp in ("ForDX", "ForDY"):
-        g.link(neg, (lp, "FirstIndex"))
-        g.link(("GetRadius", "CellsRadius"), (lp, "LastIndex"))
-    g.link(("SetCentre", "then"), ("ForDX", "Exec"))
-    g.link(("ForDX", "LoopBody"), ("ForDY", "Exec"))
-    key = ii(g, "Key", "Add_IntInt", ii(g, "KeyX", "Add_IntInt", ("GetCentre", "Centre"),
-                                          ii(g, "DXOff", "Multiply_IntInt", ("ForDX", "Index"), None, 7000, 850, b_default=KEY_MUL), 7250, 850),
-             ("ForDY", "Index"), 7500, 850)
-    centre = cell_pos_call(g, "CellCentre", key, 7500, 1000)
-    cx, cy, _ = break_vec(g, "CellXY", centre, 7750, 1000)
-    x0 = dmath(g, "Left", "Subtract_DoubleDouble", cx, None, 8000, 1000, b_default="45.0")
-    loc = make_vec(g, "SquareAt", x0, cy, dmath(g, "Lift", "Add_DoubleDouble", ("GetHeight", "RouteLineHeight"), None, 8000, 1150, b_default="1.0"),
-                   8250, 1000)
-    g.call("Square", MATHLIB, "MakeTransform", 8500, 1000,
-           [("Location", "in", STRUCT(VECTOR), None), ("Rotation", "in", STRUCT(ROTATOR), None),
-            ("Scale", "in", STRUCT(VECTOR), 'DefaultValue="0.900000,90.000000,1.000000"'), ("ReturnValue", "out", STRUCT(TRANSFORM), None)])
-    g.link(loc, ("Square", "Location"))
-    blocked = set_contains(g, "IsBlocked", ("GetBlocked", "Blocked"), key, 7750, 1300)
-    g.call("IsNear", MAPLIB, "Map_Contains", 7750, 1450,
-           [("TargetMap", "in", MAP_INT_INT, None), ("Key", "in", INT, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("GetPenalty", "Penalty"), ("IsNear", "TargetMap"))
-    g.link(key, ("IsNear", "Key"))
-    is_land = set_contains(g, "IsLand", ("GetLand", "LandNext"), key, 7750, 1600)
-    branch(g, "BrBlocked", 7250, 0)
-    g.link(("ForDY", "LoopBody"), ("BrBlocked", "execute"))
-    g.link(blocked, ("BrBlocked", "Condition"))
-    branch(g, "BrIsLand", 7375, -150)
-    g.link(("BrBlocked", "then"), ("BrIsLand", "execute"))
-    g.link(is_land, ("BrIsLand", "Condition"))
-    branch(g, "BrNear", 7500, 150)
-    g.link(("BrBlocked", "else"), ("BrNear", "execute"))
-    g.link(("IsNear", "ReturnValue"), ("BrNear", "Condition"))
-    for name, getter, after, x, y in (("AddB", ("GetBlockedLayer", "BlockedLayer"), ("BrIsLand", "else"), 7500, -150),
-                                      ("AddL", ("GetLandLayer", "LandLayer"), ("BrIsLand", "then"), 7500, -300),
-                                      ("AddP", ("GetPenaltyLayer", "PenaltyLayer"), ("BrNear", "then"), 7750, 150)):
-        g.call(name, ISM_C, "AddInstance", x, y,
-               [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", OBJ(ISMC), None),
-                ("InstanceTransform", "in", STRUCT(TRANSFORM), None), ("bWorldSpace", "in", BOOL, 'DefaultValue="true"'),
-                ("ReturnValue", "out", INT, None)])
-        g.link(after, (name, "execute"))
-        g.link(getter, (name, "self"))
-        g.link(("Square", "ReturnValue"), (name, "InstanceTransform"))
+    # the squares: BPL_FDVoyage.DrawCellSquares (sized from CellSize)
+    loom_call(g, "Squares", VOYAGE_LIB, "DrawCellSquares", 9000, 0)
+    g.link(mid_p, ("Squares", "execute"))
     return g.render()
 
 
@@ -613,7 +548,7 @@ def log_nautical_docks():
 
 SPECS = {
     "LogLinks": fn_spec(("ForDocks", "Exec"), locals_=[("Linker", OBJ(LINKER)), ("Src", STR), ("Dst", STR)]),
-    "DebugCells": fn_spec(("BrToggled", "execute"), locals_=[("Centre", INT)]),
+    "DebugCells": fn_spec(("BrToggled", "execute")),
     "DebugSetup": fn_spec(("Cmd0", "execute")),
     "Stamp": fn_spec(("Pass", "execute"), outputs=[("Result", STR)], returns=[("Pass", "then_0")],
                      values=[("Str", "ReturnValue", "Result")], pure=True),

@@ -1,0 +1,50 @@
+blueprint WBP_FDIncomingRow : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDIncomingRow
+
+// One row of the dock GUI's INCOMING table (WBP_FDPanel.FillIncoming), for a dock that requests: a good its output
+// warehouses want, how much they still want, how much is on its way, and where it comes from (with the arrival
+// time while sailing) or why nothing comes. The two numbers explain themselves on hover.
+
+widget Row: HorizontalBox {
+    widget IconBox: SizeBox(WidthOverride: 26.0, HeightOverride: 26.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Icon: Image
+    }
+    widget NameBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 6, Top: 0, Right: 0, Bottom: 0)) {
+        widget ResName: LocTextBlock(ColorAndOpacity: "#ddd3bcff")
+    }
+    widget WantedBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Wanted: TextBlock(Text: "0", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+    }
+    widget ComingBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+        widget Coming: TextBlock(Text: "0", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center)
+    }
+    widget Status: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#9c917cff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 6, Top: 0, Right: 0, Bottom: 0), Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+}
+
+var Tips: array<WBP_FDTip>
+
+// Each number's tooltip (WBP_FDTip), set again on every Show (fonts and language may change).
+fn Tip(Index: int, Cell: Widget, Msg: string, Font: SlateFontInfo) {
+    if Tips.Length() <= Index {
+        let t = create_widget(WBP_FDTip)
+        Cell.SetToolTip(t)
+        Tips.Add(t)
+    }
+    Tips[Index].Setup(Msg, Font)
+}
+
+// Coming: units on their way; Note: their source, or why nothing comes (dimmed then).
+fn Show(Res: name, InWanted: int, InComing: int, Note: string, Font: SlateFontInfo, SmallFont: SlateFontInfo) {
+    let def = ArcoGameInstance.GetResourceDefCopy(self, Res)
+    Icon.SetBrushFromTexture(def.Icon, false)
+    ResName.SetKey(def.stringKey)
+    Tip(0, WantedBox, BPL_FDText.T("freightdock.incoming.wanted"), Font)
+    Tip(1, ComingBox, BPL_FDText.T("freightdock.incoming.coming"), Font)
+    ResName.SetFont(Font)
+    Wanted.SetFont(Font)
+    Coming.SetFont(Font)
+    Status.SetFont(SmallFont)
+    Wanted.SetText(text(string(InWanted)))
+    Coming.SetText(text(string(InComing)))
+    Status.SetText(text(Note))
+    Status.SetColorAndOpacity(SlateColor(SpecifiedColor: if InComing > 0 { LinearColor(R: 0.87, G: 0.83, B: 0.74, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 1.0) }))
+}

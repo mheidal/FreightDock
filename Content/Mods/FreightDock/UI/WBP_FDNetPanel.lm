@@ -15,7 +15,7 @@ var HeadTips: array<WBP_FDTip>
 var BodyFont: SlateFontInfo
 var SmallFont: SlateFontInfo
 
-widget Width: SizeBox(WidthOverride: 660.0) {
+widget Width: SizeBox(WidthOverride: 740.0) {
     widget Stack: Overlay {
         widget Bg: Image(ColorAndOpacity: "#0d1520f2") slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill)
         widget Frame: RoundedFrameWithHeaderIcon(showIcon: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill, Padding: Margin(Left: 26, Top: 16, Right: 26, Bottom: 16))
@@ -33,6 +33,9 @@ widget Width: SizeBox(WidthOverride: 660.0) {
                     }
                     widget HReqBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
                         widget HReq: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                    }
+                    widget HPrioBox: SizeBox(WidthOverride: 80.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget HPrio: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
                     }
                     widget HGoods: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 8, Top: 0, Right: 0, Bottom: 0))
                 }
@@ -56,6 +59,8 @@ on Construct {
     HeadTip(HProvBox, "")
     HeadTip(HReqBox, "")
     HeadTip(HGoods, "")
+    HeadTip(HIdBox, "")
+    HeadTip(HPrioBox, "")
     Labels()
     SetVisibility(ESlateVisibility.Collapsed)
 }
@@ -95,7 +100,7 @@ fn SetLook(Brush: SlateBrush, Tint: LinearColor, TitleFont: SlateFontInfo, HeadF
     SmallFont = Small
     Title.SetFont(TitleFont)
     DockLine.SetFont(Body)
-    let heads: array<TextBlock> = [HId, HProv, HReq, HGoods]
+    let heads: array<TextBlock> = [HId, HProv, HReq, HPrio, HGoods]
     for h in heads {
         h.SetFont(Body)
     }
@@ -111,7 +116,8 @@ fn Labels() {
     HProv.SetText(text(BPL_FDText.T("freightdock.net.provide")))
     HReq.SetText(text(BPL_FDText.T("freightdock.net.request")))
     HGoods.SetText(text(BPL_FDText.T("freightdock.net.goods")))
-    let tips: array<string> = [BPL_FDText.T("freightdock.net.provideTip"), BPL_FDText.T("freightdock.net.requestTip"), BPL_FDText.T("freightdock.net.goodsTip")]
+    HPrio.SetText(text(BPL_FDText.T("freightdock.net.priority")))
+    let tips: array<string> = [BPL_FDText.T("freightdock.net.provideTip"), BPL_FDText.T("freightdock.net.requestTip"), BPL_FDText.T("freightdock.net.goodsTip"), BPL_FDText.T("freightdock.net.idTip"), BPL_FDText.T("freightdock.net.priorityTip")]
     let i = 0
     while i < HeadTips.Length() && i < tips.Length() {
         HeadTips[i].Setup(tips[i], SmallFont)
@@ -161,11 +167,22 @@ fn Show(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock)
         top = KismetMathLibrary.Max(top, n + 1)
     }
     top = KismetMathLibrary.Min(top, BPL_FDNet.MaxNet())
+    let names = BPL_FDNet.NetNames(MapLoad)
+    let stored = Dock.activeTradePartnerId
+    let du = BPL_FDNet.Unpack(stored)
+    let memberships = 0
+    for dn in du.Nets {
+        if dn > 0 {
+            memberships += 1
+        }
+    }
+    let full = memberships >= BPL_FDNet.Slots()
     let net = 1
     while net <= top {
         if net > Rows.Length() {
             let made = create_widget(WBP_FDNetRow)
             made.Toggled.bind(NetToggled)
+            made.PrioClicked.bind(PrioCycled)
             RowsBox.AddChild(made)
             Rows.Add(made)
         }
@@ -185,7 +202,8 @@ fn Show(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock)
         }
         let prov = BPL_FDNet.ProvidedGoods(MapLoad, net)
         let row = Rows[net - 1]
-        row.Show(net, BPL_FDNet.RoleOn(Dock.activeTradePartnerId, net), provNames, reqNames, goods, req.Wanted, req.Stocked, prov.All, prov.Goods, net % 2 == 0, BodyFont, SmallFont)
+        let role = BPL_FDNet.RoleOn(stored, net)
+        row.Show(net, role, BPL_FDNet.PrioOn(stored, net), BPL_FDNet.NetLabel(net, names), full && role == 0, provNames, reqNames, goods, req.Wanted, req.Stocked, prov.All, prov.Goods, net % 2 == 0, BodyFont, SmallFont)
         row.SetVisibility(ESlateVisibility.Visible)
         net += 1
     }
@@ -195,7 +213,20 @@ fn Show(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock)
     }
 }
 
-// A checkbox: Bit 1 flips providing on Net, 2 requesting. A dock is in at most 4 networks.
+// The priority cell: Net's priority for the dock's requests steps to the next level (Top wraps round to Low).
+fn PrioCycled(Net: int) {
+    if Dock == none || MapLoad == none {
+        return
+    }
+    let stored = Dock.activeTradePartnerId
+    let next = (BPL_FDNet.PrioOn(stored, Net) + 1) % (BPL_FDNet.MaxPriority() + 1)
+    Dock.activeTradePartnerId = BPL_FDNet.WithPrio(stored, Net, next)
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(BPL_FDNet.DockId(Dock)) + ": network " + string(Net) + " priority " + string(next), false)
+    Show(MapLoad, Dock)
+    Changed.broadcast()
+}
+
+// A checkbox: Bit 1 flips providing on Net, 2 requesting. A dock is in at most BPL_FDNet.Slots() networks.
 fn NetToggled(Net: int, Bit: int) {
     if Dock == none || MapLoad == none {
         return
@@ -204,8 +235,8 @@ fn NetToggled(Net: int, Bit: int) {
     let cur = BPL_FDNet.RoleOn(stored, Net)
     let role = if (cur & Bit) != 0 { cur - Bit } else { cur + Bit }
     let w = BPL_FDNet.With(stored, Net, role)
+    // refused only for a new network past the limit, whose checkboxes are disabled (with why as their tooltip)
     if !w.Ok {
-        MapLoad.Toast(BPL_FDText.T("freightdock.toast.maxNetworks"))
         return
     }
     Dock.activeTradePartnerId = if BPL_FDNet.IsMember(w.ReturnValue) { w.ReturnValue } else { BPL_FDNet.Emptied(w.ReturnValue) }

@@ -42,6 +42,16 @@ This creates `.venv` with pytest. The generator itself uses only the standard li
 
 Member variables are not created by `fdgen.install`. Add them with `WWBlueprintToolset.EnsureVariables` (it adds or updates). Delete them with `BlueprintTools.remove_variable`. Afterwards, refresh the manifest.
 
+## Cook and install
+
+`WWBlueprintToolset.CookAndInstall {"modName": "FreightDock"}` runs the same Cook & Install as the Content Browser menu and returns at once. It refuses while a cook is running, while a FreightDock asset has unsaved changes, or while the installed pak is in use (the game is running).
+
+`WWBlueprintToolset.CookStatus` reports the latest cook, from either place:
+- running, with its stage;
+- or the result, the installed pak's time and, on failure, the last lines of the cook output.
+
+It also warns when a subscribed Workshop copy would load instead of the local install.
+
 ## Layout
 
 ```
@@ -100,4 +110,4 @@ The tests don't cover behaviour: whether a graph does the right thing in game. T
 
 - Every generated log line goes through `Stamp` (pure, output `Result`: `"[yyyy-mm-dd hh:mm:ss] [FreightDock] "`). Lines that use ModAPI's own date instead (BP_Startup, hand-built functions) start their message with `text.LOG_PREFIX`. Integers in log text are printed without thousands separators.
 - Hand-built in the editor, not generated: the Event Graph, Toast, StockpileToString, CollectionToString, LogDocks, and the widget WBP_FDToast.
-- Written in Loom, not here: the Freight Dock panel (`Content/Mods/FreightDock/UI/WBP_FDPanel.lm`, `WBP_FDLinkRow.lm`, `WBP_FDWantRow.lm`, `WBP_FDTip.lm`, and the network picker's `WBP_FDNetRow.lm`, `WBP_FDNetTip.lm`), the loading plan (`Loom/BPL_FDLoad.lm`, called by `UpdateRequest`), the unloading animation (`Loom/BP_FDFling.lm`), network storage and dispatch (`Loom/BPL_FDNet.lm`: `TargetOf`, `ShipAtDock`), the arcs and the per-frame hook (`Loom/BPL_FDPairing.lm`: `DrawArcs`, `PairKeyTick`) and the Mod Options (`Loom/BPL_FDOptions.lm`: `RegisterOptions` in BP_Startup, `ReadPairKey`). Those BP_MapLoad and BP_Startup functions are one-call wrappers made with `nodes.loom_call` (or a plain call, in BP_Startup). When a generated function needs changing, its logic moves to Loom the same way. Generated graphs call Loom by path (`paths.FD_PANEL_CLASS`, `NET_LIB`, `PAIRING_LIB`, `OPTIONS_LIB`), and they call BP_MapLoad's functions by name, so renaming a BP_MapLoad function or its pins also needs the `.lm` files changed.
+- Written in Loom, not here: the Freight Dock panel (`Content/Mods/FreightDock/UI/WBP_FDPanel.lm`, `WBP_FDLinkRow.lm`, `WBP_FDWantRow.lm`, `WBP_FDTip.lm`, and the network picker's `WBP_FDNetRow.lm`, `WBP_FDNetTip.lm`), the loading plan (`Loom/BPL_FDLoad.lm`, called by `UpdateRequest`), the unloading animation (`Loom/BP_FDFling.lm`), the stand-ins' courses, sailing and route cells (`Loom/BPL_FDVoyage.lm`: `FillCourse`, called by `MakeCourse` after it adds the spline component, `VoyageTick`, `FindPath`, `ClearLine`, `RouteStillClear`; dock outlines in `DockZone`), network storage and dispatch (`Loom/BPL_FDNet.lm`: `TargetOf`, `ShipAtDock`), the arcs and the per-frame hook (`Loom/BPL_FDPairing.lm`: `DrawArcs`, `PairKeyTick`) and the Mod Options (`Loom/BPL_FDOptions.lm`: `RegisterOptions` in BP_Startup, `ReadPairKey`). Those BP_MapLoad and BP_Startup functions are one-call wrappers made with `nodes.loom_call` (or a plain call, in BP_Startup). When a generated function needs changing, its logic moves to Loom the same way. Generated graphs call Loom by path (`paths.FD_PANEL_CLASS`, `NET_LIB`, `PAIRING_LIB`, `OPTIONS_LIB`), and they call BP_MapLoad's functions by name, so renaming a BP_MapLoad function or its pins also needs the `.lm` files changed.
