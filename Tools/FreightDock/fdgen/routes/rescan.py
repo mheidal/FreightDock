@@ -548,7 +548,6 @@ def scan_route_step():
     something (or has none) or if Blocked has changed size since the last rescan (something was removed or added, so
     a better route may exist). When all are done, note Blocked's size, go idle and schedule the next rescan."""
     g = Graph()
-    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 1500)
     get_self(g, "GetDocks", "Docks", OBJ(WORKDOCK, "Array"), 0, 600)
     get_self(g, "GetIdx", "ScanIdx", INT, 0, 700)
     arrfn(g, "NDocks", "Array_Length", 250, 600, [("TargetArray", "in", OBJ(WORKDOCK, "Array"), None), ("ReturnValue", "out", INT, None)])
@@ -575,22 +574,12 @@ def scan_route_step():
     g.link(("Due", "ReturnValue"), ("SetDue", "NextRescanAt"))
     set_self(g, "ClearPending", "PendingRescan", BOOL, 750, -300, literal="false")
     chain(g, "Idle", "SetDue", "ClearPending")
-    get_self(g, "GetReplans", "ScanReplans", INT, 750, -800)
     get_self(g, "GetBlocked", "Blocked", INT_SET, 750, -900)
     g.call("BlockedLen", SETLIB, "Set_Length", 1000, -900, [("TargetSet", "in", INT_SET, None), ("ReturnValue", "out", INT, None)])
     g.link(("GetBlocked", "Blocked"), ("BlockedLen", "TargetSet"))
-    s = fmt_to_string(g, "FmtLog", "Rescan done: {r} route(s) replanned", [("r", INT)], 1250, -1000)
-    g.link(("GetReplans", "ScanReplans"), ("FmtLog", "r"))
-    any_replans = ii(g, "AnyReplans", "Greater_IntInt", ("GetReplans", "ScanReplans"), None, 1000, -700, b_default="0", out=BOOL)
-    branch(g, "BrLog", 1250, -450)
-    g.link(any_replans, ("BrLog", "Condition"))
     set_self(g, "SetPlanned", "PlannedBlocked", INT, 1000, -450)
     g.link(("ClearPending", "then"), ("SetPlanned", "execute"))
     g.link(("BlockedLen", "ReturnValue"), ("SetPlanned", "PlannedBlocked"))
-    g.link(("SetPlanned", "then"), ("BrLog", "execute"))
-    log_msg(g, "LogDone", "GetModAPI", 1500, -300)
-    g.link(("BrLog", "then"), ("LogDone", "execute"))
-    g.link((s, "ReturnValue"), ("LogDone", "Msg"))
 
     # this dock
     dock = arr_item(g, "Dock", ("GetDocks", "Docks"), ("GetIdx", "ScanIdx"), OBJ(WORKDOCK), 250, 900)

@@ -57,7 +57,8 @@ fn AddTo(Counts: ref map<string, int>, Key: string, Units: int) {
     Counts[Key] = base + Units
 }
 
-// Msg is made ASCII (dock names come from signs): one other character turns the modlog into UTF-16.
+// Unused in release; kept for diagnostics. Msg is made ASCII (dock names come from signs): one other character turns
+// the modlog into UTF-16.
 fn Log(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Msg: string) {
     ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + Ascii(Msg), false)
 }
@@ -107,9 +108,6 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     for id in ids {
         let dock = BPL_FDNet.DockIn(MapLoad, id)
         if Sailing(MapLoad, id) {
-            if !MapLoad.JobSailed.Contains(id) {
-                LogFacing(MapLoad, dock, id)
-            }
             MapLoad.JobSailed[id] = true
             continue
         }
@@ -129,7 +127,6 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         }
         // every good dropped (stalled with nothing got): the dock is free for another job
         if BPL_FDNet.Manifest(MapLoad, id).Length() == 0 {
-            Log(MapLoad, "Dock " + string(id) + ": nothing left to load")
             Cancel(MapLoad, dock, id)
             continue
         }
@@ -144,36 +141,9 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     }
 }
 
-// How a voyage's stand-in starts out, against its berth (to find why a ship model would sail backwards): the ship's
-// class, the real ship's and its model's yaw, and the home berth's out direction. Logged once per voyage.
-fn LogFacing(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int) {
-    let ship = MapLoad.VoyageShip.Find(Id)
-    let proxy = MapLoad.Voyages.Find(Id)
-    let line = "Voyage " + string(Id) + ":"
-    if ship.ReturnValue && ship.Value != none {
-        line += " ship " + KismetSystemLibrary.GetDisplayName(ship.Value) + " yaw " + string(ship.Value.K2_GetActorRotation().Yaw)
-        let child = ship.Value.zoomedActor.ChildActor
-        if child != none {
-            line += ", model " + KismetSystemLibrary.GetDisplayName(child) + " yaw " + string(child.K2_GetActorRotation().Yaw)
-        }
-    }
-    if proxy.ReturnValue && proxy.Value != none {
-        line += ", stand-in yaw " + string(proxy.Value.K2_GetActorRotation().Yaw)
-    }
-    if Dock != none {
-        let berth = MapLoad.NauticalDockAt(Dock).Best
-        if berth != none {
-            let out = berth.State.berthOutDirection
-            line += ", berth out yaw " + string(KismetMathLibrary.DegAtan2(out.Y, out.X))
-        }
-    }
-    Log(MapLoad, line)
-}
-
 // The ship is back: goods of the manifest still aboard (not delivered) are parked (Park), and the job ends.
 fn Complete(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int) {
-    let parked = Park(MapLoad, Dock, Id)
-    Log(MapLoad, "Dock " + string(Id) + ": job done" + (if parked == "" { "" } else { ", parked undelivered:" + parked }))
+    Park(MapLoad, Dock, Id)
     BPL_FDNet.DropJob(MapLoad, Id)
 }
 
@@ -203,8 +173,7 @@ fn Cancel(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDoc
     MapLoad.ClearRequested(Id)
     MapLoad.LoadingSince.Remove(Id)
     MapLoad.DepartingSince.Remove(Id)
-    let parked = Park(MapLoad, Dock, Id)
-    Log(MapLoad, "Dock " + string(Id) + ": job to " + string(MapLoad.JobTo[Id]) + " cancelled" + (if parked == "" { "" } else { ", parked:" + parked }))
+    Park(MapLoad, Dock, Id)
     BPL_FDNet.DropJob(MapLoad, Id)
     MapLoad.RouteSelId = -999
 }
@@ -281,7 +250,6 @@ fn Shrink(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             }
         }
         if cutLog != "" {
-            Log(MapLoad, "Dock " + string(id) + ": job to " + string(rid) + " shrinks, no longer wanted:" + cutLog)
             if kept == 0 {
                 Cancel(MapLoad, dock, id)
             }
@@ -439,7 +407,6 @@ fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<s
             continue
         }
         let free = Fetchable(MapLoad, dock)
-        let grew = ""
         let keys: array<string> = []
         for key, open in Want {
             if open > 0 && KismetStringLibrary.StartsWith(key, Prefix(rid), ESearchCase.CaseSensitive) {
@@ -464,12 +431,7 @@ fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<s
                 MapLoad.PickupSince.Remove(jk)
                 Want[gk] = need - add
                 room -= add
-                // the total as written, read back, so the log shows what the loading plan will see
-                grew += " " + string(good) + " " + string(before) + "+" + string(add) + "=" + string(MapLoad.JobGoods[jk]) + " (free " + string(if f.ReturnValue { f.Value } else { 0 }) + ", still to fetch " + string(still) + ")"
             }
-        }
-        if grew != "" {
-            Log(MapLoad, "Dock " + string(id) + ": job to " + string(rid) + " grows:" + grew)
         }
     }
 }
@@ -484,8 +446,6 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
     let freeS: map<string, int> = {}
     let aboardS: map<string, int> = {}
     let parkS: map<string, int> = {}
-    // the reasons of the last pass, to log the ones that change
-    let wasIdle = MapLoad.IdleWhy
     MapLoad.IdleWhy.Clear()
     for d in BPL_FDNet.FreightDocks(MapLoad) {
         let did = BPL_FDNet.DockId(d)
@@ -596,13 +556,6 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
         done.Add(BPL_FDNet.DockId(idle[bestP]))
     }
     Explain(MapLoad, Want, minFail)
-    for idleId, reason in MapLoad.IdleWhy {
-        let was = wasIdle.Find(idleId)
-        let same = was.ReturnValue && was.Value == reason
-        if !same {
-            Log(MapLoad, "Dock " + string(idleId) + " idle: " + reason)
-        }
-    }
 }
 
 // How long a request waits before the minimum load no longer holds it back: the depart-after time, or 10 minutes
@@ -751,7 +704,6 @@ fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Sh
     let pid = BPL_FDNet.DockId(P)
     let rid = BPL_FDNet.DockId(R)
     let left = KismetMathLibrary.Max(Ship.config.cargoLimit - MapLoad.HoldCounts(Ship).Total, 0)
-    let summary = ""
     let keys: array<string> = []
     for key, open in Want {
         if open > 0 && KismetStringLibrary.StartsWith(key, Prefix(rid), ESearchCase.CaseSensitive) {
@@ -792,22 +744,11 @@ fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Sh
             FreeS[pk] = free - fromFree
             TakePool(MapLoad, P, InPool, good, fromFree)
             ParkS[pk] = park - fromPark
-            summary += " " + string(good) + "=" + string(units)
         }
     }
     MapLoad.JobTo[pid] = rid
     MapLoad.JobSailed.Remove(pid)
     MapLoad.IdleWhy.Remove(pid)
     MapLoad.PlanRoute(P)
-    // the planned route (PlanRoute leaves PlanStart / PlanGoal at its ends): log any blocked cells it crosses
-    let routePts: array<Vector> = []
-    let rl = MapLoad.RouteLen.Find(pid)
-    let ri = 0
-    while rl.ReturnValue && ri < rl.Value {
-        routePts.Add(MapLoad.RoutePts.Find(pid * 1000 + ri).Value)
-        ri += 1
-    }
-    BPL_FDVoyage.LogCrossings(MapLoad, "route for dock " + string(pid) + " to " + string(rid), routePts)
     MapLoad.RouteSelId = -999
-    Log(MapLoad, "Dispatch: dock " + string(pid) + " -> " + string(rid) + ":" + summary + " (score " + string(Score) + ")")
 }

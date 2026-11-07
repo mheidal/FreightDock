@@ -1,0 +1,163 @@
+blueprint BPL_FDCheat : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDCheat
+
+// DEVELOPMENT ONLY - nothing calls this in release. To use it, add the two calls noted at WBP_FDPanel's CheatKey to its
+// Step (and set CheatKey to F4 in the editor); remove them again before a release.
+// F4: 200 logs, planks, cut stone and canned food into the colony's stock, and the Freight Dock tech, through the game's own
+// console cheats (as DebugSetup does); and the WSS Allhands 100 x faster, once (FastAllhands). F7: the route overlays.
+
+// CheatKey: F4, held by the panel (a key can only be set as a variable's default).
+fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, CheatKey: Key) {
+    // F7: the route cell overlay (land, buildings, near-shore cells around the camera), plus the dock structures'
+    // outlines (DockZone, magenta) and the berthed ships' cells (ShipCells, cyan), drawn as flat arcs every frame
+    let wasShown = MapLoad.ShowCells
+    MapLoad.DebugCells()
+    // (F4 never seen: each F7 press also logs the cheat key as the panel holds it)
+    if MapLoad.ShowCells != wasShown {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Cheat key: '" + string(KismetInputLibrary.Key_GetDisplayName(CheatKey, true)) + "', valid " + string(KismetInputLibrary.Key_IsValid(CheatKey)), false)
+    }
+    if MapLoad.ShowCells {
+        BPL_FDVoyage.RefreshZones(MapLoad)
+        DrawCells(MapLoad, MapLoad.DockZone, BPL_FDNet.Rgb(255, 0, 255))
+        let shipIds: map<int, int> = {}
+        for key, at in MapLoad.ShipCells {
+            shipIds[key] = KismetMathLibrary.FFloor(at.X) * 7 + KismetMathLibrary.FFloor(at.Y)
+        }
+        DrawCells(MapLoad, shipIds, BPL_FDNet.Rgb(0, 255, 255))
+    }
+    let pc = GameplayStatics.GetPlayerController(0)
+    if pc == none {
+        return
+    }
+    if !pc.WasInputKeyJustPressed(CheatKey) {
+        return
+    }
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Cheat (F4): key seen", false)
+    let cmds = ["Arco_GiveResource wood 200", "Arco_GiveResource planks 200", "Arco_GiveResource bricks 200", "Arco_GiveResource cannedfood 200", "Arco_GiveUnlock unlock.freightDock"]
+    for c in cmds {
+        KismetSystemLibrary.ExecuteConsoleCommand(c, pc)
+    }
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Cheat (F4): 200 logs, planks, cut stone, canned food; Freight Dock tech", false)
+    let fast = FastAllhands(MapLoad)
+    MapLoad.Toast("Cheat: 200 logs, planks, cut stone and canned food; Freight Dock tech" + (if fast > 0 { "; WSS Allhands x100 speed" } else { "" }))
+}
+
+// Stormie's ship, the WSS Allhands (every ship whose name contains "Allhands": the event model has several actors),
+// 100 x faster: top speed and acceleration, once (a ship already above 1000 top speed is left alone, so further
+// presses don't compound). Logs each ship, or every ship's names when none matched. Returns how many matched.
+fn FastAllhands(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
+    let found = 0
+    let names = ""
+    for a in GameplayStatics.GetAllActorsOfClass(NauticalShip).OutActors {
+        let ship = cast(a, NauticalShip)
+        if ship != none {
+            let label = ship.State.shipName + " / " + string(ship.State.externalName)
+            if KismetStringLibrary.Contains(label, "allhands", false, false) {
+                found += 1
+                let was = ship.config.moveSpeedMax
+                if was <= 1000.0 {
+                    ship.config.moveSpeedMax = was * 100.0
+                    ship.config.Acceleration = ship.config.Acceleration * 100.0
+                }
+                ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Cheat (F4): " + label + " speed " + string(was) + " -> " + string(ship.config.moveSpeedMax), false)
+            } else {
+                names += "; " + label
+            }
+        }
+    }
+    if found == 0 {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Cheat (F4): no ship named Allhands" + names, false)
+    }
+    return found
+}
+
+// One box of flat arcs round each group of Cells (cell key -> group), at the sea's height.
+fn DrawCells(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Cells: map<int, int>, Tint: Color) {
+    let play = cast(GameplayStatics.GetPlayerController(0), PlayerController_Play)
+    if play == none {
+        return
+    }
+    let loX: map<int, int> = {}
+    let hiX: map<int, int> = {}
+    let loY: map<int, int> = {}
+    let hiY: map<int, int> = {}
+    for key, group in Cells {
+        let cx = key / 4096 - 2048
+        let cy = key % 4096 - 2048
+        let a = loX.Find(group)
+        loX[group] = if a.ReturnValue { KismetMathLibrary.Min(a.Value, cx) } else { cx }
+        let b = hiX.Find(group)
+        hiX[group] = if b.ReturnValue { KismetMathLibrary.Max(b.Value, cx) } else { cx }
+        let c = loY.Find(group)
+        loY[group] = if c.ReturnValue { KismetMathLibrary.Min(c.Value, cy) } else { cy }
+        let d = hiY.Find(group)
+        hiY[group] = if d.ReturnValue { KismetMathLibrary.Max(d.Value, cy) } else { cy }
+    }
+    let size = MapLoad.CellSize
+    for group, x0 in loX {
+        let x1 = (float(hiX[group]) + 1.0) * size
+        let y0 = float(loY[group]) * size
+        let y1 = (float(hiY[group]) + 1.0) * size
+        let ax = float(x0) * size
+        let corners: array<Vector> = [Vector(X: ax, Y: y0, Z: 30.0), Vector(X: x1, Y: y0, Z: 30.0), Vector(X: x1, Y: y1, Z: 30.0), Vector(X: ax, Y: y1, Z: 30.0)]
+        let i = 0
+        while i < 4 {
+            BPL_FDPairing.Queue(play, corners[i], corners[(i + 1) % 4], Tint, MapLoad.ArcWidth, 0.0)
+            i += 1
+        }
+    }
+}
+
+// Loading probe: every 2 s of game time, per job still loading, per good of its manifest: the hold, the dock's input
+// slot (count, capacity, carried), the dock's requests (dock-specific, live), its delivered-goods store, and each
+// input warehouse's slot (count, reserved, request level, whether it accepts the good). Returns the next time.
+fn Probe(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, At: float) -> float {
+    let now = GameplayStatics.GetTimeSeconds()
+    if now < At {
+        return At
+    }
+    for pid, rid in MapLoad.JobTo {
+        let dock = BPL_FDNet.DockIn(MapLoad, pid)
+        let loading = dock != none
+        if BPL_FDDispatch.Sailing(MapLoad, pid) {
+            loading = false
+        }
+        if loading {
+            let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
+            let hold: map<name, int> = {}
+            let total = 0
+            if ship != none {
+                let hc = MapLoad.HoldCounts(ship)
+                hold = hc.Counts
+                total = hc.Total
+            }
+            let line = "Probe dock " + string(pid) + " -> " + string(rid) + ": hold " + string(total) + (if ship == none { " (no ship)" } else { "/" + string(ship.config.cargoLimit) })
+            for res, units in BPL_FDNet.Manifest(MapLoad, pid) {
+                let h = hold.Find(res)
+                let inp = dock.m_inputStockpile.Slots.Find(res)
+                let sea = dock.m_stockpile_goodsFromSea.Slots.Find(res)
+                let spec = dock.m_requiredEmbarkSupplies_dockSpecific.counts.Find(res)
+                let live = dock.m_requiredEmbarkSupplies_live.counts.Find(res)
+                line += " | " + string(res) + ": job " + string(units) + ", hold " + string(if h.ReturnValue { h.Value } else { 0 })
+                line += ", input " + (if inp.ReturnValue { string(inp.Value.count) + "/" + string(inp.Value.capacity) + " carried " + string(inp.Value.reservedSpaceForDropoff) } else { "none" })
+                line += ", spec " + string(if spec.ReturnValue { spec.Value } else { -1 }) + ", live " + string(if live.ReturnValue { live.Value } else { -1 })
+                line += ", fromSea " + (if sea.ReturnValue { string(sea.Value.count) + " res " + string(sea.Value.reservedForPickup) } else { "none" })
+                let linker = cast(dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+                if linker != none {
+                    for bid in linker.m_sourceStockpileIds {
+                        let b = MapLoad.BuildingById(bid).Building
+                        if b != none {
+                            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+                            if rb != none {
+                                let s = rb.m_stockpile.Slots.Find(res)
+                                let accepts = !rb.m_whiteListReceiving || rb.m_whitelist.Contains(res)
+                                line += "; src " + string(bid) + " " + (if s.ReturnValue { string(s.Value.count) + " res " + string(s.Value.reservedForPickup) + " min " + string(s.Value.minHold) } else { "none" }) + (if accepts { " ok" } else { " not accepted" }) + (if rb.m_forceEmpty { " keep-empty" } else { "" })
+                            }
+                        }
+                    }
+                }
+            }
+            ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + line, false)
+        }
+    }
+    return now + 2.0
+}

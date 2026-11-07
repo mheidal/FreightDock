@@ -391,14 +391,12 @@ def update_request():
     """The dock's request, planned by the Loom library (BPL_FDLoad.Plan): what is already being carried to the dock
     plus, per resource, a share of the ship's free space, capped by what the input warehouses hold free
     and leaving out resources no hauler has picked up for a while (see BPL_FDLoad.lm). 0 new while NoMore.
-    Outputs: Remaining (unmet need the input warehouses can still supply, ignoring space) and InFlight (units waiting at the dock or being carried to it).
-    When the request changes, the log line lists every resource's parts and the free space."""
+    Outputs: Remaining (unmet need the input warehouses can still supply, ignoring space) and InFlight (units waiting at the dock or being carried to it)."""
     g = Graph()
     get_local(g, "GetDock", "UpdateRequest", "Dock", OBJ(WORKDOCK), 0, 300)
     get_local(g, "GetTarget", "UpdateRequest", "Target", OBJ(WORKDOCK), 0, 400)
     get_local(g, "GetShip", "UpdateRequest", "Ship", OBJ(SHIP), 0, 500)
     get_local(g, "GetNoMore", "UpdateRequest", "NoMore", BOOL, 0, 600)
-    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 700)
     g.node("Self", K2 + "K2Node_Self", [], 0, 200, [("self", "out", ['PinType.PinCategory="object"', 'PinType.PinSubCategory="self"'], None)])
     g.call("Plan", LOAD_LIB, "Plan", 250, 0,
            [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
@@ -436,16 +434,6 @@ def update_request():
     g.link(("BrChanged", "then"), ("Request", "execute"))
     g.link(("GetDock", "Dock"), ("Request", "Dock"))
     g.link(("MakeResult", "ResourceCollection"), ("Request", "Want"))
-    dock_id = dock_id_call(g, "DockId", ("GetDock", "Dock"), 1000, 600)
-    s = fmt_to_string(g, "FmtReq", "Dock {d} request now: {req}[{detail}free space {space}]",
-                      [("d", INT), ("req", STR), ("detail", STR), ("space", INT)], 1250, 500)
-    g.link(dock_id, ("FmtReq", "d"))
-    g.link(("NewStr", "result"), ("FmtReq", "req"))
-    g.link(("Plan", "Detail"), ("FmtReq", "detail"))
-    g.link(("Plan", "Space"), ("FmtReq", "space"))
-    log_msg(g, "LogReq", "GetModAPI", 1000, 0)
-    g.link(("Request", "then"), ("LogReq", "execute"))
-    g.link((s, "ReturnValue"), ("LogReq", "Msg"))
     return g.render()
 
 
@@ -455,13 +443,12 @@ CARRIER_WAIT = 30.0   # seconds a ready ship waits for goods still being carried
 def freight_tick():
     """Rule c: depart when full (hold + in flight) / nothing left to request / max wait; deliver TripSeconds later.
     A ship that is ready while goods are still being carried to its dock waits for them first (DepartingSince; the
-    request then only covers what is in flight), at most CARRIER_WAIT seconds. The departure log line says why it left."""
+    request then only covers what is in flight), at most CARRIER_WAIT seconds."""
     g = Graph()
     F = "FreightTick"
     DEPARTED = ("GetDeparted", "DepartedAt")
     SINCE = ("GetSince", "LoadingSince")
     get_self(g, "GetDocks", "Docks", OBJ(WORKDOCK, "Array"), 0, 300)
-    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 400)
     get_self(g, "GetDeparted", "DepartedAt", MAP_INT_DOUBLE, 0, 500)
     get_self(g, "GetSince", "LoadingSince", MAP_INT_DOUBLE, 0, 600)
     get_self(g, "GetTrip", "TripSeconds", DOUBLE, 0, 700)
@@ -474,7 +461,6 @@ def freight_tick():
     get_local(g, "GetFreight", F, "Freight", INT, 0, 1500)
     get_local(g, "GetNow", F, "Now", DOUBLE, 0, 1400)
     get_local(g, "GetInFlight", F, "InFlight", INT, 0, 1600)
-    get_local(g, "GetReason", F, "Reason", STR, 0, 1700)
     get_self(g, "GetDeparting", "DepartingSince", MAP_INT_DOUBLE, 0, 1800)
     DEPARTING = ("GetDeparting", "DepartingSince")
     dock = ("ForDocks", "Array Element")
@@ -572,18 +558,9 @@ def freight_tick():
         g.link(("GetId", "Id"), (label, "Key"))
     g.link(("Deliver", "then"), ("ForgetDeparted", "execute"))
     g.link(("ForgetDeparted", "then"), ("ForgetSince", "execute"))
-    target_id = dock_id_call(g, "TargetId", ("GetTarget", "Target"), 4050, -450)
-    s_arr = fmt_to_string(g, "FmtArrived", "Dock {d} freight arrived at target {p}: delivered {n}",
-                          [("d", INT), ("p", INT), ("n", INT)], 4300, -500)
-    g.link(("GetId", "Id"), ("FmtArrived", "d"))
-    g.link(target_id, ("FmtArrived", "p"))
-    g.link(("Deliver", "Total"), ("FmtArrived", "n"))
-    log_msg(g, "LogArrived", "GetModAPI", 4550, -200)
     user_call(g, "ClearReq", "ClearRequested", 4550, -350, ins=[("Id", INT)])
     g.link(("ForgetSince", "then"), ("ClearReq", "execute"))
     g.link(("GetId", "Id"), ("ClearReq", "Id"))
-    g.link(("ClearReq", "then"), ("LogArrived", "execute"))
-    g.link((s_arr, "ReturnValue"), ("LogArrived", "Msg"))
 
     # loading: start the wait clock, then check rule c
     loaded_any = int_op(g, "LoadedAny", "Greater_IntInt", ("GetFreight", "Freight"), None, 3550, 400, b_default="0")
@@ -669,15 +646,6 @@ def freight_tick():
     g.link(bnot(g, "SomeCarried", nothing_carried, 4800, 1100), ("BrCarrying", "Condition"))
     map_add(g, "StartPending", DEPARTING, ("GetId", "Id"), ("GetNow", "Now"), MAP_INT_DOUBLE, DOUBLE, 5050, 350, key_type=INT)
     g.link(("BrCarrying", "then"), ("StartPending", "execute"))
-    s_wait = fmt_to_string(g, "FmtWaiting",
-                           "Dock {d} ready to depart (rule: {rule}), waiting up to {w} s for {n} being carried to the dock",
-                           [("d", INT), ("rule", STR), ("w", INT), ("n", INT)], 5300, 500)
-    g.link(("GetId", "Id"), ("FmtWaiting", "d"))
-    g.link(("GetInFlight", "InFlight"), ("FmtWaiting", "n"))
-    set_pin_default(g, "FmtWaiting_wTxt", "Value", str(int(CARRIER_WAIT)))
-    log_msg(g, "LogWaiting", "GetModAPI", 5300, 350)
-    g.link(("StartPending", "then"), ("LogWaiting", "execute"))
-    g.link((s_wait, "ReturnValue"), ("LogWaiting", "Msg"))
     set_local(g, "SetReasonRule", F, "Reason", STR, 5050, 200)
     g.link(("BrCarrying", "else"), ("SetReasonRule", "execute"))
 
@@ -686,9 +654,6 @@ def freight_tick():
     g.link(("SetReasonPending", "then"), ("Depart", "execute"))
     map_remove(g, "ForgetPending", DEPARTING, ("GetId", "Id"), MAP_INT_DOUBLE, 5550, 200)
     g.link(("Depart", "then"), ("ForgetPending", "execute"))
-    target_id2 = dock_id_call(g, "TargetId2", ("GetTarget", "Target"), 5550, 0)
-    s_dep = fmt_to_string(g, "FmtDepart", "Dock {d} departs for target {p} with {n} aboard (still wanted: {r}; {reason})",
-                          [("d", INT), ("p", INT), ("n", INT), ("r", INT), ("reason", STR)], 5800, 0)
     g.call("RuleAll", MATHLIB, "SelectString", 5050, 950,
            [("A", "in", STR, 'DefaultValue="all wanted aboard"'), ("B", "in", STR, 'DefaultValue="timer"'),
             ("bPickA", "in", BOOL, None), ("ReturnValue", "out", STR, None)])
@@ -698,19 +663,10 @@ def freight_tick():
             ("bPickA", "in", BOOL, None), ("ReturnValue", "out", STR, None)])
     g.link(full, ("Rule", "bPickA"))
     g.link(("RuleAll", "ReturnValue"), ("Rule", "B"))
-    g.link(("Rule", "ReturnValue"), ("FmtWaiting", "rule"))
     to_rule = concat_parts(g, "RuleText", ["rule: ", ("Rule", "ReturnValue")], 5300, 1250)
     g.link((to_rule, "ReturnValue"), ("SetReasonRule", "Reason"))
-    g.link(("GetReason", "Reason"), ("FmtDepart", "reason"))
-    g.link(("GetId", "Id"), ("FmtDepart", "d"))
-    g.link(target_id2, ("FmtDepart", "p"))
-    g.link(("GetFreight", "Freight"), ("FmtDepart", "n"))
-    g.link(("GetRemaining", "Remaining"), ("FmtDepart", "r"))
-    log_msg(g, "LogDepart", "GetModAPI", 5800, 200)
-    g.link(("ForgetPending", "then"), ("LogDepart", "execute"))
-    g.link((s_dep, "ReturnValue"), ("LogDepart", "Msg"))
     user_call(g, "Pause", "PauseLoading", 6050, 200, ins=[("Dock", OBJ(WORKDOCK))])
-    g.link(("LogDepart", "then"), ("Pause", "execute"))
+    g.link(("ForgetPending", "then"), ("Pause", "execute"))
     g.link(dock, ("Pause", "Dock"))
     user_call(g, "Voyage", "StartVoyage", 6300, 200,
               ins=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP))])
@@ -940,7 +896,7 @@ SPECS = {
                                      ("NoMore", BOOL)],
                              outputs=[("Remaining", INT), ("InFlight", INT)],
                              locals_=[],
-                             returns=[("LogReq", "then"), ("BrChanged", "else")],
+                             returns=[("Request", "then"), ("BrChanged", "else")],
                              values=[("Plan", "Remaining", "Remaining"), ("Plan", "InFlight", "InFlight")]),
     "FreightTick": fn_spec(("Refresh", "execute"),
                            locals_=[("Target", OBJ(WORKDOCK)), ("Id", INT), ("Ship", OBJ(SHIP)), ("Remaining", INT),

@@ -221,7 +221,6 @@ fn PrioCycled(Net: int) {
     let stored = Dock.activeTradePartnerId
     let next = (BPL_FDNet.PrioOn(stored, Net) + 1) % (BPL_FDNet.MaxPriority() + 1)
     Dock.activeTradePartnerId = BPL_FDNet.WithPrio(stored, Net, next)
-    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(BPL_FDNet.DockId(Dock)) + ": network " + string(Net) + " priority " + string(next), false)
     Show(MapLoad, Dock)
     Changed.broadcast()
 }
@@ -240,8 +239,6 @@ fn NetToggled(Net: int, Bit: int) {
         return
     }
     Dock.activeTradePartnerId = if BPL_FDNet.IsMember(w.ReturnValue) { w.ReturnValue } else { BPL_FDNet.Emptied(w.ReturnValue) }
-    let names = ["none", "provide", "request", "both"]
-    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(BPL_FDNet.DockId(Dock)) + ": network " + string(Net) + " role " + names[role], false)
     Show(MapLoad, Dock)
     Changed.broadcast()
 }

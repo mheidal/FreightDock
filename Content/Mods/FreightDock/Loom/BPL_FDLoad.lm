@@ -73,10 +73,7 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
     let id = BPL_FDNet.DockId(Dock)
     BoardParked(MapLoad, Dock, Ship, id)
     // the ship carries only the job's freight: anything else that got aboard goes to the delivered-goods store
-    let stray = BPL_FDNet.ParkStray(MapLoad, Dock, BPL_FDNet.Manifest(MapLoad, id))
-    if stray != "" {
-        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(id) + ": not the job's freight, parked:" + stray, false)
-    }
+    BPL_FDNet.ParkStray(MapLoad, Dock, BPL_FDNet.Manifest(MapLoad, id))
     let held = MapLoad.HoldCounts(Ship)
     let hold = held.Counts
     let onDuty = BPL_FDNet.OnDuty(MapLoad, Dock)
@@ -200,5 +197,4 @@ fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         return
     }
     MapLoad.LoadingSince[id] = -1000000000000000.0
-    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Deliver now: dock " + string(id), false)
 }

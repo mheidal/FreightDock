@@ -190,7 +190,6 @@ def voyage_arrive():
     end the trip. A missing stand-in also ends the trip."""
     g = Graph()
     F = "VoyageArrive"
-    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 500)
     get_self(g, "GetVoyages", "Voyages", MAP_INT_ACTOR, 0, 600)
     get_self(g, "GetVShip", "VoyageShip", MAP_INT_SHIP, 0, 700)
     get_self(g, "GetVHome", "VoyageHome", MAP_INT_VECTOR, 0, 800)
@@ -268,19 +267,10 @@ def voyage_arrive():
     g.link(("GetTarget", "Target"), ("FlingLaunch", "Target"))
     g.link(("GetDock", "Dock"), ("Transfer", "Dock"))
     g.link(("GetTarget", "Target"), ("Transfer", "Target"))
-    pid = dock_id_call(g, "TargetId", ("GetTarget", "Target"), 1500, -650)
-    s = fmt_to_string(g, "FmtArrived", "Dock {d} freight arrived at target {p}: delivered {n}",
-                      [("d", INT), ("p", INT), ("n", INT)], 1750, -650)
-    g.link(key, ("FmtArrived", "d"))
-    g.link(pid, ("FmtArrived", "p"))
-    g.link(("Transfer", "Total"), ("FmtArrived", "n"))
-    log_msg(g, "LogArrived", "GetModAPI", 1750, -400)
     user_call(g, "ClearReq", "ClearRequested", 1750, -200, ins=[("Id", INT)])
     g.link(("Transfer", "then"), ("FlingLaunch", "execute"))
     g.link(("FlingLaunch", "then"), ("ClearReq", "execute"))
     g.link(key, ("ClearReq", "Id"))
-    g.link(("ClearReq", "then"), ("LogArrived", "execute"))
-    g.link((s, "ReturnValue"), ("LogArrived", "Msg"))
     g.call("Now", SYSLIB, "GetGameTimeInSeconds", 2250, -650, [("ReturnValue", "out", DOUBLE, None)])
     g.call("WaitEnd", MATHLIB, "Add_DoubleDouble", 2500, -650,
            [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
@@ -288,7 +278,7 @@ def voyage_arrive():
     g.link(("GetDwell", "DwellSeconds"), ("WaitEnd", "B"))
     map_add(g, "SetWait", ("GetVWait", "VoyageWait"), key, ("WaitEnd", "ReturnValue"), MAP_INT_DOUBLE, DOUBLE,
             2250, -400, key_type=INT)
-    g.link(("LogArrived", "then"), ("SetWait", "execute"))
+    g.link(("ClearReq", "then"), ("SetWait", "execute"))
     g.link(("BrTarget", "else"), ("SetWait", "execute"))
     map_add(g, "SetWaiting", ("GetVPhase", "VoyagePhase"), key, None, MAP_INT_INT, INT, 2500, -400, key_type=INT)
     g.link(("SetWait", "then"), ("SetWaiting", "execute"))
@@ -331,11 +321,6 @@ def voyage_arrive():
         for prev in prev_list:
             g.link(prev, (name, "execute"))
         prev_list = [(name, "then")]
-    s2 = fmt_to_string(g, "FmtHome", "Dock {d}: ship back home", [("d", INT)], 3500, 500)
-    g.link(key, ("FmtHome", "d"))
-    log_msg(g, "LogHome", "GetModAPI", 3500, 300)
-    g.link(prev_list[0], ("LogHome", "execute"))
-    g.link((s2, "ReturnValue"), ("LogHome", "Msg"))
     return g.render()
 
 

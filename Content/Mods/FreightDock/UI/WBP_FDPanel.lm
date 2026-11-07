@@ -58,6 +58,12 @@ var PauseOn: soft<Texture2D> = /Game/Assets/Icons/icons8-pause-100.icons8-pause-
 var PlayOn: soft<Texture2D> = /Game/Assets/Icons/icons8-play-100.icons8-play-100
 var DeliverTip: WBP_FDTip
 var TitleTip: WBP_FDTip
+// Development only, unused in release: for the F4 cheat and the loading probe, add to Step
+//     BPL_FDCheat.Tick(Owner, CheatKey)
+//     ProbeAt = BPL_FDCheat.Probe(Owner, ProbeAt)
+// (Loom stores this Key default as "(": set CheatKey to F4 in the editor after each build of this file)
+var CheatKey: Key = Key(KeyName: "F4")
+var ProbeAt: float = 0.0
 
 widget Width: SizeBox(WidthOverride: 500.0) {
     widget Stack: Overlay {
@@ -205,7 +211,6 @@ fn PauseClicked() {
     }
     let paused = !BPL_FDNet.IsPaused(ShownDock.activeTradePartnerId)
     ShownDock.activeTradePartnerId = BPL_FDNet.WithPaused(ShownDock.activeTradePartnerId, paused)
-    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(DockId(ShownDock)) + (if paused { ": paused" } else { ": resumed" }), false)
     NextRefresh = 0.0
 }
 

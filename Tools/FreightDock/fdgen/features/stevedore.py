@@ -29,7 +29,7 @@ def register_extras():
 
 def set_stevedore():
     """SetStevedore(Agent, On): add or remove the Stevedore modifier in the worker's active modifiers (the game's own
-    data, made writable through Suzie), logging the change with the worker's carry capacity.
+    data, made writable through Suzie).
     Locals: State (AgentState), ModState (AgentModifierState), Mods (Name -> AgentModifier map), Mod (AgentModifier)."""
     g = Graph()
     F = "SetStevedore"
@@ -38,7 +38,6 @@ def set_stevedore():
     get_local(g, "GetState", F, "State", STRUCT(AGENTSTATE), 0, 600)
     get_local(g, "GetModState", F, "ModState", STRUCT(MODSTATE), 0, 700)
     get_local(g, "GetMods", F, "Mods", MOD_MAP, 0, 800)
-    get_self(g, "GetModAPI", "ModAPI", OBJ(MODAPI), 0, 1000)
     agent = ("GetAgent", "Agent")
     # copy the state down to the modifier map
     get_member(g, "AgentState", AGENT, "m_state", STRUCT(AGENTSTATE), 250, 400)
@@ -101,16 +100,6 @@ def set_stevedore():
     g.link(("PutModState", "then"), ("PutState", "execute"))
     g.link(agent, ("PutState", "self"))
     g.link(("PutModState", "StructOut"), ("PutState", "m_state"))
-    # log: who, on/off, found in the table, carry capacity as the game had it
-    OBJT = OBJ("/Script/CoreUObject.Object")
-    parts = ["Stevedore ", to_str(g, "SOn", "Conv_BoolToString", "InBool", BOOL, ("GetOn", "On"), 1750, 500), ": ",
-             to_str(g, "SName", "GetDisplayName", "Object", OBJT, agent, 2000, 500, lib=SYSLIB),
-             " (modifier found: ", to_str(g, "SFound", "Conv_BoolToString", "InBool", BOOL, ("Lookup", "ReturnValue"), 2250, 500),
-             ", carry capacity ", to_str(g, "SCarry", "Conv_IntToString", "InInt", INT, ("BreakState", "derived_carryCapacity"), 2500, 500), ")"]
-    msg = concat_parts(g, "Msg", parts, 1750, 700)
-    log_msg(g, "LogChange", "GetModAPI", 2500, 0)
-    g.link(("PutState", "then"), ("LogChange", "execute"))
-    g.link((msg, "ReturnValue"), ("LogChange", "Msg"))
     return g.render()
 
 

@@ -27,7 +27,7 @@ def find_path():
 
 def plan_route():
     """PlanRoute(Dock): water route from Dock's stand-off point to its target's, stored as RoutePts[Id*1000+i]
-    and RouteLen[Id], and logged. Straight if the direct line is clear.
+    and RouteLen[Id]. Straight if the direct line is clear.
     Locals: Start, Goal, Anchor, Prev (Vector); Pts (Vector array); Id (Integer)."""
     g = Graph()
     F = "PlanRoute"
@@ -159,18 +159,8 @@ def plan_route():
     map_add(g, "StoreLen", ("GetRouteLen", "RouteLen"), ("GetId", "Id"), ("PtsLen", "ReturnValue"), MAP_INT_INT, INT,
             6000, -250, key_type=INT)
     g.link(("ForPts", "Completed"), ("StoreLen", "execute"))
-    arrfn(g, "CellsLen", "Array_Length", 6250, -550, [("TargetArray", "in", INT_ARRAY, None), ("ReturnValue", "out", INT, None)])
-    g.link(("GetPath", "PathCells"), ("CellsLen", "TargetArray"))
-    s = fmt_to_string(g, "FmtLog", "Route for dock {id}: {n} points ({cells} path cells; 0 = straight line)",
-                      [("id", INT), ("n", INT), ("cells", INT)], 6500, -550)
-    g.link(("GetId", "Id"), ("FmtLog", "id"))
-    g.link(("PtsLen", "ReturnValue"), ("FmtLog", "n"))
-    g.link(("CellsLen", "ReturnValue"), ("FmtLog", "cells"))
-    log_msg(g, "LogRoute", "GetModAPI", 6250, -250)
-    g.link(("StoreLen", "then"), ("LogRoute", "execute"))
-    g.link((s, "ReturnValue"), ("LogRoute", "Msg"))
     user_call(g, "DropCurve", "DropRouteCurve", 6500, -250, ins=[("Id", INT)])
-    g.link(("LogRoute", "then"), ("DropCurve", "execute"))
+    g.link(("StoreLen", "then"), ("DropCurve", "execute"))
     g.link(("GetId", "Id"), ("DropCurve", "Id"))
     return g.render()
 
