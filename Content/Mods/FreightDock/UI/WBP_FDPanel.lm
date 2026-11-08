@@ -38,9 +38,11 @@ var Migrated: bool = false
 var ShownDock: WorkDock
 var Editing: bool = false
 var NetPanel: WBP_FDNetPanel
-var FdSigns: array<signPost>
-var FdSignShown: array<bool>
-var NextSignScan: float = 0.0
+// the rename popup (WBP_FDRename, made the first time), and what it renames: a network (RenameNet), else the dock
+// Renaming
+var Rename: WBP_FDRename
+var RenameNet: int = 0
+var Renaming: WorkDock
 // the NETWORKS entries (one per membership, hoverable) and the highlight last asked for (BPL_FDPairing.Highlight)
 var NetEntryBoxes: array<Border>
 var NetEntryNets: array<int>
@@ -52,12 +54,23 @@ var HiGood: name
 // the camera's zoom target while the cursor is over the network GUI (-1: not held)
 var HeldZoom: float = -1.0
 var IncomingRows: array<WBP_FDIncomingRow>
-// tooltips: Pause's, Deliver now's (why it can't act), the title's (how to name the dock)
+// tooltips: Pause's, Deliver now's (why it can't act), the title's (click to rename)
 var PauseTip: WBP_FDTip
 var PauseOn: soft<Texture2D> = /Game/Assets/Icons/icons8-pause-100.icons8-pause-100
 var PlayOn: soft<Texture2D> = /Game/Assets/Icons/icons8-play-100.icons8-play-100
 var DeliverTip: WBP_FDTip
 var TitleTip: WBP_FDTip
+// Ctrl+C / Ctrl+V / Ctrl+Z on a freight dock (CopyKeys): the copied value (while HasCopy), and the last paste's dock
+// and the value it replaced (UndoDock -1: nothing to undo); the keys, looked up once
+var HasCopy: bool = false
+var Copied: int = -1
+var UndoDock: int = -1
+var UndoValue: int = -1
+var KeyC: Key
+var KeyV: Key
+var KeyZ: Key
+var CtrlL: Key
+var CtrlR: Key
 // Development only, unused in release: for the F4 cheat and the loading probe, add to Step
 //     BPL_FDCheat.Tick(Owner, CheatKey)
 //     ProbeAt = BPL_FDCheat.Probe(Owner, ProbeAt)
@@ -71,7 +84,10 @@ widget Width: SizeBox(WidthOverride: 500.0) {
         widget Frame: RoundedFrameWithHeaderIcon(showIcon: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill, Padding: Margin(Left: 26, Top: 16, Right: 26, Bottom: 16))
         widget Inner: Border(BrushColor: "#00000000", Padding: Margin(Left: 20, Top: 16, Right: 20, Bottom: 16)) {
             widget Col: VerticalBox {
-                widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
+                // the dock's name; a click opens the rename popup over it
+                widget TitleBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center) {
+                    widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                }
                 widget Div1: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 widget NetHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                 widget NetLine: HorizontalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0)) {
@@ -127,11 +143,18 @@ on Construct {
     DeliverTip = create_widget(WBP_FDTip)
     TitleTip = create_widget(WBP_FDTip)
     PauseBtn.SetToolTip(PauseTip)
+    TitleBtn.SetToolTip(TitleTip)
     PauseIcon.SetDesiredSizeOverride(Vector2D(X: 24.0, Y: 24.0))
     Labels()
     Deliver.OnClicked.bind(DeliverClicked)
     PauseBtn.OnClicked.bind(PauseClicked)
     EditBtn.OnClicked.bind(EditClicked)
+    TitleBtn.OnClicked.bind(TitleClicked)
+    KeyC = OptionManager.StringToKey("C")
+    KeyV = OptionManager.StringToKey("V")
+    KeyZ = OptionManager.StringToKey("Z")
+    CtrlL = OptionManager.StringToKey("LeftControl")
+    CtrlR = OptionManager.StringToKey("RightControl")
     SetVisibility(ESlateVisibility.Collapsed)
 }
 
@@ -150,15 +173,23 @@ fn Labels() {
     PauseIcon.SetBrushFromTexture(if paused { PlayOn.load() } else { PauseOn.load() }, false)
     PauseIcon.SetColorAndOpacity(LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0))
     PauseTip.Setup(BPL_FDText.T(if paused { "freightdock.panel.resumeTip" } else { "freightdock.panel.pauseTip" }), SmallFont)
-    TitleTip.Setup(BPL_FDText.T("freightdock.panel.nameHint"), SmallFont)
+    TitleTip.Setup(BPL_FDText.T("freightdock.panel.renameTip"), SmallFont)
     DestHead.SetText(text(BPL_FDText.T("freightdock.panel.targetOutput")))
     SrcHead.SetText(text(BPL_FDText.T("freightdock.panel.thisInput")))
     Deliver.SetLabelText(BPL_FDText.T("freightdock.panel.deliverNow"))
     EditBtn.SetLabelText(BPL_FDText.T(if Editing { "freightdock.panel.close" } else { "freightdock.panel.edit" }))
 }
 
-// A click on the panel's background stays on the panel, so it doesn't reach the world behind it.
+// A click on the panel's background stays on the panel (press and release), so it doesn't reach the world behind it.
 on OnMouseButtonDown(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+on OnMouseButtonUp(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+on OnMouseButtonDoubleClick(InMyGeometry: Geometry, InMouseEvent: PointerEvent) -> EventReply {
     return WidgetBlueprintLibrary.Handled()
 }
 
@@ -186,6 +217,10 @@ fn EditClicked() {
         NetPanel = create_widget(WBP_FDNetPanel)
         NetPanel.AddToViewport(0)
         NetPanel.Changed.bind(NetChanged)
+        NetPanel.RenameAsked.bind(NetRenameAsked)
+    }
+    if !Editing {
+        CloseRename()
     }
     NextRefresh = 0.0
 }
@@ -204,6 +239,132 @@ fn DeliverClicked() {
     NextRefresh = 0.0
 }
 
+// The title: the rename popup over it, starting with the dock's name (empty while it has none).
+fn TitleClicked() {
+    if ShownDock == none {
+        return
+    }
+    let initial = if BPL_FDNet.IsNamed(ShownDock) { BPL_FDNet.DockName(MapLoad, ShownDock) } else { "" }
+    let g = TitleBtn.GetCachedGeometry()
+    let middle = KismetMathLibrary.Multiply_Vector2DFloat(SlateBlueprintLibrary.GetLocalSize(g), 0.5)
+    OpenRename(0, ShownDock, BPL_FDText.T("freightdock.rename.dock"), initial, BPL_FDText.T1("freightdock.dock.unnamed", "id", string(DockId(ShownDock))), SlateBlueprintLibrary.LocalToViewport(g, middle).PixelPosition)
+}
+
+// A network's ID in the network GUI: the rename popup over it.
+fn NetRenameAsked(Net: int, Name: string, At: Vector2D) {
+    OpenRename(Net, none, BPL_FDText.T1("freightdock.rename.net", "net", string(Net)), Name, "", At)
+}
+
+fn OpenRename(Net: int, Dock: WorkDock, Title: string, Initial: string, Hint: string, At: Vector2D) {
+    if Rename == none {
+        Rename = create_widget(WBP_FDRename)
+        // above the game's own windows, the dock window among them
+        Rename.AddToViewport(1000)
+        Rename.Done.bind(RenameDone)
+    }
+    RenameNet = Net
+    Renaming = Dock
+    Rename.Open(Title, Initial, Hint, At, BodyFont)
+}
+
+// The popup's text: the network's or the dock's new name ("": unnamed again).
+fn RenameDone(Name: string) {
+    if RenameNet > 0 {
+        if NetPanel != none {
+            NetPanel.NetRenamed(RenameNet, Name)
+        }
+    } else if Renaming != none {
+        BPL_FDNet.SetDockName(Renaming, Name)
+    }
+    RenameNet = 0
+    Renaming = none
+    NextRefresh = 0.0
+    RowsKey = ""
+    NetEntriesKey = ""
+}
+
+// Shuts the popup without keeping what was typed (the dock deselected or the network GUI closed).
+fn CloseRename() {
+    if Rename != none {
+        Rename.Close()
+    }
+    RenameNet = 0
+    Renaming = none
+}
+
+// Ctrl+C on a freight dock copies its networks; on anything else, it drops the copy, as the game's copy then holds
+// something else. Ctrl+V on a freight dock pastes them (its pause stays), Ctrl+Z undoes that paste while the dock is
+// still shown. Each says so in a toast. Not while the rename popup takes the keys. Shown: a freight dock is shown.
+fn CopyKeys(Shown: bool) {
+    let pc = GameplayStatics.GetPlayerController(0)
+    if pc == none || MapLoad == none {
+        return
+    }
+    if Rename != none {
+        if Rename.Showing {
+            return
+        }
+    }
+    let ctrl = pc.IsInputKeyDown(CtrlL)
+    if !ctrl {
+        ctrl = pc.IsInputKeyDown(CtrlR)
+    }
+    if !ctrl {
+        return
+    }
+    if pc.WasInputKeyJustPressed(KeyC) {
+        HasCopy = Shown
+        if Shown {
+            Copied = ShownDock.activeTradePartnerId
+            MapLoad.Toast(BPL_FDText.T1("freightdock.copy.copied", "nets", NetList(Copied)))
+        }
+    }
+    if !Shown {
+        return
+    }
+    let id = DockId(ShownDock)
+    if pc.WasInputKeyJustPressed(KeyV) {
+        if HasCopy {
+            UndoDock = id
+            UndoValue = ShownDock.activeTradePartnerId
+            SetNets(Copied)
+            MapLoad.Toast(BPL_FDText.T1("freightdock.copy.pasted", "nets", NetList(Copied)))
+        }
+    }
+    if pc.WasInputKeyJustPressed(KeyZ) {
+        if UndoDock == id {
+            UndoDock = -1
+            SetNets(UndoValue)
+            MapLoad.Toast(BPL_FDText.T("freightdock.copy.undone"))
+        }
+    }
+}
+
+// The shown dock's memberships set to Value's, its pause kept; both GUIs show it at once.
+fn SetNets(Value: int) {
+    let v = BPL_FDNet.WithPaused(Value, BPL_FDNet.IsPaused(ShownDock.activeTradePartnerId))
+    ShownDock.activeTradePartnerId = if BPL_FDNet.IsMember(v) { v } else { BPL_FDNet.Emptied(v) }
+    NextRefresh = 0.0
+    RowsKey = ""
+    NetEntriesKey = ""
+}
+
+// A stored value's memberships as text ("1 Food: provide, 3: both"), or "Not in a network".
+fn NetList(Stored: int) -> string {
+    let roles: array<string> = ["", BPL_FDText.T("freightdock.role.provide"), BPL_FDText.T("freightdock.role.request"), BPL_FDText.T("freightdock.role.both")]
+    let netNames = BPL_FDNet.NetNames(MapLoad)
+    let u = BPL_FDNet.Unpack(Stored)
+    let parts: array<string> = []
+    let i = 0
+    while i < BPL_FDNet.Slots() {
+        if u.Nets[i] > 0 {
+            parts.Add(BPL_FDText.T2("freightdock.panel.membership", "net", BPL_FDNet.NetLabel(u.Nets[i], netNames), "role", roles[u.Roles[i]]))
+        }
+        i += 1
+    }
+    return if parts.Length() == 0 { BPL_FDText.T("freightdock.panel.notInNetwork") } else { KismetStringLibrary.JoinStringArray(parts, ", ") }
+}
+
 // Pause / Resume: the ship finishes its job, then takes no new one (BPL_FDDispatch skips a paused dock).
 fn PauseClicked() {
     if MapLoad == none || ShownDock == none {
@@ -218,21 +379,22 @@ fn PauseClicked() {
 fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     MapLoad = Owner
     if !Migrated && Owner.Docks.Length() > 0 {
-        // once per load, when the docks are known: 1.x pairs become networks (BPL_FDNet)
+        // once per load, when the docks are known: 1.x pairs become networks (BPL_FDNet), and the colony records this
+        // version as the last to run on it (BPL_FDStore, "ver"; none before 2026-11)
         Migrated = true
         let made = BPL_FDNet.Migrate(Owner)
-        ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted", false)
+        let was = BPL_FDStore.Get("ver")
+        BPL_FDStore.Set("ver", BPL_FDStore.Version())
+        ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted; colony data from version " + (if was == "" { "none" } else { was }), false)
     }
     let found = Owner.FindDockUnderCursor()
-    // tagged signs show their text while pointed at (the mouse ray; a trace under the cursor doesn't hit signs)
-    let ray = GameplayStatics.GetPlayerController(0).DeprojectMousePositionToWorld()
-    SignStep(ray.WorldLocation, ray.WorldDirection)
     let dock = found.Dock
     let show = false
     if dock != none {
         show = Owner.IsFreightDock(dock).Result
     }
     ShownDock = if show { dock } else { none }
+    CopyKeys(show)
     if !show {
         if ShownId != -1 {
             Leave()
@@ -242,6 +404,8 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let id = DockId(dock)
     let now = GameplayStatics.GetRealTimeSeconds()
     if id != ShownId {
+        // a paste is undone only while its dock is still shown
+        UndoDock = -1
         Restore()
         ShownId = id
         NextRefresh = 0.0
@@ -305,61 +469,22 @@ fn ShowNetPanel() {
     NetPanel.SetVisibility(if shown { ESlateVisibility.Visible } else { ESlateVisibility.Collapsed })
 }
 
-// Dock name signs ("[fd] Name", BPL_FDNet.DockName) keep their text panel hidden unless the cursor is over the
-// sign's tile or one next to it. The signs are looked for again every half second (new, renamed, reloaded).
-fn SignStep(RayStart: Vector, RayDir: Vector) {
-    let now = GameplayStatics.GetRealTimeSeconds()
-    if now >= NextSignScan {
-        NextSignScan = now + 0.5
-        let found: array<signPost> = []
-        for a in GameplayStatics.GetAllActorsOfClass(signPost).OutActors {
-            let s = cast(a, signPost)
-            if s != none {
-                let msg = s.Signpost.shownMessage
-                // dock names ([fd] Name) and network names ([fn3] Name)
-                if KismetStringLibrary.StartsWith(msg, "[fd]", ESearchCase.IgnoreCase) || KismetStringLibrary.StartsWith(msg, "[fn", ESearchCase.IgnoreCase) {
-                    found.Add(s)
-                }
-            }
-        }
-        // a sign no longer tagged gets its text back
-        let i = 0
-        while i < FdSigns.Length() {
-            if KismetSystemLibrary.IsValid(FdSigns[i]) && !found.Contains(FdSigns[i]) {
-                FdSigns[i].Widget.SetVisibility(true, true)
-            }
-            i += 1
-        }
-        FdSigns = found
-        FdSignShown = []
-        for tagged in FdSigns {
-            FdSignShown.Add(true)
-        }
-    }
-    let k = 0
-    while k < FdSigns.Length() {
-        let sign = FdSigns[k]
-        if KismetSystemLibrary.IsValid(sign) {
-            // where the mouse ray crosses the height of the sign's board
-            let at = sign.K2_GetActorLocation()
-            let near = false
-            if KismetMathLibrary.Abs(RayDir.Z) > 0.0001 {
-                let t = (at.Z + 50.0 - RayStart.Z) / RayDir.Z
-                let point = KismetMathLibrary.Add_VectorVector(RayStart, KismetMathLibrary.Multiply_VectorFloat(RayDir, t))
-                near = t > 0.0 && KismetMathLibrary.Vector_Distance2D(point, at) <= 100.0
-            }
-            if near != FdSignShown[k] {
-                sign.Widget.SetVisibility(near, true)
-                FdSignShown[k] = near
-            }
-        }
-        k += 1
-    }
-}
-
 // Nothing to show: hide, and give the dock window's parts back their visibility.
 fn Leave() {
+    if Editing && MapLoad != none {
+        // what the game selects instead: nothing (a click reached the world) or another building
+        let now = "nothing"
+        let tool = cast(GameplayStatics.GetActorOfClass(SelectTool), SelectTool)
+        if tool != none {
+            if tool.m_currentlySelectedGridActor != none {
+                now = KismetSystemLibrary.GetDisplayName(tool.m_currentlySelectedGridActor)
+            }
+        }
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Network GUI closed: dock " + string(ShownId) + " no longer selected; selected now: " + now, false)
+    }
     ShownId = -1
+    UndoDock = -1
+    CloseRename()
     SetVisibility(ESlateVisibility.Collapsed)
     if Editing {
         EditClicked()
@@ -685,10 +810,6 @@ fn Refresh(Dock: WorkDock) {
     Labels()
     let dockName = BPL_FDNet.DockName(MapLoad, Dock)
     Title.SetText(text(KismetStringLibrary.ToUpper(dockName)))
-    // unnamed: the title says on hover how to name the dock
-    let unnamed = dockName == BPL_FDText.T1("freightdock.dock.unnamed", "id", string(id))
-    Title.SetToolTip(if unnamed { TitleTip } else { none })
-    Title.SetVisibility(if unnamed { ESlateVisibility.Visible } else { ESlateVisibility.SelfHitTestInvisible })
 
     let destIds: array<int> = []
     if target != none {
@@ -872,14 +993,9 @@ fn FillNetworks(Dock: WorkDock) {
             if u.Nets[i] == net {
                 nets.Add(net)
                 roles.Add(u.Roles[i])
-                // "3 Food: request (High)": the priority only when the dock requests there and it isn't Normal
-                let shown = BPL_FDNet.NetLabel(net, netNames)
-                let entry = BPL_FDText.T2("freightdock.panel.membership", "net", shown, "role", names[u.Roles[i]])
-                if (u.Roles[i] & BPL_FDNet.Request()) != 0 && u.Prios[i] != BPL_FDNet.Normal() {
-                    entry = BPL_FDText.Fill(BPL_FDText.T2("freightdock.panel.membershipPrio", "net", shown, "role", names[u.Roles[i]]), "prio", BPL_FDText.T(name("freightdock.prio." + string(u.Prios[i]))))
-                }
+                let entry = BPL_FDText.T2("freightdock.panel.membership", "net", BPL_FDNet.NetLabel(net, netNames), "role", names[u.Roles[i]])
                 labels.Add(entry)
-                // the label's text, so a rename, a priority or a language change rebuilds the labels
+                // the label's text, so a rename or a language change rebuilds the labels
                 key += entry + "|"
             }
             i += 1

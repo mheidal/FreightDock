@@ -533,8 +533,6 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                         let least = KismetMathLibrary.FCeil(MapLoad.MinLoad * float(KismetMathLibrary.Min(pship.config.cargoLimit, total)))
                         minFail[rid] = BPL_FDText.T2("freightdock.why.belowMinimum", "n", string(units), "min", string(least))
                     }
-                    // what the target's requests on the networks it shares with this provider weigh
-                    value = value * PriorityWeight(BPL_FDNet.SharedPriority(p.activeTradePartnerId, r.activeTradePartnerId))
                     if fits {
                         let dist = KismetMathLibrary.Vector_Distance2D(p.GetOwner().K2_GetActorLocation(), r.GetOwner().K2_GetActorLocation())
                         let trip = 2.0 * dist / KismetMathLibrary.FMax(MapLoad.ShipSpeed, 1.0) + Overhead()
@@ -564,23 +562,9 @@ fn WaiveAfter(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> float 
     return if MapLoad.MaxWaitSeconds > 100000.0 { 600.0 } else { MapLoad.MaxWaitSeconds }
 }
 
-// A membership priority's weight on its dock's requests (BPL_FDNet: 0 Low, 1 Normal, 2 High, 3 Top).
-pure fn PriorityWeight(Prio: int) -> float {
-    if Prio <= 0 {
-        return 0.5
-    }
-    if Prio == 2 {
-        return 2.0
-    }
-    if Prio >= 3 {
-        return 4.0
-    }
-    return 1.0
-}
-
 // Why each request left open after this pass gets nothing (MapLoad.WhyNot, "<target>|<good>" -> the reason, for
-// the target's dock GUI): no provider on its networks, none with the good, the minimum load, or every provider with
-// it busy (on a job, sailing, paused or without a ship).
+// the target's dock GUI): no provider on its networks, none with the good, the providers with it off duty or without
+// a ship, the minimum load, or every provider with it busy (on a job, sailing or paused).
 fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<string, int>, MinFail: map<int, string>) {
     MapLoad.WhyNot.Clear()
     // "<provider>|<good>" -> what the provider could ship, worked out once per provider
@@ -594,9 +578,10 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
             let r = BPL_FDNet.DockIn(MapLoad, rid)
             let reason = BPL_FDText.T("freightdock.why.noProvider")
             if r != none {
-                // stock at a provider whose crew is at work, or only at ones off duty
+                // stock at a provider whose crew is at work, or only at ones off duty or without a ship
                 let has = false
                 let hasOff = false
+                let hasShipless = false
                 let providers = BPL_FDNet.ProvidersOf(MapLoad, r)
                 for p in providers {
                     let pid = BPL_FDNet.DockId(p)
@@ -611,7 +596,16 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
                     }
                     let s = stock.Find(BPL_FDNet.JobKey(pid, good))
                     if s.ReturnValue && s.Value > 0 {
-                        if BPL_FDNet.OnDuty(MapLoad, p) {
+                        // no ship: none at home, and none away on a job (as Assign tells a provider without one)
+                        let shipless = false
+                        if !MapLoad.JobTo.Contains(pid) {
+                            if !Sailing(MapLoad, pid) {
+                                shipless = BPL_FDNet.ShipAtDock(MapLoad, p) == none
+                            }
+                        }
+                        if shipless {
+                            hasShipless = true
+                        } else if BPL_FDNet.OnDuty(MapLoad, p) {
                             has = true
                         } else {
                             hasOff = true
@@ -623,6 +617,8 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
                     reason = BPL_FDText.T("freightdock.why.noProvider")
                 } else if !has && hasOff {
                     reason = BPL_FDText.T("freightdock.why.offDuty")
+                } else if !has && hasShipless {
+                    reason = BPL_FDText.T("freightdock.why.noShips")
                 } else if !has {
                     reason = BPL_FDText.T("freightdock.why.noStock")
                 } else if mf.ReturnValue {

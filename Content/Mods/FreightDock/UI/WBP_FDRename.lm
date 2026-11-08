@@ -1,0 +1,83 @@
+blueprint WBP_FDRename : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDRename
+
+use /Game/UI/DebugUI_Components
+
+// The rename popup (one, made by the dock GUI, WBP_FDPanel, for the dock's title and the network GUI's IDs): a
+// heading and a text box, centred over what was clicked. Enter or a click elsewhere broadcasts Done with the text
+// (empty: back to the default name); Escape, or Close, shuts it without. The box is the game's own text entry
+// (DebugRow_TextEntry, as the ship rename uses), which keeps the keys from the game's hotkeys while typing; it can't
+// be placed in the tree (the editor doesn't have it), so it is made the first time the popup opens.
+
+dispatcher Done(Name: string)
+
+var Showing: bool = false
+var Game: DebugRow_TextEntry
+
+widget Width: SizeBox(WidthOverride: 300.0) {
+    widget Box: Border(BrushColor: "#0d1520f2", Padding: Margin(Left: 12, Top: 8, Right: 12, Bottom: 10)) {
+        widget Col: VerticalBox {
+            widget Head: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
+        }
+    }
+}
+
+on Construct {
+    SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// A click on the popup stays on it (press and release), so it doesn't reach the world behind it.
+on OnMouseButtonDown(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+on OnMouseButtonUp(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+on OnMouseButtonDoubleClick(InMyGeometry: Geometry, InMouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+// Escape shuts it at once, before the text box takes the key.
+on OnPreviewKeyDown(MyGeometry: Geometry, InKeyEvent: KeyEvent) -> EventReply {
+    let action = KismetInputLibrary.Key_GetNavigationActionFromKey(InKeyEvent)
+    if Showing && action == EUINavigationAction.Back {
+        Close()
+        return WidgetBlueprintLibrary.Handled()
+    }
+    return WidgetBlueprintLibrary.Unhandled()
+}
+
+// Shows the popup centred on At (viewport pixels), headed Title, the box holding Initial (Hint shows while empty).
+fn Open(Title: string, Initial: string, Hint: string, At: Vector2D, Font: SlateFontInfo) {
+    Head.SetText(text(Title))
+    Head.SetFont(Font)
+    SetAlignmentInViewport(Vector2D(X: 0.5, Y: 0.5))
+    SetPositionInViewport(At, true)
+    SetVisibility(ESlateVisibility.Visible)
+    Showing = true
+    if Game == none {
+        Game = create_widget(DebugRow_TextEntry)
+        Col.AddChildToVerticalBox(Game)
+        Game.OnCommit.bind(Committed)
+    }
+    Game.SetEditingText(Initial)
+    Game.EditableText.SetText(text(Initial))
+    Game.EditableText.SetHintText(text(Hint))
+    Game.ForceTypeFocus()
+}
+
+// Shuts the popup without keeping what was typed.
+fn Close() {
+    Showing = false
+    SetVisibility(ESlateVisibility.Collapsed)
+}
+
+fn Committed() {
+    if !Showing {
+        return
+    }
+    let name = string(Game.EditableText.GetText())
+    Close()
+    Done.broadcast(name)
+}

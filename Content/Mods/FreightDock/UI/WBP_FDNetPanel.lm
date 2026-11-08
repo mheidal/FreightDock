@@ -5,8 +5,12 @@ blueprint WBP_FDNetPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDNetPane
 // the selected dock's Provide / Request checkboxes with the network's provider / requester counts, and its
 // requested goods (WBP_FDNetRow).
 // Headers explain their columns on hover. A checkbox applies at once; Changed tells the dock GUI to refresh.
+// The Provide / Request columns have an icon each on the divider above the header, red and blue as the map's provider
+// and requester pointers: the divider is three of the game's ball dividers with the icons between them.
 
 dispatcher Changed()
+// a network's ID was clicked: the dock GUI opens the rename popup (WBP_FDRename) centred on At, viewport pixels
+dispatcher RenameAsked(Net: int, Name: string, At: Vector2D)
 
 var MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C
 var Dock: WorkDock
@@ -14,6 +18,8 @@ var Rows: array<WBP_FDNetRow>
 var HeadTips: array<WBP_FDTip>
 var BodyFont: SlateFontInfo
 var SmallFont: SlateFontInfo
+var ProvIconTex: soft<Texture2D> = /Game/Assets/Icons/icons8-logout-rounded-100.icons8-logout-rounded-100
+var ReqIconTex: soft<Texture2D> = /Game/Assets/Icons/icons8-input-100_2_.icons8-input-100_2_
 
 widget Width: SizeBox(WidthOverride: 740.0) {
     widget Stack: Overlay {
@@ -23,7 +29,19 @@ widget Width: SizeBox(WidthOverride: 740.0) {
             widget Col: VerticalBox {
                 widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center)
                 widget DockLine: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff", Justification: ETextJustify.Center) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
-                widget Div: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 8, Right: 0, Bottom: 6))
+                // segment widths put each icon (36 + 4 a side) over its column's centre: Provide at 96 + 55, Request
+                // at 206 + 55
+                widget DivRow: HorizontalBox slot(Padding: Margin(Left: 0, Top: 8, Right: 0, Bottom: 2)) {
+                    widget DivA: SizeBox(WidthOverride: 129.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget Div: HR_HorizontalBallDivider
+                    }
+                    widget HProvIcon: Image slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 4, Top: 0, Right: 4, Bottom: 0))
+                    widget DivB: SizeBox(WidthOverride: 66.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget Div2: HR_HorizontalBallDivider
+                    }
+                    widget HReqIcon: Image slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 4, Top: 0, Right: 4, Bottom: 0))
+                    widget Div3: HR_HorizontalBallDivider slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+                }
                 widget Header: HorizontalBox {
                     widget HIdBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
                         widget HId: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
@@ -33,9 +51,6 @@ widget Width: SizeBox(WidthOverride: 740.0) {
                     }
                     widget HReqBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
                         widget HReq: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
-                    }
-                    widget HPrioBox: SizeBox(WidthOverride: 80.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
-                        widget HPrio: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
                     }
                     widget HGoods: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 8, Top: 0, Right: 0, Bottom: 0))
                 }
@@ -60,13 +75,36 @@ on Construct {
     HeadTip(HReqBox, "")
     HeadTip(HGoods, "")
     HeadTip(HIdBox, "")
-    HeadTip(HPrioBox, "")
+    // provider icons red, requester icons blue, as the map's pointers
+    HProvIcon.SetBrushFromTexture(ProvIconTex.load(), false)
+    HProvIcon.SetColorAndOpacity(KismetMathLibrary.Conv_ColorToLinearColor(BPL_FDNet.ProviderColor()))
+    HReqIcon.SetBrushFromTexture(ReqIconTex.load(), false)
+    HReqIcon.SetColorAndOpacity(KismetMathLibrary.Conv_ColorToLinearColor(BPL_FDNet.RequesterColor()))
+    let size = Vector2D(X: 36.0, Y: 36.0)
+    HProvIcon.SetDesiredSizeOverride(size)
+    HReqIcon.SetDesiredSizeOverride(size)
     Labels()
     SetVisibility(ESlateVisibility.Collapsed)
 }
 
-// A click on the panel's background stays on the panel, so it doesn't reach the world behind it.
+// A click on the panel's background stays on the panel, so it doesn't reach the world behind it: the press, and the
+// release too (a release on a disabled checkbox, reaching the world, deselected the dock and closed both GUIs).
 on OnMouseButtonDown(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+on OnMouseButtonUp(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+// A quick second click comes as a double-click, which a disabled checkbox or a gap passes on: it stays here too.
+on OnMouseButtonDoubleClick(InMyGeometry: Geometry, InMouseEvent: PointerEvent) -> EventReply {
+    return WidgetBlueprintLibrary.Handled()
+}
+
+// The wheel over the panel stays on it, the table's scrolling aside: past the table's top or bottom it reached the
+// game, which zoomed for a frame (the dock GUI's HoldZoom then set the zoom back).
+on OnMouseWheel(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
     return WidgetBlueprintLibrary.Handled()
 }
 
@@ -100,7 +138,7 @@ fn SetLook(Brush: SlateBrush, Tint: LinearColor, TitleFont: SlateFontInfo, HeadF
     SmallFont = Small
     Title.SetFont(TitleFont)
     DockLine.SetFont(Body)
-    let heads: array<TextBlock> = [HId, HProv, HReq, HPrio, HGoods]
+    let heads: array<TextBlock> = [HId, HProv, HReq, HGoods]
     for h in heads {
         h.SetFont(Body)
     }
@@ -116,8 +154,7 @@ fn Labels() {
     HProv.SetText(text(BPL_FDText.T("freightdock.net.provide")))
     HReq.SetText(text(BPL_FDText.T("freightdock.net.request")))
     HGoods.SetText(text(BPL_FDText.T("freightdock.net.goods")))
-    HPrio.SetText(text(BPL_FDText.T("freightdock.net.priority")))
-    let tips: array<string> = [BPL_FDText.T("freightdock.net.provideTip"), BPL_FDText.T("freightdock.net.requestTip"), BPL_FDText.T("freightdock.net.goodsTip"), BPL_FDText.T("freightdock.net.idTip"), BPL_FDText.T("freightdock.net.priorityTip")]
+    let tips: array<string> = [BPL_FDText.T("freightdock.net.provideTip"), BPL_FDText.T("freightdock.net.requestTip"), BPL_FDText.T("freightdock.net.goodsTip"), BPL_FDText.T("freightdock.net.idTip")]
     let i = 0
     while i < HeadTips.Length() && i < tips.Length() {
         HeadTips[i].Setup(tips[i], SmallFont)
@@ -182,7 +219,7 @@ fn Show(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock)
         if net > Rows.Length() {
             let made = create_widget(WBP_FDNetRow)
             made.Toggled.bind(NetToggled)
-            made.PrioClicked.bind(PrioCycled)
+            made.RenameAsked.bind(RowRenameAsked)
             RowsBox.AddChild(made)
             Rows.Add(made)
         }
@@ -201,9 +238,29 @@ fn Show(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock)
             goods.Add(res)
         }
         let prov = BPL_FDNet.ProvidedGoods(MapLoad, net)
+        // per good, for its tooltip: the requesters asking for it and the providers able to supply it
+        let askedBy: map<name, string> = {}
+        let suppliedBy: map<name, string> = {}
+        for good in goods {
+            let asking: array<string> = []
+            for r in m.Requesters {
+                if BPL_FDNet.AsksForGood(MapLoad, r, good) {
+                    asking.Add(BPL_FDNet.DockName(MapLoad, r))
+                }
+            }
+            let supplying: array<string> = []
+            for p in m.Providers {
+                if BPL_FDNet.SuppliesGood(MapLoad, p, good) {
+                    supplying.Add(BPL_FDNet.DockName(MapLoad, p))
+                }
+            }
+            askedBy[good] = KismetStringLibrary.JoinStringArray(asking, ", ")
+            suppliedBy[good] = KismetStringLibrary.JoinStringArray(supplying, ", ")
+        }
         let row = Rows[net - 1]
         let role = BPL_FDNet.RoleOn(stored, net)
-        row.Show(net, role, BPL_FDNet.PrioOn(stored, net), BPL_FDNet.NetLabel(net, names), full && role == 0, provNames, reqNames, goods, req.Wanted, req.Stocked, prov.All, prov.Goods, net % 2 == 0, BodyFont, SmallFont)
+        let own = names.Find(net)
+        row.Show(net, role, BPL_FDNet.NetLabel(net, names), if own.ReturnValue { own.Value } else { "" }, full && role == 0, provNames, reqNames, goods, req.Wanted, req.Stocked, prov.All, prov.Goods, askedBy, suppliedBy, net % 2 == 0, BodyFont, SmallFont)
         row.SetVisibility(ESlateVisibility.Visible)
         net += 1
     }
@@ -213,14 +270,17 @@ fn Show(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock)
     }
 }
 
-// The priority cell: Net's priority for the dock's requests steps to the next level (Top wraps round to Low).
-fn PrioCycled(Net: int) {
+// A row's ID cell was clicked: the dock GUI opens the rename popup over it (At, viewport pixels).
+fn RowRenameAsked(Net: int, Name: string, At: Vector2D) {
+    RenameAsked.broadcast(Net, Name, At)
+}
+
+// The rename popup's result for network Net ("": unnamed).
+fn NetRenamed(Net: int, Name: string) {
     if Dock == none || MapLoad == none {
         return
     }
-    let stored = Dock.activeTradePartnerId
-    let next = (BPL_FDNet.PrioOn(stored, Net) + 1) % (BPL_FDNet.MaxPriority() + 1)
-    Dock.activeTradePartnerId = BPL_FDNet.WithPrio(stored, Net, next)
+    BPL_FDNet.SetNetName(Net, Name)
     Show(MapLoad, Dock)
     Changed.broadcast()
 }

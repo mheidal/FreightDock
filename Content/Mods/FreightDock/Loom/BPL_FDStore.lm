@@ -1,0 +1,97 @@
+blueprint BPL_FDStore : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDStore
+
+// FreightDock's colony-wide data, kept in the colony's event flags (ArcoSystems.m_miscEventFlags: a set of names the
+// colony save keeps; the game only looks up its own flag names, so ours do nothing). Each entry is one name,
+// "fd.<key>=<value>". Names ignore case and the engine keeps one spelling per name, so the value is stored with
+// every capital (and "^") escaped as "^" and its lower case (Escape, Unescape); keys are lower case.
+// Keys: "ver" the FreightDock version that last ran on the colony, "n<id>" a network's name, "d<dockId>" a dock's.
+// See Docs/FreightDock/Many-to-many links.md, Extra storage. A base library: it uses no other FreightDock library.
+
+// The version written to "ver" on load: keep it equal to Version in FreightDock.uplugin.
+pure fn Version() -> string {
+    return "1.1"
+}
+
+// The longest value kept (longer ones are cut).
+pure fn MaxLength() -> int {
+    return 60
+}
+
+pure fn Escape(Text: string) -> string {
+    let out = ""
+    for c in KismetStringLibrary.GetCharacterArrayFromString(Text) {
+        let low = KismetStringLibrary.ToLower(c)
+        if c == "^" {
+            out += "^^"
+        } else if KismetStringLibrary.EqualEqual_StrStr(low, c) {
+            out += c
+        } else {
+            out += "^" + low
+        }
+    }
+    return out
+}
+
+pure fn Unescape(Text: string) -> string {
+    let out = ""
+    let escaped = false
+    for c in KismetStringLibrary.GetCharacterArrayFromString(Text) {
+        if escaped {
+            out += if c == "^" { "^" } else { KismetStringLibrary.ToUpper(c) }
+            escaped = false
+        } else if c == "^" {
+            escaped = true
+        } else {
+            out += c
+        }
+    }
+    return out
+}
+
+// Every FreightDock entry: key -> value.
+fn Entries() -> map<string, string> {
+    let out: map<string, string> = {}
+    let arco = ArcoSystems.GetArcoSys().ReturnValue
+    if arco == none {
+        return out
+    }
+    for flag in arco.m_miscEventFlags {
+        let s = string(flag)
+        if KismetStringLibrary.StartsWith(s, "fd.", ESearchCase.CaseSensitive) {
+            let eq = KismetStringLibrary.FindSubstring(s, "=", true, false, -1)
+            if eq > 3 {
+                out[KismetStringLibrary.Mid(s, 3, eq - 3)] = Unescape(KismetStringLibrary.RightChop(s, eq + 1))
+            }
+        }
+    }
+    return out
+}
+
+// Key's value, or "" when it has none.
+fn Get(Key: string) -> string {
+    let found = Entries().Find(Key)
+    return if found.ReturnValue { found.Value } else { "" }
+}
+
+// Sets Key's value, replacing any it had; "" removes it.
+fn Set(Key: string, Value: string) {
+    let arco = ArcoSystems.GetArcoSys().ReturnValue
+    if arco == none {
+        return
+    }
+    let prefix = "fd." + Key + "="
+    let flags = arco.m_miscEventFlags
+    let old: array<name> = []
+    for flag in flags {
+        if KismetStringLibrary.StartsWith(string(flag), prefix, ESearchCase.CaseSensitive) {
+            old.Add(flag)
+        }
+    }
+    for flag in old {
+        flags.Remove(flag)
+    }
+    if Value != "" {
+        flags.Add(name(prefix + Escape(KismetStringLibrary.Left(Value, MaxLength()))))
+    }
+    arco.m_miscEventFlags = flags
+}

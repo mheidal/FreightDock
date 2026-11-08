@@ -17,7 +17,7 @@ mod whose `.uplugin` lacks `"EngineVersion": "5.8"` or later (reason written to 
 
 ## Releasing
 
-1. Bump `Version` in `FreightDock.uplugin`.
+1. Bump `Version` in `FreightDock.uplugin`, and set `Version()` in `Loom/BPL_FDStore.lm` to the same (the colony records it).
    Check the F4 cheat and the loading probe are unhooked: no `BPL_FDCheat.Tick` or `BPL_FDCheat.Probe` call in `Step` of `UI/WBP_FDPanel.lm` (`BPL_FDCheat` itself stays, unused).
 2. In the editor: right-click `Content/Mods/FreightDock` > **Cook & Install** (or `WWBlueprintToolset.CookAndInstall`, see `Tools/FreightDock/README.md`). Close the game first: it holds the installed pak open, so the install fails. Test in game.
 3. Stage:
