@@ -1,20 +1,15 @@
 blueprint BPL_FDCheat : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/BPL_FDCheat
 
-// DEVELOPMENT ONLY - nothing calls this in release. To use it, add the two calls noted at WBP_FDPanel's CheatKey to its
-// Step (and set CheatKey to F4 in the editor); remove them again before a release.
+// DEVELOPMENT ONLY - nothing calls this in release. To use it, add the two calls noted at WBP_FDPanel's ProbeAt to its
+// Step; remove them again before a release.
 // F4: 200 logs, planks, cut stone and canned food into the colony's stock, and the Freight Dock tech, through the game's own
 // console cheats (as DebugSetup does); and the WSS Allhands 100 x faster, once (FastAllhands). F7: the route overlays.
 
-// CheatKey: F4, held by the panel (a key can only be set as a variable's default).
-fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, CheatKey: Key) {
+fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let cheatKey = OptionManager.StringToKey("F4")
     // F7: the route cell overlay (land, buildings, near-shore cells around the camera), plus the dock structures'
     // outlines (DockZone, magenta) and the berthed ships' cells (ShipCells, cyan), drawn as flat arcs every frame
-    let wasShown = MapLoad.ShowCells
     MapLoad.DebugCells()
-    // (F4 never seen: each F7 press also logs the cheat key as the panel holds it)
-    if MapLoad.ShowCells != wasShown {
-        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Cheat key: '" + string(KismetInputLibrary.Key_GetDisplayName(CheatKey, true)) + "', valid " + string(KismetInputLibrary.Key_IsValid(CheatKey)), false)
-    }
     if MapLoad.ShowCells {
         BPL_FDVoyage.RefreshZones(MapLoad)
         DrawCells(MapLoad, MapLoad.DockZone, BPL_FDNet.Rgb(255, 0, 255))
@@ -28,7 +23,7 @@ fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, CheatKey: Key) 
     if pc == none {
         return
     }
-    if !pc.WasInputKeyJustPressed(CheatKey) {
+    if !pc.WasInputKeyJustPressed(cheatKey) {
         return
     }
     ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Cheat (F4): key seen", false)

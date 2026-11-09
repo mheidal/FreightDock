@@ -680,7 +680,37 @@ fn ParkUnits(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Work
     slot.capacity = KismetMathLibrary.Max(slot.capacity, slot.count)
     pile.Slots[Res] = slot
     Dock.m_stockpile_goodsFromSea = pile
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Probe: dock " + string(DockId(Dock)) + " hold to delivered-goods store: " + string(Res) + "=" + string(move) + " (store now " + string(slot.count) + ")", false)
     return move
+}
+
+// Zeroes the count of each input slot no hauler is bringing goods to (no dropoff reserved): the count isn't goods but
+// the game's bookkeeping for hauls under way (2026-11-09: it rose ~13 per trip while the input warehouse never lost
+// any, and fell back when the trip ended). Left behind - by a trip cut off when loading stopped, or in a save - it
+// fills the slot, and haulers get no room or turn back. Provisions are left to the game. Returns " good=count" per
+// slot zeroed.
+fn ClearInputCounts(Dock: WorkDock) -> string {
+    if Dock == none {
+        return ""
+    }
+    let pile = Dock.m_inputStockpile
+    let out = ""
+    let keys: array<name> = []
+    for res, slot in pile.Slots {
+        if slot.count > 0 && slot.reservedSpaceForDropoff == 0 && !Provisions().Contains(res) {
+            keys.Add(res)
+        }
+    }
+    for res in keys {
+        let slot = pile.Slots[res]
+        out += " " + string(res) + "=" + string(slot.count)
+        slot.count = 0
+        pile.Slots[res] = slot
+    }
+    if out != "" {
+        Dock.m_inputStockpile = pile
+    }
+    return out
 }
 
 // Goods a ship keeps aboard for itself (the game always asks for them): never unloaded as stray freight.

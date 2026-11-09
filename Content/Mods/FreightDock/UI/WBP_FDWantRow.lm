@@ -10,7 +10,8 @@ widget Row: HorizontalBox {
         widget Icon: Image
     }
     widget NameBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 6, Top: 0, Right: 0, Bottom: 0)) {
-        widget ResName: LocTextBlock(ColorAndOpacity: "#ddd3bcff")
+        // a long name wraps within its 96, the row growing taller
+        widget ResName: LocTextBlock(ColorAndOpacity: "#ddd3bcff", AutoWrapText: true)
     }
     widget AvailableBox: SizeBox(WidthOverride: 50.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
         widget Available: TextBlock(Text: "0", ColorAndOpacity: "#9c917cff", Justification: ETextJustify.Center)

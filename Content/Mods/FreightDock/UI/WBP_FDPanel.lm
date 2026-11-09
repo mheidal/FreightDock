@@ -72,11 +72,14 @@ var KeyZ: Key
 var CtrlL: Key
 var CtrlR: Key
 // Development only, unused in release: for the F4 cheat and the loading probe, add to Step
-//     BPL_FDCheat.Tick(Owner, CheatKey)
+//     BPL_FDCheat.Tick(Owner)
 //     ProbeAt = BPL_FDCheat.Probe(Owner, ProbeAt)
-// (Loom stores this Key default as "(": set CheatKey to F4 in the editor after each build of this file)
-var CheatKey: Key = Key(KeyName: "F4")
 var ProbeAt: float = 0.0
+
+// Temporary (remove at release): ProbeLog's last line per "<dock>|<category>", and ProbeIdle's next check
+var ProbeSeen: map<string, string>
+var IdleProbeAt: float = 0.0
+
 
 widget Width: SizeBox(WidthOverride: 500.0) {
     widget Stack: Overlay {
@@ -375,6 +378,204 @@ fn PauseClicked() {
     NextRefresh = 0.0
 }
 
+// Temporary (remove at release, with BPL_FDDispatch's "Probe:" lines): every 0.1 s of game time, per dock and per
+// category, a line when that category changes - state (pause, duty, job and manifest, idle reason, the loading,
+// departing, voyage and stall records), requests (dock-specific, live), input slot, delivered-goods store, repair
+// store, hold (exact quantities), plan (stall clocks per good), workers (here or away, what each is doing and
+// carrying), warehouses (this dock's input and output warehouses, for the goods in play) and target (its unmet
+// requests and delivered-goods store for the manifest).
+fn ProbeIdle(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let now = GameplayStatics.GetTimeSeconds()
+    if now < IdleProbeAt {
+        return
+    }
+    IdleProbeAt = now + 0.1
+    for d in BPL_FDNet.FreightDocks(Owner) {
+        ProbeDock(Owner, d)
+    }
+}
+
+// Logs Text as the dock's Cat line when it differs from the last one.
+fn ProbeLog(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Cat: string, Text: string) {
+    let key = string(Id) + "|" + Cat
+    let was = ProbeSeen.Find(key)
+    let before = if was.ReturnValue { was.Value } else { "" }
+    if Text != before {
+        ProbeSeen[key] = Text
+        // game time, for the order of changes within a second
+        BPL_FDDispatch.Log(Owner, "Probe: t " + string(GameplayStatics.GetTimeSeconds()) + " dock " + string(Id) + " " + Cat + ":" + (if Text == "" { " none" } else { Text }))
+    }
+}
+
+// Every slot with anything in it: count / capacity, dropoff and pickup reservations, minimum hold.
+pure fn SlotText(Pile: Stockpile) -> string {
+    let out = ""
+    for res, s in Pile.Slots {
+        if s.count != 0 || s.capacity != 0 || s.reservedForPickup != 0 || s.reservedSpaceForDropoff != 0 || s.minHold != 0 {
+            out += " " + string(res) + "=" + string(s.count) + "/" + string(s.capacity) + " drop " + string(s.reservedSpaceForDropoff) + " res " + string(s.reservedForPickup) + (if s.minHold != 0 { " min " + string(s.minHold) } else { "" })
+        }
+    }
+    return out
+}
+
+// A warehouse's slots for Goods (Kind: "in" or "out").
+fn WarehouseText(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Kind: string, Bid: int, Goods: array<name>) -> string {
+    let head = " | " + Kind + " " + string(Bid)
+    let b = Owner.BuildingById(Bid).Building
+    if b == none {
+        return head + " gone"
+    }
+    let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+    if rb == none {
+        return head + " not a store"
+    }
+    let out = head + (if rb.m_forceEmpty { " keep-empty" } else { "" }) + ":"
+    for res in Goods {
+        let s = rb.m_stockpile.Slots.Find(res)
+        if s.ReturnValue {
+            out += " " + string(res) + "=" + string(s.Value.count) + " res " + string(s.Value.reservedForPickup) + " drop " + string(s.Value.reservedSpaceForDropoff) + " min " + string(s.Value.minHold)
+        }
+    }
+    return out
+}
+
+fn ProbeDock(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, D: WorkDock) {
+    let id = DockId(D)
+    let goods: array<name> = []
+
+    let st = if BPL_FDNet.IsPaused(D.activeTradePartnerId) { " paused" } else { " active" }
+    st += " stored " + string(D.activeTradePartnerId) + " onDuty " + string(BPL_FDNet.OnDuty(Owner, D))
+    let job = Owner.JobTo.Find(id)
+    if job.ReturnValue {
+        st += " job->" + string(job.Value)
+        for res, n in BPL_FDNet.Manifest(Owner, id) {
+            st += " " + string(res) + "=" + string(n)
+            goods.AddUnique(res)
+        }
+    } else {
+        let why = Owner.IdleWhy.Find(id)
+        st += " no job (" + (if why.ReturnValue { why.Value } else { "" }) + ")"
+    }
+    let ls = Owner.LoadingSince.Find(id)
+    if ls.ReturnValue {
+        st += " loadingSince " + string(ls.Value)
+    }
+    let ds = Owner.DepartingSince.Find(id)
+    if ds.ReturnValue {
+        st += " departingSince " + string(ds.Value)
+    }
+    let da = Owner.DepartedAt.Find(id)
+    if da.ReturnValue {
+        st += " departedAt " + string(da.Value)
+    }
+    if Owner.Voyages.Contains(id) {
+        let ph = Owner.VoyagePhase.Find(id)
+        st += " voyage phase " + (if ph.ReturnValue { string(ph.Value) } else { "?" })
+    }
+    let sailed = Owner.JobSailed.Find(id)
+    if sailed.ReturnValue {
+        st += " sailed " + string(sailed.Value)
+    }
+    let dropped = Owner.JobDropped.Find(id)
+    if dropped.ReturnValue {
+        st += " dropped " + dropped.Value
+    }
+    ProbeLog(Owner, id, "state", st)
+
+    let rq = ""
+    for res, n in D.m_requiredEmbarkSupplies_dockSpecific.counts {
+        rq += " spec " + string(res) + "=" + string(n)
+    }
+    for res, n in D.m_requiredEmbarkSupplies_live.counts {
+        rq += " live " + string(res) + "=" + string(n)
+    }
+    ProbeLog(Owner, id, "requests", rq)
+
+    for res, s in D.m_inputStockpile.Slots {
+        if s.count != 0 || s.capacity != 0 {
+            goods.AddUnique(res)
+        }
+    }
+    for res, s in D.m_stockpile_goodsFromSea.Slots {
+        if s.count != 0 {
+            goods.AddUnique(res)
+        }
+    }
+    ProbeLog(Owner, id, "input", SlotText(D.m_inputStockpile))
+    ProbeLog(Owner, id, "store", SlotText(D.m_stockpile_goodsFromSea))
+    ProbeLog(Owner, id, "repair", SlotText(D.m_repairStockpile))
+
+    let ship = BPL_FDNet.ShipAtDock(Owner, D)
+    let hd = ""
+    if ship == none {
+        hd = " no ship at dock"
+    } else {
+        for res, item in ship.State.cargo.Items {
+            hd += " " + string(res) + "=" + string(item.Quantity)
+            goods.AddUnique(res)
+        }
+        hd += " (limit " + string(ship.config.cargoLimit) + ")"
+    }
+    ProbeLog(Owner, id, "hold", hd)
+
+    let pl = ""
+    for res in goods {
+        let k = BPL_FDNet.JobKey(id, res)
+        let seen = Owner.PickupSeen.Find(k)
+        let since = Owner.PickupSince.Find(k)
+        let cut = Owner.CutStock.Find(k)
+        if seen.ReturnValue || since.ReturnValue || cut.ReturnValue {
+            pl += " " + string(res) + ": seen " + (if seen.ReturnValue { string(seen.Value) } else { "-" }) + " since " + (if since.ReturnValue { string(since.Value) } else { "-" }) + (if cut.ReturnValue { " cut at stock " + string(cut.Value) } else { "" })
+        }
+    }
+    ProbeLog(Owner, id, "plan", pl)
+
+    let wk = ""
+    let i = 0
+    for slot in D.m_workers.m_workerSlots {
+        wk += " [" + string(i) + (if slot.present { " here" } else { " away" })
+        if slot.Agent != none {
+            wk += " '" + slot.Agent.m_state.currentActionDesc + "'"
+            for res, n in slot.Agent.m_currentlyRenderedResources.counts {
+                if n > 0 {
+                    wk += " carries " + string(res) + "=" + string(n)
+                }
+            }
+        } else {
+            wk += " nobody"
+        }
+        wk += "]"
+        i += 1
+    }
+    ProbeLog(Owner, id, "workers", wk)
+
+    let wh = ""
+    let linker = cast(D.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker != none {
+        for bid in linker.m_sourceStockpileIds {
+            wh += WarehouseText(Owner, "in", bid, goods)
+        }
+        for bid in linker.m_destStockpileIds {
+            wh += WarehouseText(Owner, "out", bid, goods)
+        }
+    }
+    ProbeLog(Owner, id, "warehouses", wh)
+
+    let tg = ""
+    if job.ReturnValue {
+        let r = BPL_FDNet.DockIn(Owner, job.Value)
+        if r != none {
+            let want = Owner.DeficitsFor(r).Want.counts
+            for res in goods {
+                let w = want.Find(res)
+                let at = r.m_stockpile_goodsFromSea.Slots.Find(res)
+                tg += " " + string(res) + " wants " + (if w.ReturnValue { string(w.Value) } else { "0" }) + " store " + (if at.ReturnValue { string(at.Value.count) } else { "0" })
+            }
+        }
+    }
+    ProbeLog(Owner, id, "target", tg)
+}
+
 // Every frame, from BP_MapLoad.PanelTick.
 fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     MapLoad = Owner
@@ -387,6 +588,7 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         BPL_FDStore.Set("ver", BPL_FDStore.Version())
         ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted; colony data from version " + (if was == "" { "none" } else { was }), false)
     }
+    ProbeIdle(Owner)
     let found = Owner.FindDockUnderCursor()
     let dock = found.Dock
     let show = false
@@ -857,10 +1059,12 @@ fn Refresh(Dock: WorkDock) {
     PauseBtn.SetVisibility(if provides || paused { ESlateVisibility.Visible } else { ESlateVisibility.Collapsed })
     let away = MapLoad.Voyages.Contains(id)
     let loading = MapLoad.LoadingSince.Contains(id)
-    let leaving = MapLoad.DepartingSince.Contains(id)
+    let pending = MapLoad.DepartingSince.Find(id)
+    let leaving = pending.ReturnValue
     let canDeliver = !away && loading && !leaving
     Deliver.SetIsEnabled(canDeliver)
-    DeliverTip.Setup(BPL_FDText.T(if away { "freightdock.deliver.underWay" } else if leaving { "freightdock.deliver.leaving" } else { "freightdock.deliver.nothingLoaded" }), SmallFont)
+    // pending since before 0: Deliver now was pressed (ShipLine)
+    DeliverTip.Setup(BPL_FDText.T(if away { "freightdock.deliver.underWay" } else if leaving { (if pending.Value < 0.0 { "freightdock.deliver.departing" } else { "freightdock.deliver.leaving" }) } else { "freightdock.deliver.nothingLoaded" }), SmallFont)
     Deliver.SetToolTip(if canDeliver { none } else { DeliverTip })
     FillNetworks(Dock)
     FillUnload(Dock)
@@ -949,8 +1153,10 @@ fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
             s = if HasJob { BPL_FDText.T("freightdock.ship.noShip") } else { "" }
         } else {
             if HasJob {
-                if MapLoad.DepartingSince.Contains(Id) {
-                    s = BPL_FDText.T("freightdock.ship.leaving") + "\n"
+                let pending = MapLoad.DepartingSince.Find(Id)
+                if pending.ReturnValue {
+                    // Deliver now marks it pending since long ago (below 0): it sails on the next pass
+                    s = BPL_FDText.T(if pending.Value < 0.0 { "freightdock.ship.departing" } else { "freightdock.ship.leaving" }) + "\n"
                 } else if !BPL_FDNet.OnDuty(MapLoad, Dock) {
                     s = BPL_FDText.T("freightdock.ship.offDuty") + "\n"
                 } else if MapLoad.LoadingSince.Contains(Id) {

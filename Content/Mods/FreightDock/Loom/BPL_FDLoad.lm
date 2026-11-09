@@ -3,8 +3,9 @@ blueprint BPL_FDLoad : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/B
 // Loading plan for a freight dock with a job (BP_MapLoad.UpdateRequest calls Plan; BPL_FDDispatch gives out jobs):
 // what to ask haulers to bring so the job's manifest ends up aboard.
 //
-// - Per good of the manifest: got = in the hold + being carried here. Haulers carry goods straight into the hold; a
-//   count left in the input slot ("at dock" in the log) never boards, so it doesn't count.
+// - Per good of the manifest: got = in the hold + being carried here. Haulers carry goods straight into the hold; the
+//   input slot's count ("at dock" in the log) is the game's bookkeeping for hauls under way, not goods, so it doesn't
+//   count (BPL_FDNet.ClearInputCounts zeroes it when stale).
 //   The request is a total to have aboard: the manifest, or the hold when that is more. RequestFor sets the input
 //   slot's capacity to the request less the hold, so haulers beyond it are turned away. Goods not in the manifest
 //   leave the request (their slot's capacity goes to 0).
@@ -44,6 +45,7 @@ fn BoardParked(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
         let f = pile.Slots.Find(res)
         let free = if f.ReturnValue { f.Value.count - f.Value.reservedForPickup } else { 0 }
         let move = KismetMathLibrary.Min(want, free)
+        BPL_FDDispatch.Log(MapLoad, "Probe: job " + string(Id) + " boards parked " + string(res) + ": wants " + string(want) + ", store free " + string(free) + ", moved " + string(KismetMathLibrary.Max(move, 0)))
         if move > 0 {
             let from = f.Value
             from.count = from.count - move
@@ -121,6 +123,7 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
             let note = string(res) + "=" + string(units - got)
             MapLoad.JobDropped[id] = if was.ReturnValue { was.Value + "," + note } else { note }
             // the dispatcher leaves the good with this dock until its input warehouses' free stock changes
+            BPL_FDDispatch.Log(MapLoad, "Probe: job " + string(id) + " " + string(res) + " stalled, " + string(units) + " -> " + string(got) + " (at dock " + string(atDock) + ")")
             let left = BPL_FDNet.SourceStock(MapLoad, Dock).Stock.Find(res)
             MapLoad.CutStock[BPL_FDNet.JobKey(id, res)] = if left.ReturnValue { left.Value } else { 0 }
         }
@@ -148,7 +151,8 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
 
 // Writes Want as the dock's request: its dock-specific supplies and live requirement, and per good its input slot's
 // capacity, the request less what is in the hold (never the whole request: haulers would be sent for goods already
-// aboard). A good that left the request leaves the live requirement, and its input slot's capacity goes to 0.
+// aboard). A good that left the request leaves the live requirement, and its input slot's capacity goes to 0. The
+// slot's count is the game's bookkeeping for hauls under way, not goods (BPL_FDNet.ClearInputCounts).
 fn RequestFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Want: ResourceCollection) {
     let old = Dock.m_requiredEmbarkSupplies_dockSpecific.counts
     Dock.m_requiredEmbarkSupplies_dockSpecific = Want
@@ -184,8 +188,9 @@ fn RequestFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
 }
 
 // The panel's Deliver now button (BP_MapLoad.DeliverSelected, ported from fdgen): the selected freight dock's ship sails
-// now with what it has - its loading clock (LoadingSince) is set far back so FreightTick's max-wait check passes. Ship
-// away or nothing loaded yet: nothing (the button is disabled then).
+// on FreightTick's next pass with what it has, not waiting for goods still being carried to it: its departure is marked
+// pending (DepartingSince) since long ago, so the carrier wait is over. Ship away or nothing loaded yet: nothing (the
+// button is disabled then).
 fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let dock = MapLoad.FindDockUnderCursor().Dock
     if dock == none {
@@ -196,5 +201,5 @@ fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     if MapLoad.Voyages.Contains(id) || !MapLoad.LoadingSince.Contains(id) {
         return
     }
-    MapLoad.LoadingSince[id] = -1000000000000000.0
+    MapLoad.DepartingSince[id] = -1000000000000000.0
 }

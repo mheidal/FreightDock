@@ -26,6 +26,7 @@ pure fn Strings() -> map<name, string> {
         "freightdock.deliver.underWay": "Already under way",
         "freightdock.deliver.nothingLoaded": "Nothing loaded yet",
         "freightdock.deliver.leaving": "Leaving once haulers arrive",
+        "freightdock.deliver.departing": "Departing",
 
         // dock GUI (WBP_FDPanel)
         "freightdock.dock.unnamed": "Freight Dock {id}",
@@ -74,6 +75,7 @@ pure fn Strings() -> map<name, string> {
         "freightdock.ship.returning": "Returning",
         "freightdock.ship.noShip": "No ship at dock",
         "freightdock.ship.leaving": "Waiting for final cargo",
+        "freightdock.ship.departing": "Departing",
         "freightdock.ship.loading": "Loading {time}",
         "freightdock.ship.loadingOf": "Loading {time} of {limit}",
         "freightdock.ship.waiting": "Waiting for cargo",

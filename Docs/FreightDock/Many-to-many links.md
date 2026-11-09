@@ -1,6 +1,6 @@
-# Many-to-many dock links (tabled)
+# Many-to-many dock links
 
-Status: designed in outline, not implemented. A persistence spike succeeded (2026-11-01); its code is on branch `freightdock-packed-links-spike`. The released mod (1.1) still links freight docks strictly one-to-one.
+Status: built on branch `freightdock-networks` (steps 5-9, 2026-11), not yet released; see Next at the end. The released mod (1.1) links freight docks one-to-one; this branch turns its pairs into networks on load. The persistence spike (2026-11-01) is on branch `freightdock-packed-links-spike`.
 
 ## Goal
 
@@ -32,7 +32,7 @@ Question: can one int32 hold several links and still survive a save/load?
 Spike leftovers:
 
 - **Code:** `SpikeStorage`, `SpikeTick` and the variable `SpikeFrames`, on the spike branch only (`Tools/FreightDock/fdgen/features/spike.py`); they were left out of the merge. Removal steps are in that file's docstring.
-- **Test dock:** the test save's dock 11700 still holds the test value; the current mod sees it as paired with a dock that doesn't exist. To clear it, press F5 on that dock, then F5 with no dock selected.
+- **Test dock:** the test save's dock 11700 still holds the test value, which the current mod reads as a network value (requests on 5 and 8, both on 17, paused). To clear it, untick its networks in the network GUI.
 
 Other places were tested on 2026-11-04 (see Extra storage): only the profile save's key-value store also survives, and it isn't part of the colony save. 30 bits are enough for the layout below.
 
@@ -41,7 +41,7 @@ Other places were tested on 2026-11-04 (see Extra storage): only the profile sav
 A dock stores **which networks it belongs to, and in which role**, never which docks it links to. There is no per-map dock limit and no per-dock link limit. (The earlier slot format, 63 docks with about 4 links each, is dropped; its limits were a large part of why the work was tabled.)
 
 - **Networks:** IDs 1–31.
-- **Memberships:** up to 4 per dock, each with its own role: provide, request, or both.
+- **Memberships:** up to 3 per dock, each with its own role: provide, request, or both.
 - **Links:** on each network, every provider supplies every requester; a dock never supplies itself.
 - **Example:** dock A provides on 1; dock B requests on 1 and provides on 3; dock C requests on 3. The result is a chain, A → B → C.
 - **Roles per membership** matter for chains like this one: a single role per dock could not express B.
@@ -118,7 +118,7 @@ Candidates tested on 2026-11-04 with a temporary probe (written, then saved, rel
 | **Linker lists** (`m_sourceStockpileIds`, `m_destStockpileIds`) | Read-only to Blueprint. |
 | **A made-up key in the dock's request** (`m_requiredEmbarkSupplies_dockSpecific`) | Lost on save. While present it showed in the game's departure checklist ("crew 0/12345"). |
 | **A made-up slot in the dock's goods-from-sea store** | Lost on save. While present it showed in the Logistics tab ("Text block 0/54321"). |
-| **Profile save key-value store** (`Backbone.GetSave()` → `SetString` / `SetNumber`, then `Save`) | **Survives** reloads and a game restart, but belongs to the player, not the colony (keyed by save name, lost on "save as"). **Closing to mods:** the developer announced (2026-11-07) that `GenericSaveGame` won't be mod-accessible after the next patch, and that file-writing Blueprint functions are being locked down. |
+| **Profile save key-value store** (`Backbone.GetSave()` → `SetString` / `GetString` / `HasString`) | **Survives** reloads and a game restart, but belongs to the player (Profile_0, synced with Steam Cloud), not the colony: per-colony data has to be keyed by save name (Frog Raiders 1.0.3 uses `sched.` + `ArcoSystems.m_associatedSave` less `_autosave`), so it is lost on "save as", doesn't rewind when an older save is loaded, doesn't travel with a shared save, and is never cleaned up. The developer recommends it for global data (2026-11-08) and it stays open to mods; the game writes it to disk itself, so a mod shouldn't call `Save` (file-writing Blueprint functions are being locked down, and the 2026-11-04 probe's `Save` call is one). |
 
 Second search, 2026-11-07: the colony save (`.whisker`) was decoded (Oodle-compressed FlatBuffer tree, every value stored as text; reader `savetool.py` in that session's scratchpad). It is written by hand per game system, not by property flags: that is why `activeTradePartnerId` (saved as `workDocks/<id>/tradePartner`) survives without `CPF_SaveGame`. Actor and component tags and anything on mod classes are not saved. Candidates were made writable with Suzie's `ForceBlueprintWritable` (`Config/DefaultEditor.ini`) and tested with a probe (written, saved, game restarted, reloaded):
 
@@ -130,6 +130,7 @@ Second search, 2026-11-07: the colony save (`.whisker`) was decoded (Oodle-compr
 | **`minHold` of a real resource's slot** in the dock's goods-from-sea store | per dock | Survives (made-up resource keys don't, see above). |
 | **ModAPI** | | No storage: config files are read-only; Mod Options have no write in the ModAPI. `ModAPI.optMan.SetValue` (the game's `OptionManager`) exists but is per player, not per colony, and untested. |
 
+- **Developer's answer** (2026-11-08, Discord): writing `m_miscEventFlags` through forced writability won't be blocked ("not a security risk"), and the game doesn't whitelist or clear unknown flags, nor would it, as that would break save compatibility. A native per-save data slot for mods (keeping case) is ticketed as a feature request.
 - **Event flag entries are names:** the engine keeps one spelling per name regardless of case, so text in an entry (key and data alike) is stored with capitals escaped (`^` before the lowercase letter) to come back exactly.
 - **Memberships and roles** stay in `activeTradePartnerId`, per dock.
 
@@ -255,10 +256,12 @@ Found out (2026-11-04):
 1. The game's paste doesn't copy anything the mod uses (see Copy and paste).
 2. Signposts can't be written by the mod; only the profile save's key-value store also survives, outside the colony save (see Extra storage). Since 2026-11-07: the colony's event flags hold colony-wide data inside the save.
 
-Still to find out:
+Found out (2026-11-08):
 
-1. Whether the mod can see Ctrl+C / Ctrl+V on a freight dock, to copy memberships itself.
-2. The colour palette itself.
+1. The mod sees Ctrl+C / Ctrl+V / Ctrl+Z on a freight dock, and copies memberships itself (see Copy and paste).
+2. The colour palette: ten colour families in three shades, plus white (see UI, Colours).
+
+Not doing: a storage or buffer role. Maybe for the future, not this release: more than one ship per dock; chained voyages (C -> A -> B).
 
 ## Storage library (built)
 
@@ -284,7 +287,7 @@ Still to find out:
 
 - **The panel shows for every freight dock,** member of a network or not. A dock with no target shows its networks, ship, unloading and input; the target's sections and Deliver now are hidden.
 - **NETWORKS (dock GUI):** the dock's memberships in ascending network order ("1: provide   3: both", or "Not in a network") and an Edit button.
-- **Network GUI** (`WBP_FDNetPanel`): Edit opens it to the dock GUI's left, bottoms aligned, in the same frame, background and fonts (the dock GUI passes its brush and fonts: `SetLook`); Edit, now "Close", closes it, as does selecting something else. A table of networks 1 to the highest in use plus one, gaps included, columns Network ID | Provide | Request | Requested goods; each header but the first explains itself on hover. Rows (`WBP_FDNetRow`): the game's tick-box icons (`icons8-tick-box(-unchecked)-96`, tinted gold / muted) as checkboxes for the selected dock (both ticked: "both"), each followed by the network's number of providers / requesters in parentheses, the tooltip naming them; requested goods as icons (`BPL_FDNet.NetRequests`: request levels, `minHold`, whether met or not), dimmed when no provider on the network has the good whitelisted in an input warehouse (`ProvidedGoods`; a warehouse with no whitelist in use, `m_whiteListReceiving` false, counts as providing everything); each good's tooltip (`WBP_FDNetTip`): icon, name, requested and stocked amounts, the requesters asking for it (`AsksForGood`) and the providers able to supply it (`SuppliesGood`). Rows alternate a faint band and highlight on hover. A checkbox applies at once (`With`); a fifth membership is refused with a toast; a dock left in no network gets -1 back (`Emptied`).
+- **Network GUI** (`WBP_FDNetPanel`): Edit opens it to the dock GUI's left, bottoms aligned, in the same frame, background and fonts (the dock GUI passes its brush and fonts: `SetLook`); Edit, now "Close", closes it, as does selecting something else. A table of networks 1 to the highest in use plus one, gaps included, columns Network ID | Provide | Request | Requested goods; each header but the first explains itself on hover. Rows (`WBP_FDNetRow`): the game's tick-box icons (`icons8-tick-box(-unchecked)-96`, tinted gold / muted) as checkboxes for the selected dock (both ticked: "both"), each followed by the network's number of providers / requesters in parentheses, the tooltip naming them; requested goods as icons (`BPL_FDNet.NetRequests`: request levels, `minHold`, whether met or not), dimmed when no provider on the network has the good whitelisted in an input warehouse (`ProvidedGoods`; a warehouse with no whitelist in use, `m_whiteListReceiving` false, counts as providing everything); each good's tooltip (`WBP_FDNetTip`): icon, name, requested and stocked amounts, the requesters asking for it (`AsksForGood`) and the providers able to supply it (`SuppliesGood`). Rows alternate a faint band and highlight on hover. A checkbox applies at once (`With`); past 3 memberships the other rows' checkboxes are disabled, with why as their tooltip; a dock left in no network gets -1 back (`Emptied`).
 - **Dock names** (`BPL_FDNet.DockName`): the name set in the dock GUI (see Names, step 9); else "Freight Dock <id>". Used in the dock GUI's title and destination line and in the network GUI's provider / requester tooltips; logs keep IDs. (Until 2026-11-07 names came from `[fd]` / `[fn3]` signs.)
 - **F5 is gone:** `PairAtCursor` and `Unpair` were deleted (fdgen, BP_MapLoad, Loom), with the `PairKey` and `PendingDock` variables and the pairing-key Mod Option. `PairKeyTick` (stand-in clicks, the panel) and `ReadPairKey` ("Depart after") keep their names, since the hand-built Event Graph calls them, and call `BPL_FDPairing.Tick` and `BPL_FDOptions.ReadOptions`; `RegisterOptions` (BP_Startup) calls `BPL_FDOptions.RegisterOptions`.
 
@@ -305,7 +308,7 @@ Still to find out:
 
 ## Network arcs and pointers (built, step 8)
 
-- **Colours** (`BPL_FDNet.NetColor`): a fixed palette of ten, repeating by network ID, with red and blue left out; the network's number is drawn in its colour in the network GUI and the dock GUI's NETWORKS labels. Pointers: providers red (#E9594D), requesters blue (#71D0EA), after Factorio's provider / requester markings.
+- **Colours** (`BPL_FDNet.NetColor`): one per network ID, ten colour families in three shades (1-10 light, 11-20 mid, 21-30 deep, 31 white), with red and blue left out (until 2026-11-08: ten, repeating); the network's number is drawn in its colour in the network GUI and the dock GUI's NETWORKS labels. Pointers: providers red (#E9594D), requesters blue (#71D0EA), after Factorio's provider / requester markings.
 - **Selected freight dock** (`BPL_FDPairing.NetworkArcs`, every frame): an arc to each dock it provides to and from each dock that provides to it, in the network's colour; a pair linked on several networks gets one arc per network, offset sideways by the network's membership slot (`Shift`). This replaces the single lavender pair arc (`PairArcs` is no longer called); the job's route line stays.
 - **Hover highlights** (`BPL_FDPairing.Highlight`, worked out by the dock GUI's `HoverStep` only when what is hovered changes, kept in BP_MapLoad's `HiFrom` / `HiTo` / `HiArcColor` / `HiPts` / `HiPtColor` and drawn every frame by `Highlights`): a NETWORKS label in the dock GUI or a network ID in the network GUI shows that network's arcs (every provider to every requester) and pointers on all its members; the Provide cell, pointers on its providers; the Request cell, its requesters; a good's icon, the providers whose inputs can supply it (`SuppliesGood`) and the requesters asking for it (`AsksForGood`). A dock that is both gets two pointers, side by side.
 - **Pointers** are arcs of no height from a dock straight up (6000 units). Untested: if the arc renderer can't draw them vertically, a thin vertical strip using the route line's material is the fallback.
@@ -314,27 +317,27 @@ Still to find out:
 
 ## Explaining and controlling (built, step 9)
 
-Everything is shown per dock, in its dock GUI; there is no colony-wide display and no toast.
+Everything is shown per dock, in its dock GUI; there is no colony-wide display. The only toasts are copy, paste and undo's (Ctrl+C / V / Z).
 
 - **Storage:** 3 memberships of 9 bits and a paused flag (see Bit layout).
 - **INCOMING** (dock GUI, for a dock that requests): per good its output warehouses want, how much is still wanted (less what is unloaded there), how much is on its way, and from where (loading at the provider, or sailing with the arrival time), or why nothing comes. The dispatcher records the reason per "<target>|<good>" left open after each pass (`BPL_FDDispatch.Explain`, `MapLoad.WhyNot`): no provider on its networks, no provider stock, providers off duty, providers missing ships (the only providers with the good have no ship: none at home and none on a job), below minimum load (n of m), or providers busy.
 - **Pause** (beside the SHIP heading): the ship finishes its job and takes no new one ("Idle: paused").
 - **Deliver now** sits beside it, disabled with the reason as its tooltip when it can't act; it no longer toasts.
 - **Dropped goods:** a good cut from the job as stalled is listed under the ship's state ("Dropped: 3 Flax (no hauler)") until the job ends (`MapLoad.JobDropped`). A good cut to nothing leaves the job; a loading job left with nothing is cancelled, freeing the dock.
-- **Names:** a click on the dock GUI's title renames the dock, and a click on a network's ID in the network GUI renames the network ("3 Food" in both GUIs), in a text box in place: Enter or a click elsewhere keeps the text, Escape cancels, an empty name restores the default. Kept in the colony's event flags (`Loom/BPL_FDStore.lm`: `fd.d<dockId>=…`, `fd.n<id>=…`, capitals escaped; see Extra storage), so they travel with the save. Names are cut at 60 characters. Entries of demolished docks stay (dock IDs aren't reused).
+- **Names:** a click on the dock GUI's title renames the dock, and a click on a network's ID in the network GUI renames the network ("3 Food" in both GUIs), in a popup centred over what was clicked (`WBP_FDRename`). Its text box is the game's own (`DebugRow_TextEntry`, as the ship rename uses), so typing doesn't fire the game's hotkeys; Enter or a click elsewhere keeps the text, Escape cancels, an empty name restores the default. Kept in the colony's event flags (`Loom/BPL_FDStore.lm`: `fd.d<dockId>=…`, `fd.n<id>=…`, capitals escaped; see Extra storage), so they travel with the save. Names are cut at 60 characters. Entries of demolished docks stay (dock IDs aren't reused).
 - **Version:** on each load the colony records the FreightDock version that last ran on it (`fd.ver`, `BPL_FDStore.Version()`, kept equal to the `.uplugin`'s `Version`); colonies from before 2026-11 have none. The load line in the modlog says which version the colony's data came from.
 - **Minimum load with "Depart after: Never":** the waiting exemption applies after 10 minutes.
 - **Ping-pong:** a provider doesn't ship goods its own output warehouses still request.
 - **Crews off duty** (`BPL_FDNet.OnDuty`: at night, and in the morning until the dock's first worker is at work, `MapLoad.CrewArrived`; docks have no overtime): an off-duty provider is offered only what needs no haulers (aboard, or parked leftovers), so such a job can still sail at night; a job loading when the crew leaves keeps its goods, its stall and depart-after clocks wait ("Crew off duty"), and it doesn't grow. INCOMING says "Providers off duty" when only off-duty providers hold the good.
 
-## If resumed
+## Next (agreed 2026-11-08)
 
-1. Remove the spike leftovers (see above).
-2. Check whether Ctrl+C / Ctrl+V can be seen on a freight dock.
-3. Write the Loom storage library: pack, unpack, network index, and the load step with migration. Test migration on a 1.x save first.
-4. Swap the storage layer for the network index, with one network per old pair. Behaviour should be identical to today's: this is the refactor checkpoint.
-5. Routes per pair, then voyages and dispatch, then arcs, the picker and the minimap.
-6. Full regression: memberships and migration, copy/paste, building over a route, mass-build rescan, Deliver now, depart timeout, stand-in hover route, and save/load.
+1. Regression pass: migration of a 1.x save, memberships, copy/paste/undo, names, building over a route, mass-build rescan, Deliver now, the depart timeout, the stand-in hover route, save/load.
+2. The network minimap (see Minimap).
+3. Jobs surviving a reload.
+   - The event flags (`fd.*`) are kept free of stale data, for everything stored there, not only jobs: when what an entry describes ends (a job finishes, a dock or network is gone), the entry is deleted, or archived where history is kept (job history is a candidate). Existing entries such as names of docks that no longer exist are cleaned up the same way.
+   - Other data the flags could carry: job history, ship positions across saves.
+4. Release: version bump, Technical description, README.
 
 ## Revisiting - ideation
 Supposing we go with 3-of-5b provide/request network IDs.
