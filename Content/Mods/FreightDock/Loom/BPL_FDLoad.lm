@@ -45,7 +45,7 @@ fn BoardParked(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
         let f = pile.Slots.Find(res)
         let free = if f.ReturnValue { f.Value.count - f.Value.reservedForPickup } else { 0 }
         let move = KismetMathLibrary.Min(want, free)
-        BPL_FDDispatch.Log(MapLoad, "Probe: job " + string(Id) + " boards parked " + string(res) + ": wants " + string(want) + ", store free " + string(free) + ", moved " + string(KismetMathLibrary.Max(move, 0)))
+        BPL_FDDispatch.Probe(MapLoad, "Probe: job " + string(Id) + " boards parked " + string(res) + ": wants " + string(want) + ", store free " + string(free) + ", moved " + string(KismetMathLibrary.Max(move, 0)))
         if move > 0 {
             let from = f.Value
             from.count = from.count - move
@@ -73,6 +73,14 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
     }
     let now = GameplayStatics.GetTimeSeconds()
     let id = BPL_FDNet.DockId(Dock)
+    // back from its voyage, waiting for the dispatcher to close the job (BPL_FDDispatch.Complete): nothing is
+    // requested or checked for a stall (its goods were delivered, not lost: a stall cut would drop them and bar the
+    // good from this dock), and Remaining 1 keeps it from sailing again
+    let sailed = MapLoad.JobSailed.Find(id)
+    if sailed.ReturnValue && sailed.Value {
+        Remaining = 1
+        return
+    }
     BoardParked(MapLoad, Dock, Ship, id)
     // the ship carries only the job's freight: anything else that got aboard goes to the delivered-goods store
     BPL_FDNet.ParkStray(MapLoad, Dock, BPL_FDNet.Manifest(MapLoad, id))
@@ -123,7 +131,7 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
             let note = string(res) + "=" + string(units - got)
             MapLoad.JobDropped[id] = if was.ReturnValue { was.Value + "," + note } else { note }
             // the dispatcher leaves the good with this dock until its input warehouses' free stock changes
-            BPL_FDDispatch.Log(MapLoad, "Probe: job " + string(id) + " " + string(res) + " stalled, " + string(units) + " -> " + string(got) + " (at dock " + string(atDock) + ")")
+            BPL_FDDispatch.Probe(MapLoad, "Probe: job " + string(id) + " " + string(res) + " stalled, " + string(units) + " -> " + string(got) + " (at dock " + string(atDock) + ")")
             let left = BPL_FDNet.SourceStock(MapLoad, Dock).Stock.Find(res)
             MapLoad.CutStock[BPL_FDNet.JobKey(id, res)] = if left.ReturnValue { left.Value } else { 0 }
         }

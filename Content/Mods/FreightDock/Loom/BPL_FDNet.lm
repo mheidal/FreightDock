@@ -65,6 +65,12 @@ fn ShipAtDock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
     return none
 }
 
+// Development only: true turns on the "Probe:" log lines (job events, goods moved; BPL_FDDispatch.Probe). For the
+// per-dock probe add WBP_FDPanel.ProbeIdle(Owner) to its Step too (see WBP_FDPanel's ProbeAt).
+pure fn Probing() -> bool {
+    return false
+}
+
 pure fn Slots() -> int {
     return 3
 }
@@ -680,7 +686,9 @@ fn ParkUnits(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Work
     slot.capacity = KismetMathLibrary.Max(slot.capacity, slot.count)
     pile.Slots[Res] = slot
     Dock.m_stockpile_goodsFromSea = pile
-    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Probe: dock " + string(DockId(Dock)) + " hold to delivered-goods store: " + string(Res) + "=" + string(move) + " (store now " + string(slot.count) + ")", false)
+    if Probing() {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Probe: dock " + string(DockId(Dock)) + " hold to delivered-goods store: " + string(Res) + "=" + string(move) + " (store now " + string(slot.count) + ")", false)
+    }
     return move
 }
 

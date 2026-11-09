@@ -59,13 +59,20 @@ fn AddTo(Counts: ref map<string, int>, Key: string, Units: int) {
 
 // Unused in release; kept for diagnostics. Msg is made ASCII (dock names come from signs): one other character turns
 // the modlog into UTF-16.
-// Temporary (remove at release, with every "Probe:" line): " good=units" per entry.
+// Development only (the "Probe:" lines): " good=units" per entry.
 pure fn Goods(Counts: map<name, int>) -> string {
     let out = ""
     for res, n in Counts {
         out += " " + string(res) + "=" + string(n)
     }
     return out
+}
+
+// A "Probe:" line, logged only while BPL_FDNet.Probing() (development only).
+fn Probe(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Msg: string) {
+    if BPL_FDNet.Probing() {
+        Log(MapLoad, Msg)
+    }
 }
 
 fn Log(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Msg: string) {
@@ -102,7 +109,7 @@ fn Pass(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     for d in BPL_FDNet.FreightDocks(MapLoad) {
         let cleared = BPL_FDNet.ClearInputCounts(d)
         if cleared != "" {
-            Log(MapLoad, "Probe: dock " + string(BPL_FDNet.DockId(d)) + " stale input counts zeroed:" + cleared)
+            Probe(MapLoad, "Probe: dock " + string(BPL_FDNet.DockId(d)) + " stale input counts zeroed:" + cleared)
         }
     }
     Upkeep(MapLoad)
@@ -161,7 +168,7 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
 // is stopped as on Cancel: between the ship's return and this pass FreightTick may have requested the manifest again,
 // which a paused dock (no new job to replace it) would otherwise go on loading.
 fn Complete(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int) {
-    Log(MapLoad, "Probe: job " + string(Id) + " -> " + string(MapLoad.JobTo[Id]) + " complete; manifest" + Goods(BPL_FDNet.Manifest(MapLoad, Id)))
+    Probe(MapLoad, "Probe: job " + string(Id) + " -> " + string(MapLoad.JobTo[Id]) + " complete; manifest" + Goods(BPL_FDNet.Manifest(MapLoad, Id)))
     if Dock != none {
         MapLoad.PauseLoading(Dock)
     }
@@ -192,7 +199,7 @@ fn Park(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock,
 // The provider and requester no longer share a network (or one is gone): stop loading and clear the trip's state.
 // Goods of the job already aboard are parked (Park), as after a trip.
 fn Cancel(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Id: int, Why: string) {
-    Log(MapLoad, "Probe: job " + string(Id) + " -> " + string(MapLoad.JobTo[Id]) + " cancelled: " + Why + "; manifest" + Goods(BPL_FDNet.Manifest(MapLoad, Id)))
+    Probe(MapLoad, "Probe: job " + string(Id) + " -> " + string(MapLoad.JobTo[Id]) + " cancelled: " + Why + "; manifest" + Goods(BPL_FDNet.Manifest(MapLoad, Id)))
     if Dock != none {
         MapLoad.PauseLoading(Dock)
     }
@@ -276,7 +283,7 @@ fn Shrink(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             }
         }
         if cutLog != "" {
-            Log(MapLoad, "Probe: job " + string(id) + " -> " + string(rid) + " cut, requester wants less:" + cutLog)
+            Probe(MapLoad, "Probe: job " + string(id) + " -> " + string(rid) + " cut, requester wants less:" + cutLog)
             if kept == 0 {
                 Cancel(MapLoad, dock, id, "requester wants none of it")
             }
@@ -755,7 +762,7 @@ fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Sh
         let fromFree = KismetMathLibrary.Min(KismetMathLibrary.Min(need - fromAboard - fromPark, free), left)
         left -= fromFree
         let units = fromAboard + fromFree + fromPark
-        Log(MapLoad, "Probe: job " + string(pid) + " -> " + string(rid) + " " + string(good) + ": need " + string(need) + ", aboard " + string(aboard) + ", parked " + string(park) + ", input stock " + string(free) + " -> takes aboard " + string(fromAboard) + ", parked " + string(fromPark) + ", input " + string(fromFree) + " (hold room left " + string(left) + ")")
+        Probe(MapLoad, "Probe: job " + string(pid) + " -> " + string(rid) + " " + string(good) + ": need " + string(need) + ", aboard " + string(aboard) + ", parked " + string(park) + ", input stock " + string(free) + " -> takes aboard " + string(fromAboard) + ", parked " + string(fromPark) + ", input " + string(fromFree) + " (hold room left " + string(left) + ")")
         if units > 0 {
             MapLoad.JobGoods[pk] = units
             // the stall clock starts over: what a past job loaded of this good says nothing about this one
@@ -772,7 +779,7 @@ fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Sh
         }
     }
     MapLoad.JobTo[pid] = rid
-    Log(MapLoad, "Probe: job " + string(pid) + " -> " + string(rid) + " given; manifest" + Goods(BPL_FDNet.Manifest(MapLoad, pid)))
+    Probe(MapLoad, "Probe: job " + string(pid) + " -> " + string(rid) + " given; manifest" + Goods(BPL_FDNet.Manifest(MapLoad, pid)))
     MapLoad.JobSailed.Remove(pid)
     MapLoad.IdleWhy.Remove(pid)
     MapLoad.PlanRoute(P)

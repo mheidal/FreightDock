@@ -71,12 +71,15 @@ var KeyV: Key
 var KeyZ: Key
 var CtrlL: Key
 var CtrlR: Key
-// Development only, unused in release: for the F4 cheat and the loading probe, add to Step
+// Development only, unused in release: for the F4 cheat, the loading probe and the per-dock probe (ProbeIdle), add to
+// Step
 //     BPL_FDCheat.Tick(Owner)
 //     ProbeAt = BPL_FDCheat.Probe(Owner, ProbeAt)
+//     ProbeIdle(Owner)
+// and set BPL_FDNet.Probing() true for the dispatcher's "Probe:" lines.
 var ProbeAt: float = 0.0
 
-// Temporary (remove at release): ProbeLog's last line per "<dock>|<category>", and ProbeIdle's next check
+// Development only: ProbeLog's last line per "<dock>|<category>", and ProbeIdle's next check
 var ProbeSeen: map<string, string>
 var IdleProbeAt: float = 0.0
 
@@ -378,7 +381,7 @@ fn PauseClicked() {
     NextRefresh = 0.0
 }
 
-// Temporary (remove at release, with BPL_FDDispatch's "Probe:" lines): every 0.1 s of game time, per dock and per
+// Development only (unhooked; see ProbeAt): every 0.1 s of game time, per dock and per
 // category, a line when that category changes - state (pause, duty, job and manifest, idle reason, the loading,
 // departing, voyage and stall records), requests (dock-specific, live), input slot, delivered-goods store, repair
 // store, hold (exact quantities), plan (stall clocks per good), workers (here or away, what each is doing and
@@ -518,14 +521,37 @@ fn ProbeDock(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, D: WorkDock)
     }
     ProbeLog(Owner, id, "hold", hd)
 
+    let linker = cast(D.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    // without a job, every good its input warehouses hold (what the dispatcher could offer)
+    if !job.ReturnValue && linker != none {
+        for bid in linker.m_sourceStockpileIds {
+            let b = Owner.BuildingById(bid).Building
+            if b != none {
+                let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+                if rb != none {
+                    for res, s in rb.m_stockpile.Slots {
+                        if s.count > 0 {
+                            goods.AddUnique(res)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     let pl = ""
+    let prefix = string(id) + "|"
+    for key, at in Owner.CutStock {
+        if KismetStringLibrary.StartsWith(key, prefix, ESearchCase.CaseSensitive) {
+            pl += " barred " + KismetStringLibrary.RightChop(key, KismetStringLibrary.Len(prefix)) + " until stock != " + string(at)
+        }
+    }
     for res in goods {
         let k = BPL_FDNet.JobKey(id, res)
         let seen = Owner.PickupSeen.Find(k)
         let since = Owner.PickupSince.Find(k)
-        let cut = Owner.CutStock.Find(k)
-        if seen.ReturnValue || since.ReturnValue || cut.ReturnValue {
-            pl += " " + string(res) + ": seen " + (if seen.ReturnValue { string(seen.Value) } else { "-" }) + " since " + (if since.ReturnValue { string(since.Value) } else { "-" }) + (if cut.ReturnValue { " cut at stock " + string(cut.Value) } else { "" })
+        if seen.ReturnValue || since.ReturnValue {
+            pl += " " + string(res) + ": seen " + (if seen.ReturnValue { string(seen.Value) } else { "-" }) + " since " + (if since.ReturnValue { string(since.Value) } else { "-" })
         }
     }
     ProbeLog(Owner, id, "plan", pl)
@@ -550,7 +576,6 @@ fn ProbeDock(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, D: WorkDock)
     ProbeLog(Owner, id, "workers", wk)
 
     let wh = ""
-    let linker = cast(D.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
     if linker != none {
         for bid in linker.m_sourceStockpileIds {
             wh += WarehouseText(Owner, "in", bid, goods)
@@ -588,7 +613,6 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         BPL_FDStore.Set("ver", BPL_FDStore.Version())
         ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted; colony data from version " + (if was == "" { "none" } else { was }), false)
     }
-    ProbeIdle(Owner)
     let found = Owner.FindDockUnderCursor()
     let dock = found.Dock
     let show = false
