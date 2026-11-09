@@ -87,5 +87,8 @@ private:
 	TSet<UEdGraph*> FilledInterfaceGraphs;
 	/** Each Create Event and the function it is given once its links are made. */
 	TArray<TPair<UK2Node_CreateDelegate*, FName>> PendingDelegates;
+	/** Links or pin defaults made since the Blueprint was last marked modified (OpLink and OpDefault defer that to
+	 *  OpCompile). */
+	bool bLinksUnmarked = false;
 	TSharedRef<FJsonObject> Report = MakeShared<FJsonObject>();
 };
