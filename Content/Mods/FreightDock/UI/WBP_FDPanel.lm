@@ -38,6 +38,22 @@ var Migrated: bool = false
 var ShownDock: WorkDock
 var Editing: bool = false
 var NetPanel: WBP_FDNetPanel
+// the network map (WBP_FDMapPanel), opened by Map
+var MapPanel: WBP_FDMapPanel
+var Mapping: bool = false
+// the dock window's background (Sweep), and how far down the window is moved (slate units) so its bottom lines up
+// with this panel's; frames to wait for the move to show in its geometry
+var WindowBg: Widget
+var Lowered: float = 0.0
+var LowerWait: int = 0
+// the last move measured, applied to a dock window as soon as it shows (before it is laid out, so it doesn't show at
+// its usual place first), and the windows moved
+var KnownLower: float = 0.0
+var Moved: array<Widget>
+// BP_MapLoad's tick moved to the end of the frame (Step, once)
+var TickLate: bool = false
+// frames left to sweep a dock window found before it was laid out (FindWindow)
+var SweepSoon: int = 0
 // the rename popup (WBP_FDRename, made the first time), and what it renames: a network (RenameNet), else the dock
 // Renaming
 var Rename: WBP_FDRename
@@ -60,6 +76,11 @@ var PauseOn: soft<Texture2D> = /Game/Assets/Icons/icons8-pause-100.icons8-pause-
 var PlayOn: soft<Texture2D> = /Game/Assets/Icons/icons8-play-100.icons8-play-100
 var DeliverTip: WBP_FDTip
 var TitleTip: WBP_FDTip
+// the icon buttons: the network GUI (route, NETWORKS line) and the map (spyglass, header), with their tooltips
+var EditTex: soft<Texture2D> = /Game/Assets/Icons/icons8-route-96.icons8-route-96
+var MapTex: soft<Texture2D> = /Game/Assets/Icons/icons8-spyglass-90.icons8-spyglass-90
+var EditTip: WBP_FDTip
+var MapTip: WBP_FDTip
 // Ctrl+C / Ctrl+V / Ctrl+Z on a freight dock (CopyKeys): the copied value (while HasCopy), and the last paste's dock
 // and the value it replaced (UndoDock -1: nothing to undo); the keys, looked up once
 var HasCopy: bool = false
@@ -90,9 +111,12 @@ widget Width: SizeBox(WidthOverride: 500.0) {
         widget Frame: RoundedFrameWithHeaderIcon(showIcon: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill, Padding: Margin(Left: 26, Top: 16, Right: 26, Bottom: 16))
         widget Inner: Border(BrushColor: "#00000000", Padding: Margin(Left: 20, Top: 16, Right: 20, Bottom: 16)) {
             widget Col: VerticalBox {
-                // the dock's name; a click opens the rename popup over it
-                widget TitleBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center) {
-                    widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                // the dock's name (a click opens the rename popup over it), centred; the map button over its right end
+                widget TitleRow: Overlay {
+                    widget TitleBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                    }
+                    widget MapRound: Arco_Button_CommonRound slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Right, VerticalAlignment: EVerticalAlignment.VAlign_Center)
                 }
                 widget Div1: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 widget NetHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
@@ -100,7 +124,7 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                     widget NetSummary: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
                     // one membership a line, a long name wrapping
                     widget NetEntries: VerticalBox slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
-                    widget EditBtn: Arco_Button_CommonRound slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
+                    widget EditRound: Arco_Button_CommonRound slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
                 }
                 widget DivNet: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 widget ShipBar: HorizontalBox {
@@ -151,10 +175,19 @@ on Construct {
     PauseBtn.SetToolTip(PauseTip)
     TitleBtn.SetToolTip(TitleTip)
     PauseIcon.SetDesiredSizeOverride(Vector2D(X: 24.0, Y: 24.0))
+    EditTip = create_widget(WBP_FDTip)
+    MapTip = create_widget(WBP_FDTip)
+    EditRound.SetToolTip(EditTip)
+    MapRound.SetToolTip(MapTip)
+    IconOnly(EditRound, EditTex.load())
+    IconOnly(MapRound, MapTex.load())
+    // the route icon looked left of centre in its button (the spyglass, set the same way, didn't): nudged by eye
+    EditRound.icon.SetRenderTranslation(Vector2D(X: 2.0, Y: 0.0))
     Labels()
     Deliver.OnClicked.bind(DeliverClicked)
     PauseBtn.OnClicked.bind(PauseClicked)
-    EditBtn.OnClicked.bind(EditClicked)
+    EditRound.OnClicked.bind(EditClicked)
+    MapRound.OnClicked.bind(MapClicked)
     TitleBtn.OnClicked.bind(TitleClicked)
     KeyC = OptionManager.StringToKey("C")
     KeyV = OptionManager.StringToKey("V")
@@ -183,7 +216,45 @@ fn Labels() {
     DestHead.SetText(text(BPL_FDText.T("freightdock.panel.targetOutput")))
     SrcHead.SetText(text(BPL_FDText.T("freightdock.panel.thisInput")))
     Deliver.SetLabelText(BPL_FDText.T("freightdock.panel.deliverNow"))
-    EditBtn.SetLabelText(BPL_FDText.T(if Editing { "freightdock.panel.close" } else { "freightdock.panel.edit" }))
+    EditTip.Setup(BPL_FDText.T(if Editing { "freightdock.panel.closeEdit" } else { "freightdock.panel.edit" }), SmallFont)
+    MapTip.Setup(BPL_FDText.T(if Mapping { "freightdock.panel.hideMap" } else { "freightdock.panel.map" }), SmallFont)
+    ToolLook(EditRound, Editing)
+    ToolLook(MapRound, Mapping)
+}
+
+// A game round button showing only an icon, centred (the icon's slot loses the gap it keeps for the label).
+fn IconOnly(Btn: Arco_Button_CommonRound, Icon: Texture2D) {
+    Btn.SetLabelText("")
+    Btn.ButtonText.SetVisibility(ESlateVisibility.Collapsed)
+    Btn.SetIcon(Icon)
+    Btn.icon.SetVisibility(ESlateVisibility.HitTestInvisible)
+    Btn.icon.SetDesiredSizeOverride(Vector2D(X: 28.0, Y: 28.0))
+    let hs = cast(Btn.icon.Slot, HorizontalBoxSlot)
+    if hs != none {
+        hs.SetPadding(Margin(Left: 0, Top: 0, Right: 0, Bottom: 0))
+        hs.SetHorizontalAlignment(EHorizontalAlignment.HAlign_Center)
+    }
+    let os = cast(Btn.icon.Slot, OverlaySlot)
+    if os != none {
+        os.SetPadding(Margin(Left: 0, Top: 0, Right: 0, Bottom: 0))
+        os.SetHorizontalAlignment(EHorizontalAlignment.HAlign_Center)
+    }
+}
+
+// An opaque colour from 0-255 channels.
+pure fn Rgb(R: int, G: int, B: int) -> Color {
+    return Color(R: KismetMathLibrary.Conv_IntToByte(R), G: KismetMathLibrary.Conv_IntToByte(G), B: KismetMathLibrary.Conv_IntToByte(B), A: KismetMathLibrary.Conv_IntToByte(255))
+}
+
+// An icon button's colours (user's scheme): its panel open, light gold icon on near-black with an orange outline;
+// closed, dull gold on black with a brown outline.
+fn ToolLook(Btn: Arco_Button_CommonRound, Open: bool) {
+    let fg = if Open { Rgb(223, 192, 125) } else { Rgb(139, 122, 83) }
+    let bg = if Open { Rgb(26, 21, 16) } else { Rgb(0, 0, 0) }
+    let line = if Open { Rgb(206, 121, 33) } else { Rgb(132, 95, 74) }
+    Btn.SetIconTint(SlateColor(SpecifiedColor: KismetMathLibrary.Conv_ColorToLinearColor(fg)))
+    Btn.SetBgTint(bg)
+    Btn.CommonRoundedButtonBg.BgFrame.SetColorAndOpacity(KismetMathLibrary.Conv_ColorToLinearColor(line))
 }
 
 // A click on the panel's background stays on the panel (press and release), so it doesn't reach the world behind it.
@@ -227,6 +298,23 @@ fn EditClicked() {
     }
     if !Editing {
         CloseRename()
+    }
+    NextRefresh = 0.0
+}
+
+// Opens or closes the network map (WBP_FDMapPanel), made the first time.
+fn MapClicked() {
+    Mapping = !Mapping
+    Labels()
+    if Mapping && MapPanel == none {
+        MapPanel = create_widget(WBP_FDMapPanel)
+        MapPanel.AddToViewport(0)
+    }
+    if Mapping {
+        if HaveBrush && HaveFonts {
+            MapPanel.SetLook(Bg.Brush, Bg.ColorAndOpacity, BodyFont, SmallFont)
+        }
+        MapPanel.Open(MapLoad, ShownDock)
     }
     NextRefresh = 0.0
 }
@@ -604,6 +692,12 @@ fn ProbeDock(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, D: WorkDock)
 // Every frame, from BP_MapLoad.PanelTick.
 fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     MapLoad = Owner
+    if !TickLate {
+        // BP_MapLoad ticks after the game's input and the rest of the world, so a dock window the game shows this
+        // frame is found (and moved, LowerWindow) before it is drawn
+        TickLate = true
+        Owner.SetTickGroup(ETickingGroup.TG_PostUpdateWork)
+    }
     if !Migrated && Owner.Docks.Length() > 0 {
         // once per load, when the docks are known: 1.x pairs become networks (BPL_FDNet), and the colony records this
         // version as the last to run on it (BPL_FDStore, "ver"; none before 2026-11)
@@ -644,6 +738,10 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     KeepHidden()
     let wasFound = Window != none
     FindWindow()
+    if SweepSoon > 0 && Window != none {
+        SweepSoon -= 1
+        Sweep()
+    }
     if now >= NextRefresh {
         NextRefresh = now + 0.5
         Refresh(dock)
@@ -662,6 +760,11 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     }
     ShowNetPanel()
     HoverStep()
+    ShowMapPanel()
+    if Mapping && MapPanel != none {
+        // the hovered network (HoverStep), else all of the dock's
+        MapPanel.Update(MapLoad, ShownDock, HiNet)
+    }
     HoldZoom()
 }
 
@@ -675,6 +778,11 @@ fn HoldZoom() {
     let over = false
     if NetPanel != none {
         over = NetPanel.IsVisible() && NetPanel.IsHovered()
+    }
+    if MapPanel != none {
+        if MapPanel.IsVisible() && MapPanel.IsHovered() {
+            over = true
+        }
     }
     if !over {
         HeldZoom = -1.0
@@ -693,6 +801,15 @@ fn ShowNetPanel() {
     }
     let shown = Editing && GetVisibility() == ESlateVisibility.Visible
     NetPanel.SetVisibility(if shown { ESlateVisibility.Visible } else { ESlateVisibility.Collapsed })
+}
+
+// The network map is shown while open and this panel is drawn.
+fn ShowMapPanel() {
+    if MapPanel == none {
+        return
+    }
+    let shown = Mapping && GetVisibility() == ESlateVisibility.Visible
+    MapPanel.SetVisibility(if shown { ESlateVisibility.Visible } else { ESlateVisibility.Collapsed })
 }
 
 // Nothing to show: hide, and give the dock window's parts back their visibility.
@@ -715,7 +832,11 @@ fn Leave() {
     if Editing {
         EditClicked()
     }
+    if Mapping {
+        MapClicked()
+    }
     ShowNetPanel()
+    ShowMapPanel()
     // hidden: no highlight
     HoverStep()
     Restore()
@@ -743,6 +864,18 @@ fn Restore() {
     }
     Spacers = []
     SpacerMins = []
+    if Window != none && !Moved.Contains(Window) {
+        Moved.Add(Window)
+    }
+    for mw in Moved {
+        if KismetSystemLibrary.IsValid(mw) {
+            mw.SetRenderTranslation(Vector2D(X: 0.0, Y: 0.0))
+        }
+    }
+    Moved = []
+    Lowered = 0.0
+    LowerWait = 0
+    WindowBg = none
     Window = none
 }
 
@@ -784,19 +917,36 @@ fn FindWindow() {
         }
     }
     Window = none
+    // a visible window not laid out yet (its first frame): taken when no laid-out one is visible, so its parts are
+    // hidden before it is first drawn; Step sweeps it again once laid out (SweepSoon)
+    let fresh: Details_WorkDock_Generic = none
     let found = WidgetBlueprintLibrary.GetAllWidgetsOfClass(/Game/UI/GridActor_DetailViews/Details_WorkDock_Generic.Details_WorkDock_Generic_C, false)
     for w in found.FoundWidgets {
         let win = cast(w, Details_WorkDock_Generic)
         if win != none {
             if win.IsVisible() {
+                if KnownLower != 0.0 && !Moved.Contains(win) {
+                    win.SetRenderTranslation(Vector2D(X: 0.0, Y: KnownLower))
+                    Moved.Add(win)
+                }
                 if SlateBlueprintLibrary.GetAbsoluteSize(win.Tabs_Parent.GetCachedGeometry()).X > 50.0 {
                     Window = win
+                } else {
+                    fresh = win
                 }
             }
         }
     }
     if Window == none {
-        return
+        if fresh == none {
+            return
+        }
+        Window = fresh
+        SweepSoon = 3
+    }
+    if Moved.Contains(Window) {
+        Lowered = KnownLower
+        LowerWait = 2
     }
     Keep(Window.ShipPreparationWidget)
     Keep(Window.EmbarkationPanel)
@@ -928,6 +1078,9 @@ fn Sweep() {
             }
         }
     }
+    if behind != none {
+        WindowBg = behind
+    }
     if !HaveBrush {
         let src = if behind == none { bar } else { behind }
         if src != none {
@@ -1001,15 +1154,50 @@ pure fn DockId(Dock: WorkDock) -> int {
     return if grid == none { -1 } else { grid.ID }
 }
 
-// Bottom right corner of the panel at the dock window's left edge, 8 px above the bottom of the screen.
+// Bottom right corner of the panel at the dock window's left edge, 8 px above the bottom of the screen; the dock
+// window moved down to the same line.
 fn Place() {
     let size = WidgetLayoutLibrary.GetViewportSize()
+    LowerWindow(size)
     let left = if Window == none { size.X * 0.64 } else { WindowLeft(size.X) }
     SetAlignmentInViewport(Vector2D(X: 1.0, Y: 1.0))
     SetPositionInViewport(Vector2D(X: left - 6.0, Y: size.Y - 8.0), true)
     if Editing && NetPanel != none {
         // the network GUI to this panel's left, 8 px apart, bottoms aligned
         NetPanel.Place(PosOf(Width).X - 8.0, size.Y - 8.0)
+    }
+    if Mapping && MapPanel != none {
+        // the map above the dock window, right edges aligned, as large as fits between it and the top of the screen
+        if WindowBg != none {
+            let at = PosOf(WindowBg)
+            let wide = SizeOf(WindowBg)
+            MapPanel.Place(at.X + wide.X, at.Y - 8.0, wide.X, at.Y - 16.0)
+        } else {
+            MapPanel.Place(size.X - 8.0, size.Y * 0.5, size.X * 0.3, size.Y * 0.5 - 16.0)
+        }
+    }
+}
+
+// Moves the dock window down so its background's bottom is 8 px above the bottom of the screen (Restore moves it
+// back). Its geometry shows a move a frame or two late: waits that long before measuring again.
+fn LowerWindow(View: Vector2D) {
+    if Window == none || WindowBg == none {
+        return
+    }
+    if LowerWait > 0 {
+        LowerWait -= 1
+        return
+    }
+    let gap = View.Y - 8.0 - (PosOf(WindowBg).Y + SizeOf(WindowBg).Y)
+    if KismetMathLibrary.Abs(gap) < 1.0 {
+        return
+    }
+    Lowered += gap / WidgetLayoutLibrary.GetViewportScale()
+    Window.SetRenderTranslation(Vector2D(X: 0.0, Y: Lowered))
+    LowerWait = 2
+    KnownLower = Lowered
+    if !Moved.Contains(Window) {
+        Moved.Add(Window)
     }
 }
 

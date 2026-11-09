@@ -43,8 +43,10 @@ pure fn Strings() -> map<name, string> {
         "freightdock.panel.renameTip": "Click to rename",
         "freightdock.rename.dock": "Rename dock",
         "freightdock.rename.net": "Rename network {net}",
-        "freightdock.panel.edit": "Edit",
-        "freightdock.panel.close": "Close",
+        "freightdock.panel.edit": "Edit networks",
+        "freightdock.panel.closeEdit": "Close network editor",
+        "freightdock.panel.map": "Map",
+        "freightdock.panel.hideMap": "Hide map",
         "freightdock.panel.notInNetwork": "Not in a network",
         "freightdock.panel.membership": "{net}: {role}",
         "freightdock.role.provide": "provide",
@@ -104,6 +106,10 @@ pure fn Strings() -> map<name, string> {
         "freightdock.manifest.carried": "On the way here",
         "freightdock.manifest.aboard": "On the ship",
         "freightdock.manifest.requested": "Amount requested",
+
+        // network map (WBP_FDMapPanel)
+        "freightdock.map.routes": "Routes",
+        "freightdock.map.routesTip": "Each provider's course to its job's target",
 
         // network GUI (WBP_FDNetPanel, WBP_FDNetRow, WBP_FDNetTip) and the members tooltip (WBP_FDMembersTip)
         "freightdock.net.title": "FREIGHT NETWORKS",

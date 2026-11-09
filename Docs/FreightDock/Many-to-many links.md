@@ -142,11 +142,16 @@ Whiskerwood has no minimap widget of its own. Loom's minimap demo (https://loom.
 - terrain read from `ArcoSystems.m_terrain`: water depth from `Cells2D[..].WaterDepth`; land height from the top cell with the solid flag in `TypesAndFlags`;
 - each cell drawn as two triangles with `BeginDrawCanvasToRenderTarget` / `K2_DrawTriangle` / `EndDrawCanvasToRenderTarget`, a few rows per frame (the demo: 128 × 128 cells, 2 rows a tick, about 64 ticks per full pass), ticking while paused.
 
-For FreightDock:
+For FreightDock (decided 2026-11-09; built in WBP_FDMapPanel):
 
-- **One map per loaded save:** built after load, a few rows a frame; not saved.
-- **Terrain only:** buildings aren't drawn into the map, so building and demolishing need no redraw. Docks and warehouses are icon widgets over the image, placed from their world positions.
-- **Refresh:** a fresh pass every 10 minutes or so, for terraforming.
+- **Opening:** a round button (the game's) with the spyglass icon at the right of the dock GUI's header (the route icon's, at the end of the NETWORKS line, opens the network GUI; colours, icon / fill / outline: closed #8B7A53 / #000000 / #845F4A, open #DFC07D / #1A1510 / #CE7921) opens the map panel (no title, for map room) above the game's dock window, right edges aligned, as large as fits between that window and the top of the screen; a second click closes it, as does deselecting the dock. While the dock GUI is shown, the game's dock window is moved down so its bottom lines up with the dock GUI's (8 px above the screen's bottom).
+- **View:** opens fitted to the docks shown (with a margin); the mouse wheel zooms about the cursor, from the whole world to 8x; dragging pans; a double-click shows the whole world. The view isn't remembered.
+- **Terrain:** water shaded by depth; land in one colour (no height shading): every land cell reads surface type 0 (`TypesAndFlags` 160), and the user prefers the plain land. Cells over water that buildings stand on at the water's level (grid level 0: paths, piers, docks, buildings on the water) are drawn in cream (#EADFC2), from the grid actors' footprints, 100 actors a frame after each terrain pass; those below or above that level are not. Drawn at one cell a pixel (768 x 768) into a render target a few rows a frame when the map is first opened, then every 10 minutes of game time while it is open; each redraw of the markers layer first draws the view's part of the terrain into it, so terrain and markers are one image (a separate terrain image zoomed by a render transform drifted a few cells off the markers). Not saved; buildings aren't drawn.
+- **Networks shown:** the hovered one (a NETWORKS entry or a network GUI row), else all of the dock's.
+- **Over the terrain** (drawn for the view in the same image, so markers keep their size; redrawn twice a second and when the view or the hovered network changes): each member dock as a marker, red providing and blue requesting (both: two side by side), the selected dock outlined and drawn last, each at the middle of its footprint's cells, on the dock as drawn (its bounds reach further out over the water); each provider's planned course to its job's target in the network's colour, with a Routes checkbox to hide them; ships under way as dots.
+- **Names:** only the hovered dock's: a label beside the marker nearest the cursor (within 16 units). A widget, not canvas text: text drawn into the render target didn't show.
+- **Mapping:** world position / 50 (a cell's side; buildings stand at cell centres, 25 past a multiple of 50) less the terrain's origin. `GridMath.GetScale` gives 1 and `ToGridPosition`/`ToInt` give world units. Confirmed 2026-11-09 by water and land around each dock at 50, axes as drawn.
+- **Later idea (user 2026-11-09):** a stylised, subway-map view: islands as simple shapes, lines between the docks of each network (which islands they connect, not the routes taken).
 
 ## Dispatch: global jobs (decided 2026-11-05)
 

@@ -1,0 +1,754 @@
+blueprint WBP_FDMapPanel : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDMapPanel
+
+// The network map: opened by Map in the dock GUI (WBP_FDPanel), it stands above the game's dock window, right edges
+// aligned, as large as fits there, in the dock GUI's frame, background and fonts.
+// - Terrain: the whole world, water shaded by depth, land in one colour; read from the game's terrain
+//   (ArcoSystems.m_terrain), one cell a pixel, a few rows a frame into a render target (as Loom's minimap demo), first
+//   when the map is opened, then every RebuildSeconds() of game time while it is open; then the cells over water
+//   that buildings stand on at the water's level, as land (BuildStep). Buildings aren't drawn otherwise.
+// - View: opens fitted to the docks shown; the wheel zooms about the cursor (whole world to MaxZoom()), dragging
+//   pans, a double-click shows the whole world. One image shows the view: the view's part of the terrain drawn into
+//   the markers layer, the markers over it, so the two can't drift apart (a terrain image zoomed by a render transform
+//   did: its built cells sat a few cells off the markers) and markers keep their size.
+// - Markers, redrawn twice a second and when the view or the hovered network changes: the networks shown (the hovered
+//   one, else all of the dock's), each member dock as a marker, red providing and blue requesting (both: two side by
+//   side), the selected dock outlined and drawn last, each at its building's middle; each provider's course to its job's target in the network's
+//   colour (Routes); ships under way as dots. A dock's name shows beside its marker while the cursor is on it.
+// World positions map to terrain cells of CellSize() world units, less the terrain's origin.
+
+var MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C
+var Dock: WorkDock
+var Sys: ArcoSystems
+var Terrain: TextureRenderTarget2D
+var Marks: TextureRenderTarget2D
+// terrain cells per map pixel, the map's size in pixels, the next map row to draw (-1: none)
+var Step: int = 1
+var MapW: int = 0
+var MapH: int = 0
+var Row: int = -1
+var BuiltAt: float = -1.0
+var NextMarks: float = 0.0
+// the map's largest side as shown, and the map box's size (widget units), set by Place
+var Shown: float = 460.0
+var BoxW: float = 460.0
+var BoxH: float = 460.0
+// the view: zoom (1: the whole world) and its top left corner as a share of the world; Fit is still to be done
+var Zoom: float = 1.0
+var ViewX: float = 0.0
+var ViewY: float = 0.0
+var FitPending: bool = false
+// dragging the view, and where the cursor last was over the map box (widget units; Inside: it is over it)
+var Dragging: bool = false
+var Pointer: Vector2D
+var Inside: bool = false
+// the markers drawn (dock IDs, centres in map box units) and the dock whose name shows (-1: none)
+var MarkIds: array<int>
+var MarkAt: array<Vector2D>
+var NamedId: int = -1
+// the pass drawing built cells over water as land (BuildStep), after each terrain pass: the grid actors, the next to
+// look at (-1: none)
+var BuiltActors: array<GridActor>
+var BuiltIdx: int = -1
+var Focus: int = -1
+var ShowRoutes: bool = true
+var BodyFont: SlateFontInfo
+var SmallFont: SlateFontInfo
+var TickOn: soft<Texture2D> = /Game/Assets/Icons/icons8-tick-box-96.icons8-tick-box-96
+var TickOff: soft<Texture2D> = /Game/Assets/Icons/icons8-tick-box-unchecked-96.icons8-tick-box-unchecked-96
+var RoutesTip: WBP_FDTip
+
+widget Width: SizeBox(WidthOverride: 560.0) {
+    widget Stack: Overlay {
+        widget Bg: Image(ColorAndOpacity: "#0d1520f2") slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill)
+        widget Frame: RoundedFrameWithHeaderIcon(showIcon: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill, Padding: Margin(Left: 26, Top: 16, Right: 26, Bottom: 16))
+        widget Inner: Border(BrushColor: "#00000000", Padding: Margin(Left: 20, Top: 16, Right: 20, Bottom: 18)) {
+            widget Col: VerticalBox {
+                widget Bar: HorizontalBox slot(Padding: Margin(Left: 0, Top: 0, Right: 0, Bottom: 6)) {
+                    widget RoutesBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
+                        widget RoutesTick: Image
+                    }
+                    widget RoutesLabel: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 4, Top: 0, Right: 0, Bottom: 0))
+                }
+                widget MapBox: SizeBox(WidthOverride: 460.0, HeightOverride: 460.0) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center) {
+                    widget MapStack: Overlay {
+                        widget MarksImg: Image slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Fill)
+                        widget NameTag: Border(BrushColor: "#0d1520e6", Padding: Margin(Left: 6, Top: 2, Right: 6, Bottom: 2)) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Left, VerticalAlignment: EVerticalAlignment.VAlign_Top) {
+                            widget NameText: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// the map's largest side in pixels, the markers layer's
+pure fn MapRes() -> int {
+    return 768
+}
+
+pure fn MarksRes() -> int {
+    return 1024
+}
+
+// the panel's width and height around the map (frame, padding, the Routes bar), widget units
+pure fn ChromeW() -> float {
+    return 92.0
+}
+
+pure fn ChromeH() -> float {
+    return 104.0
+}
+
+pure fn RowsPerFrame() -> int {
+    return 3
+}
+
+pure fn RebuildSeconds() -> float {
+    return 600.0
+}
+
+pure fn MaxZoom() -> float {
+    return 8.0
+}
+
+// A terrain cell's side in world units: buildings stand at cell centres, every one at 25 past a multiple of 50
+// (GridMath.GetScale gives 1, ToGridPosition the world position).
+pure fn CellSize() -> float {
+    return 50.0
+}
+
+on Construct {
+    Frame.NamedSlot_93.SetContent(Inner)
+    HideFrameIcon()
+    RoutesTip = create_widget(WBP_FDTip)
+    RoutesBtn.SetToolTip(RoutesTip)
+    RoutesBtn.OnClicked.bind(RoutesClicked)
+    RoutesTick.SetDesiredSizeOverride(Vector2D(X: 22.0, Y: 22.0))
+    MapBox.SetClipping(EWidgetClipping.ClipToBounds)
+    MarksImg.SetVisibility(ESlateVisibility.HitTestInvisible)
+    NameTag.SetVisibility(ESlateVisibility.Collapsed)
+    Labels()
+    SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// Over the map: a button press starts dragging the view. Clicks, double-clicks and the wheel over the panel stay on
+// it (as the network GUI).
+on OnMouseButtonDown(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    Track(MouseEvent)
+    if Inside {
+        Dragging = true
+        let held = WidgetBlueprintLibrary.Handled()
+        return WidgetBlueprintLibrary.CaptureMouse(held, self)
+    }
+    return WidgetBlueprintLibrary.Handled()
+}
+
+on OnMouseButtonUp(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    if Dragging {
+        Dragging = false
+        let freed = WidgetBlueprintLibrary.Handled()
+        return WidgetBlueprintLibrary.ReleaseMouseCapture(freed)
+    }
+    return WidgetBlueprintLibrary.Handled()
+}
+
+on OnMouseMove(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    let was = Pointer
+    Track(MouseEvent)
+    if Dragging {
+        ViewX -= (Pointer.X - was.X) / (BoxW * Zoom)
+        ViewY -= (Pointer.Y - was.Y) / (BoxH * Zoom)
+        ApplyView()
+        return WidgetBlueprintLibrary.Handled()
+    }
+    return WidgetBlueprintLibrary.Unhandled()
+}
+
+on OnMouseLeave(MouseEvent: PointerEvent) {
+    Inside = false
+}
+
+// A double-click shows the whole world.
+on OnMouseButtonDoubleClick(InMyGeometry: Geometry, InMouseEvent: PointerEvent) -> EventReply {
+    Track(InMouseEvent)
+    if Inside {
+        Zoom = 1.0
+        ViewX = 0.0
+        ViewY = 0.0
+        ApplyView()
+    }
+    return WidgetBlueprintLibrary.Handled()
+}
+
+// The wheel zooms about the cursor.
+on OnMouseWheel(MyGeometry: Geometry, MouseEvent: PointerEvent) -> EventReply {
+    Track(MouseEvent)
+    if Inside {
+        let delta = KismetInputLibrary.PointerEvent_GetWheelDelta(MouseEvent)
+        let atX = ViewX + Pointer.X / (BoxW * Zoom)
+        let atY = ViewY + Pointer.Y / (BoxH * Zoom)
+        let next = if delta > 0.0 { Zoom * 1.25 } else { Zoom / 1.25 }
+        Zoom = KismetMathLibrary.FClamp(next, 1.0, MaxZoom())
+        ViewX = atX - Pointer.X / (BoxW * Zoom)
+        ViewY = atY - Pointer.Y / (BoxH * Zoom)
+        ApplyView()
+    }
+    return WidgetBlueprintLibrary.Handled()
+}
+
+// The cursor's place over the map box (widget units), and whether it is over it.
+fn Track(MouseEvent: PointerEvent) {
+    let screen = KismetInputLibrary.PointerEvent_GetScreenSpacePosition(MouseEvent)
+    Pointer = SlateBlueprintLibrary.AbsoluteToLocal(MapBox.GetCachedGeometry(), screen)
+    Inside = Pointer.X >= 0.0 && Pointer.Y >= 0.0 && Pointer.X <= BoxW && Pointer.Y <= BoxH
+}
+
+// Keeps the view inside the world, moves the terrain image to it, and redraws the markers.
+fn ApplyView() {
+    let span = 1.0 / Zoom
+    ViewX = KismetMathLibrary.FClamp(ViewX, 0.0, 1.0 - span)
+    ViewY = KismetMathLibrary.FClamp(ViewY, 0.0, 1.0 - span)
+    NextMarks = 0.0
+}
+
+// The view around the docks shown, with a margin; the whole world when there are none.
+fn Fit() {
+    let minX = 1.0
+    let minY = 1.0
+    let maxX = 0.0
+    let maxY = 0.0
+    let any = false
+    for net in ShownNets() {
+        let m = BPL_FDNet.Members(MapLoad, net)
+        let all: array<WorkDock> = m.Providers
+        for r in m.Requesters {
+            all.Add(r)
+        }
+        for d in all {
+            let f = ToShare(DockAt(d))
+            minX = KismetMathLibrary.FMin(minX, f.X)
+            minY = KismetMathLibrary.FMin(minY, f.Y)
+            maxX = KismetMathLibrary.FMax(maxX, f.X)
+            maxY = KismetMathLibrary.FMax(maxY, f.Y)
+            any = true
+        }
+    }
+    if !any {
+        Zoom = 1.0
+        ViewX = 0.0
+        ViewY = 0.0
+        ApplyView()
+        return
+    }
+    let spanX = (maxX - minX) * 1.4 + 0.04
+    let spanY = (maxY - minY) * 1.4 + 0.04
+    Zoom = KismetMathLibrary.FClamp(KismetMathLibrary.FMin(1.0 / spanX, 1.0 / spanY), 1.0, MaxZoom())
+    ViewX = (minX + maxX) * 0.5 - 0.5 / Zoom
+    ViewY = (minY + maxY) * 0.5 - 0.5 / Zoom
+    ApplyView()
+}
+
+// The rounded frame draws its header icon whatever showIcon says: collapse its images showing the frame's Icon.
+fn HideFrameIcon() {
+    if Frame.Icon == none {
+        return
+    }
+    let parts: array<Image> = [Frame.Image, Frame.Image_1, Frame.Image_125, Frame.Image_42, Frame.Image_85]
+    for img in parts {
+        if img != none {
+            if img.Brush.ResourceObject == Frame.Icon {
+                img.SetVisibility(ESlateVisibility.Collapsed)
+            }
+        }
+    }
+}
+
+// The dock GUI's background and fonts, so the panels look alike.
+fn SetLook(Brush: SlateBrush, Tint: LinearColor, Body: SlateFontInfo, Small: SlateFontInfo) {
+    Bg.SetBrush(Brush)
+    Bg.SetColorAndOpacity(Tint)
+    BodyFont = Body
+    SmallFont = Small
+    RoutesLabel.SetFont(Body)
+    RoutesTip.Msg.SetFont(Small)
+    NameText.SetFont(Small)
+}
+
+fn Labels() {
+    RoutesLabel.SetText(text(BPL_FDText.T("freightdock.map.routes")))
+    RoutesTip.Setup(BPL_FDText.T("freightdock.map.routesTip"), SmallFont)
+    RoutesTick.SetBrushFromTexture(if ShowRoutes { TickOn.load() } else { TickOff.load() }, false)
+    RoutesTick.SetColorAndOpacity(if ShowRoutes { LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 0.85) })
+}
+
+fn RoutesClicked() {
+    ShowRoutes = !ShowRoutes
+    Labels()
+    NextMarks = 0.0
+}
+
+// Bottom right corner at (Right, Bottom), the map as large as fits in AreaW x AreaH; viewport pixels.
+fn Place(Right: float, Bottom: float, AreaW: float, AreaH: float) {
+    let scale = WidgetLayoutLibrary.GetViewportScale()
+    let big = float(KismetMathLibrary.Max(KismetMathLibrary.Max(MapW, MapH), 1))
+    let fw = if MapW > 0 { float(MapW) / big } else { 1.0 }
+    let fh = if MapH > 0 { float(MapH) / big } else { 1.0 }
+    let fits = KismetMathLibrary.FMin((AreaW / scale - ChromeW()) / fw, (AreaH / scale - ChromeH()) / fh)
+    let want = KismetMathLibrary.FMax(fits, 200.0)
+    if KismetMathLibrary.Abs(want - Shown) > 0.5 {
+        Shown = want
+        SizeMap()
+    }
+    SetAlignmentInViewport(Vector2D(X: 1.0, Y: 1.0))
+    SetPositionInViewport(Vector2D(X: Right, Y: Bottom), true)
+}
+
+// The map box (the world's proportions, its largest side Shown) and the panel around it.
+fn SizeMap() {
+    let big = float(KismetMathLibrary.Max(KismetMathLibrary.Max(MapW, MapH), 1))
+    BoxW = if MapW > 0 { Shown * float(MapW) / big } else { Shown }
+    BoxH = if MapH > 0 { Shown * float(MapH) / big } else { Shown }
+    MapBox.SetWidthOverride(BoxW)
+    MapBox.SetHeightOverride(BoxH)
+    Width.SetWidthOverride(BoxW + ChromeW())
+    ApplyView()
+}
+
+// Opened for InDock: fitted to its docks; starts the terrain the first time, and again when it is older than
+// RebuildSeconds().
+fn Open(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock) {
+    MapLoad = Owner
+    Dock = InDock
+    Focus = -1
+    Labels()
+    NextMarks = 0.0
+    FitPending = true
+    Dragging = false
+    NamedId = -1
+    NameTag.SetVisibility(ESlateVisibility.Collapsed)
+    let now = GameplayStatics.GetTimeSeconds()
+    if Row < 0 {
+        if BuiltAt < 0.0 || now - BuiltAt > RebuildSeconds() {
+            Row = 0
+        }
+    }
+}
+
+// Every frame from the dock GUI while the map is open. Net: the hovered network (0: none).
+fn Update(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDock, Net: int) {
+    MapLoad = Owner
+    if InDock != Dock {
+        Dock = InDock
+        NextMarks = 0.0
+    }
+    if Net != Focus {
+        Focus = Net
+        NextMarks = 0.0
+    }
+    BuildRows()
+    if FitPending {
+        if Setup() {
+            FitPending = false
+            Fit()
+        }
+    }
+    let now = GameplayStatics.GetRealTimeSeconds()
+    if now >= NextMarks {
+        NextMarks = now + 0.5
+        DrawMarks()
+    }
+    let gameNow = GameplayStatics.GetTimeSeconds()
+    if Row < 0 && BuiltAt >= 0.0 && gameNow - BuiltAt > RebuildSeconds() {
+        Row = 0
+    }
+    NameStep()
+    BuildStep()
+}
+
+// Sets up the render targets from the terrain's extent (once).
+fn Setup() -> bool {
+    if Sys == none {
+        Sys = cast(GameplayStatics.GetActorOfClass(ArcoSystems), ArcoSystems)
+    }
+    if Sys == none {
+        return false
+    }
+    if Terrain != none {
+        return true
+    }
+    let ex = Sys.m_terrain.Extent.X
+    let ey = Sys.m_terrain.Extent.Y
+    if ex <= 0 || ey <= 0 {
+        return false
+    }
+    let big = KismetMathLibrary.Max(ex, ey)
+    Step = KismetMathLibrary.Max((big + MapRes() - 1) / MapRes(), 1)
+    MapW = (ex + Step - 1) / Step
+    MapH = (ey + Step - 1) / Step
+    Terrain = KismetRenderingLibrary.CreateRenderTarget2D(MapW, MapH, ETextureRenderTargetFormat.RTF_RGBA8, LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 1.0), false, false)
+    let mw = MarksRes() * MapW / KismetMathLibrary.Max(MapW, MapH)
+    let mh = MarksRes() * MapH / KismetMathLibrary.Max(MapW, MapH)
+    Marks = KismetRenderingLibrary.CreateRenderTarget2D(mw, mh, ETextureRenderTargetFormat.RTF_RGBA8, LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 0.0), false, false)
+    MarksImg.SetBrushResourceObject(Marks)
+    SizeMap()
+    return true
+}
+
+// Draws the next RowsPerFrame() map rows, each pixel two triangles in one colour.
+fn BuildRows() {
+    if Row < 0 {
+        return
+    }
+    if !Setup() {
+        return
+    }
+    let ex = Sys.m_terrain.Extent.X
+    let ey = Sys.m_terrain.Extent.Y
+    let ez = Sys.m_terrain.Extent.Z
+    let tris: array<CanvasUVTri> = []
+    let r = 0
+    while r < RowsPerFrame() && Row < MapH {
+        let mx = 0
+        while mx < MapW {
+            let c = CellColor(mx * Step, Row * Step, ex, ey, ez)
+            let left = float(mx)
+            let top = float(Row)
+            let a = Vector2D(X: left, Y: top)
+            let b = Vector2D(X: left + 1.0, Y: top)
+            let d = Vector2D(X: left, Y: top + 1.0)
+            let e = Vector2D(X: left + 1.0, Y: top + 1.0)
+            tris.Add(CanvasUVTri(V0_Pos: a, V1_Pos: b, V2_Pos: d, V0_Color: c, V1_Color: c, V2_Color: c))
+            tris.Add(CanvasUVTri(V0_Pos: b, V1_Pos: e, V2_Pos: d, V0_Color: c, V1_Color: c, V2_Color: c))
+            mx += 1
+        }
+        Row += 1
+        r += 1
+    }
+    let draw = KismetRenderingLibrary.BeginDrawCanvasToRenderTarget(Terrain)
+    draw.Canvas.K2_DrawTriangle(none, tris)
+    KismetRenderingLibrary.EndDrawCanvasToRenderTarget(draw.Context)
+    if Row >= MapH {
+        NextMarks = 0.0
+        Row = -1
+        BuiltAt = GameplayStatics.GetTimeSeconds()
+        BuiltActors = GameplayStatics.GetAllActorsOfClass(GridActor).OutActors
+        BuiltIdx = 0
+    }
+}
+
+pure fn LandColor() -> LinearColor {
+    return LinearColor(R: 0.502, G: 0.502, B: 0.502, A: 1.0)
+}
+
+// Cream (#EADFC2): what is built on the water.
+pure fn BuiltColor() -> LinearColor {
+    return LinearColor(R: 0.823, G: 0.737, B: 0.539, A: 1.0)
+}
+
+// Draws in BuiltColor() the cells over water that buildings stand on at the water's level (grid level 0: paths,
+// piers, docks, buildings on the water; not those below or above it), BuiltPerFrame() grid actors a frame. Footprint
+// cells are grid cells; less the terrain's origin they are terrain cells.
+fn BuildStep() {
+    if BuiltIdx < 0 || Terrain == none {
+        return
+    }
+    let ex = Sys.m_terrain.Extent.X
+    let ey = Sys.m_terrain.Extent.Y
+    let c = BuiltColor()
+    let tris: array<CanvasUVTri> = []
+    let stop = KismetMathLibrary.Min(BuiltIdx + BuiltPerFrame(), BuiltActors.Length())
+    while BuiltIdx < stop {
+        let g = BuiltActors[BuiltIdx]
+        BuiltIdx += 1
+        if g != none {
+            for key, cell in g.liveFootprint.Cells {
+                if key.Z == 0 {
+                    let x = key.X - Sys.m_terrain.Origin.X
+                    let y = key.Y - Sys.m_terrain.Origin.Y
+                    if x >= 0 && y >= 0 && x < ex && y < ey {
+                        if int(Sys.m_terrain.Cells2D[x + y * ex].WaterDepth) > 0 {
+                            let left = float(x / Step)
+                            let top = float(y / Step)
+                            let pa = Vector2D(X: left, Y: top)
+                            let pb = Vector2D(X: left + 1.0, Y: top)
+                            let pd = Vector2D(X: left, Y: top + 1.0)
+                            let pe = Vector2D(X: left + 1.0, Y: top + 1.0)
+                            tris.Add(CanvasUVTri(V0_Pos: pa, V1_Pos: pb, V2_Pos: pd, V0_Color: c, V1_Color: c, V2_Color: c))
+                            tris.Add(CanvasUVTri(V0_Pos: pb, V1_Pos: pe, V2_Pos: pd, V0_Color: c, V1_Color: c, V2_Color: c))
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if tris.Length() > 0 {
+        let draw = KismetRenderingLibrary.BeginDrawCanvasToRenderTarget(Terrain)
+        draw.Canvas.K2_DrawTriangle(none, tris)
+        KismetRenderingLibrary.EndDrawCanvasToRenderTarget(draw.Context)
+    }
+    if BuiltIdx >= BuiltActors.Length() {
+        NextMarks = 0.0
+        BuiltIdx = -1
+        BuiltActors = []
+    }
+}
+
+pure fn BuiltPerFrame() -> int {
+    return 100
+}
+
+// The colour of terrain column (X, Y): water by depth, else land (one colour: every land cell reads surface type 0).
+fn CellColor(X: int, Y: int, Ex: int, Ey: int, Ez: int) -> LinearColor {
+    if X >= Ex || Y >= Ey {
+        return LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 1.0)
+    }
+    let depth = int(Sys.m_terrain.Cells2D[X + Y * Ex].WaterDepth)
+    if depth > 0 {
+        let k = float(KismetMathLibrary.Min(depth, 12)) / 12.0
+        return LinearColor(R: 0.20 - 0.14 * k, G: 0.46 - 0.24 * k, B: 0.62 - 0.22 * k, A: 1.0)
+    }
+    let z = Ez - 1
+    while z >= 0 {
+        if (int(Sys.m_terrain.Cells[X + Y * Ex + z * Ex * Ey].TypesAndFlags) & 32) != 0 {
+            return LandColor()
+        }
+        z -= 1
+    }
+    // no solid cell: open water or air (sea floor shown as deep water)
+    return LinearColor(R: 0.06, G: 0.22, B: 0.40, A: 1.0)
+}
+
+// Where a dock's marker goes: the middle of its footprint cells that are drawn (BuildStep: level 0, over water), so
+// it sits on the dock as drawn; else of its level-0 cells, else of all its cells; its actor's location without a
+// footprint. (Its bounds, and its whole footprint, reach further than what is drawn.)
+fn DockAt(D: WorkDock) -> Vector {
+    let loc = D.GetOwner().K2_GetActorLocation()
+    let g = cast(D.GetOwner(), GridActor)
+    if g == none || Sys == none {
+        return loc
+    }
+    let ex = Sys.m_terrain.Extent.X
+    let ey = Sys.m_terrain.Extent.Y
+    // sums for the drawn cells (0), the level-0 cells (1) and all cells (2): x, y, count
+    let sx: array<float> = [0.0, 0.0, 0.0]
+    let sy: array<float> = [0.0, 0.0, 0.0]
+    let sn: array<int> = [0, 0, 0]
+    for key, cell in g.liveFootprint.Cells {
+        let fx = float(key.X) + 0.5
+        let fy = float(key.Y) + 0.5
+        sx[2] = sx[2] + fx
+        sy[2] = sy[2] + fy
+        sn[2] = sn[2] + 1
+        if key.Z == 0 {
+            sx[1] = sx[1] + fx
+            sy[1] = sy[1] + fy
+            sn[1] = sn[1] + 1
+            let x = key.X - Sys.m_terrain.Origin.X
+            let y = key.Y - Sys.m_terrain.Origin.Y
+            if x >= 0 && y >= 0 && x < ex && y < ey {
+                if int(Sys.m_terrain.Cells2D[x + y * ex].WaterDepth) > 0 {
+                    sx[0] = sx[0] + fx
+                    sy[0] = sy[0] + fy
+                    sn[0] = sn[0] + 1
+                }
+            }
+        }
+    }
+    let i = 0
+    while i < 3 {
+        if sn[i] > 0 {
+            return Vector(X: sx[i] / float(sn[i]) * CellSize(), Y: sy[i] / float(sn[i]) * CellSize(), Z: loc.Z)
+        }
+        i += 1
+    }
+    return loc
+}
+
+// World position to a share of the world (0 to 1 across the map).
+fn ToShare(At: Vector) -> Vector2D {
+    let cx = At.X / CellSize() - float(Sys.m_terrain.Origin.X)
+    let cy = At.Y / CellSize() - float(Sys.m_terrain.Origin.Y)
+    return Vector2D(X: cx / float(MapW * Step), Y: cy / float(MapH * Step))
+}
+
+// World position to the map box as shown (widget units).
+fn ToBox(At: Vector) -> Vector2D {
+    let f = ToShare(At)
+    return Vector2D(X: (f.X - ViewX) * Zoom * BoxW, Y: (f.Y - ViewY) * Zoom * BoxH)
+}
+
+// World position to a position on the markers layer.
+fn ToMarks(At: Vector) -> Vector2D {
+    let b = ToBox(At)
+    let k = float(Marks.SizeX) / BoxW
+    return Vector2D(X: b.X * k, Y: b.Y * k)
+}
+
+// The networks shown: the hovered one, else the dock's.
+fn ShownNets() -> array<int> {
+    let out: array<int> = []
+    if Focus > 0 {
+        out.Add(Focus)
+        return out
+    }
+    if Dock == none {
+        return out
+    }
+    let u = BPL_FDNet.Unpack(Dock.activeTradePartnerId)
+    for n in u.Nets {
+        if n > 0 {
+            out.Add(n)
+        }
+    }
+    return out
+}
+
+// The markers layer.
+fn DrawMarks() {
+    if Marks == none || MapLoad == none {
+        return
+    }
+    KismetRenderingLibrary.ClearRenderTarget2D(Marks, LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 1.0))
+    // markers layer pixels per widget unit: the sizes below are as shown
+    let k = float(Marks.SizeX) / BoxW
+    let nets = ShownNets()
+    // per dock in the networks shown: provides (1), requests (2), both (3)
+    let roles: map<int, int> = {}
+    let docks: map<int, WorkDock> = {}
+    let draw = KismetRenderingLibrary.BeginDrawCanvasToRenderTarget(Marks)
+    // the view's part of the terrain, filling the layer
+    let span = 1.0 / Zoom
+    draw.Canvas.K2_DrawTexture(Terrain, Vector2D(X: 0.0, Y: 0.0), Vector2D(X: float(Marks.SizeX), Y: float(Marks.SizeY)), Vector2D(X: ViewX, Y: ViewY), Vector2D(X: span, Y: span), LinearColor(R: 1.0, G: 1.0, B: 1.0, A: 1.0), EBlendMode.BLEND_Opaque, 0.0, Vector2D(X: 0.5, Y: 0.5))
+    for net in nets {
+        let m = BPL_FDNet.Members(MapLoad, net)
+        for p in m.Providers {
+            let pkey = BPL_FDNet.DockId(p)
+            let pwas = roles.Find(pkey)
+            roles[pkey] = (if pwas.ReturnValue { pwas.Value } else { 0 }) | 1
+            docks[pkey] = p
+        }
+        for r in m.Requesters {
+            let rkey = BPL_FDNet.DockId(r)
+            let rwas = roles.Find(rkey)
+            roles[rkey] = (if rwas.ReturnValue { rwas.Value } else { 0 }) | 2
+            docks[rkey] = r
+        }
+        // routes: each provider's course to its job's target, when that target requests on this network
+        if ShowRoutes {
+            for src in m.Providers {
+                let pid = BPL_FDNet.DockId(src)
+                let job = MapLoad.JobTo.Find(pid)
+                if job.ReturnValue {
+                    let to = BPL_FDNet.DockIn(MapLoad, job.Value)
+                    if to != none {
+                        if m.Requesters.Contains(to) {
+                            DrawCourse(draw.Canvas, pid, BPL_FDNet.NetLinear(net), 2.0 * k)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // ships under way: their stand-ins
+    for vid, ship in MapLoad.Voyages {
+        if docks.Contains(vid) {
+            if ship != none {
+                let sat = ToMarks(ship.K2_GetActorLocation())
+                draw.Canvas.K2_DrawPolygon(none, sat, Vector2D(X: 9.0 * k, Y: 9.0 * k), 12, LinearColor(R: 0.05, G: 0.05, B: 0.08, A: 1.0))
+                draw.Canvas.K2_DrawPolygon(none, sat, Vector2D(X: 6.0 * k, Y: 6.0 * k), 12, LinearColor(R: 1.0, G: 0.95, B: 0.8, A: 1.0))
+            }
+        }
+    }
+    // the docks, the selected one last (on top)
+    let selId = if Dock == none { -1 } else { BPL_FDNet.DockId(Dock) }
+    MarkIds = []
+    MarkAt = []
+    for did, role in roles {
+        if did != selId {
+            DrawDock(draw.Canvas, did, docks[did], role, k, false)
+        }
+    }
+    let sel = roles.Find(selId)
+    if sel.ReturnValue {
+        DrawDock(draw.Canvas, selId, docks[selId], sel.Value, k, true)
+    }
+    KismetRenderingLibrary.EndDrawCanvasToRenderTarget(draw.Context)
+}
+
+// One dock's marker (Role: provides 1, requests 2, both 3), outlined when Selected; remembered for NameStep.
+fn DrawDock(Canvas: Canvas, Id: int, D: WorkDock, Role: int, K: float, Selected: bool) {
+    let world = DockAt(D)
+    MarkIds.Add(Id)
+    MarkAt.Add(ToBox(world))
+    let at = ToMarks(world)
+    let both = Role == 3
+    let dark = LinearColor(R: 0.03, G: 0.03, B: 0.05, A: 1.0)
+    if Selected {
+        let half = if both { 22.0 } else { 14.0 }
+        Canvas.K2_DrawBox(Vector2D(X: at.X - half * K, Y: at.Y - 14.0 * K), Vector2D(X: 2.0 * half * K, Y: 28.0 * K), 2.0 * K, LinearColor(R: 1.0, G: 1.0, B: 1.0, A: 1.0))
+    }
+    if (Role & 1) != 0 {
+        let px = if both { at.X - 9.0 * K } else { at.X }
+        Canvas.K2_DrawPolygon(none, Vector2D(X: px, Y: at.Y), Vector2D(X: 10.0 * K, Y: 10.0 * K), 4, dark)
+        Canvas.K2_DrawPolygon(none, Vector2D(X: px, Y: at.Y), Vector2D(X: 7.0 * K, Y: 7.0 * K), 4, KismetMathLibrary.Conv_ColorToLinearColor(BPL_FDNet.ProviderColor()))
+    }
+    if (Role & 2) != 0 {
+        let rx = if both { at.X + 9.0 * K } else { at.X }
+        Canvas.K2_DrawPolygon(none, Vector2D(X: rx, Y: at.Y), Vector2D(X: 10.0 * K, Y: 10.0 * K), 4, dark)
+        Canvas.K2_DrawPolygon(none, Vector2D(X: rx, Y: at.Y), Vector2D(X: 7.0 * K, Y: 7.0 * K), 4, KismetMathLibrary.Conv_ColorToLinearColor(BPL_FDNet.RequesterColor()))
+    }
+}
+
+// The name of the dock whose marker is under the cursor (the nearest, within 16 units), beside its marker.
+fn NameStep() {
+    let best = -1
+    let bestAt = Vector2D(X: 0.0, Y: 0.0)
+    if Inside && !Dragging && IsHovered() {
+        let bestDist = 16.0
+        let i = 0
+        while i < MarkIds.Length() {
+            let dist = KismetMathLibrary.Distance2D(MarkAt[i], Pointer)
+            if dist <= bestDist {
+                bestDist = dist
+                best = MarkIds[i]
+                bestAt = MarkAt[i]
+            }
+            i += 1
+        }
+    }
+    if best < 0 {
+        if NamedId >= 0 {
+            NamedId = -1
+            NameTag.SetVisibility(ESlateVisibility.Collapsed)
+        }
+        return
+    }
+    if best != NamedId {
+        NamedId = best
+        let d = BPL_FDNet.DockIn(MapLoad, best)
+        NameText.SetText(text(if d == none { "" } else { BPL_FDNet.DockName(MapLoad, d) }))
+        NameTag.SetVisibility(ESlateVisibility.HitTestInvisible)
+    }
+    NameTag.SetRenderTranslation(Vector2D(X: bestAt.X + 24.0, Y: bestAt.Y - 14.0))
+}
+
+// A provider's planned course (BP_MapLoad.RouteCurve), sampled every 100 units, as a line.
+fn DrawCourse(Canvas: Canvas, Id: int, Tint: LinearColor, Thick: float) {
+    let curve = MapLoad.RouteCurve(Id).Curve
+    if curve == none {
+        return
+    }
+    let len = curve.GetSplineLength()
+    if len <= 0.0 {
+        return
+    }
+    let last = ToMarks(curve.GetLocationAtDistanceAlongSpline(0.0, ESplineCoordinateSpace.World))
+    let d = 100.0
+    while d < len + 100.0 {
+        let next = ToMarks(curve.GetLocationAtDistanceAlongSpline(KismetMathLibrary.FMin(d, len), ESplineCoordinateSpace.World))
+        Canvas.K2_DrawLine(last, next, Thick, Tint)
+        last = next
+        d += 100.0
+    }
+}
