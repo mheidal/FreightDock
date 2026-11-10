@@ -12,7 +12,7 @@ pure fn Strings() -> map<name, string> {
     return {
         // the building and the worker modifier
         "freightdock.building.freightDock": "Freight Dock",
-        "freightdock.building.freightDock.desc": "Crew a ship that carries goods your paired freight dock's island needs, then returns",
+        "freightdock.building.freightDock.desc": "Ship goods between freight docks on shared networks",
         "freightdock.stevedore": "Stevedore",
         "freightdock.stevedore.desc": "+10 carry capacity while working at a freight dock",
 
@@ -24,6 +24,7 @@ pure fn Strings() -> map<name, string> {
 
         // why Deliver now can't act (its tooltip while disabled)
         "freightdock.deliver.underWay": "Already under way",
+        "freightdock.deliver.returned": "Trip finished",
         "freightdock.deliver.nothingLoaded": "Nothing loaded yet",
         "freightdock.deliver.departing": "Departing",
 
@@ -71,13 +72,20 @@ pure fn Strings() -> map<name, string> {
         "freightdock.idle.noRequests": "no requests for its inputs",
         "freightdock.idle.noInputs": "no input warehouses",
         "freightdock.idle.belowMinimum": "below minimum load ({n} for {dock})",
+        "freightdock.idle.noOpen": "no requests on its networks",
+        "freightdock.idle.covered": "requests covered by other ships",
+        "freightdock.idle.inputsEmpty": "inputs empty",
+        "freightdock.idle.inputsLack": "inputs lack requested goods",
+        "freightdock.idle.keptForOwn": "{good} kept for own outputs",
+        "freightdock.idle.heldBack": "{good} held back after stall",
         "freightdock.ship.onTheWay": "On the way",
         "freightdock.ship.unloading": "Unloading",
         "freightdock.ship.returning": "Returning",
+        "freightdock.ship.returned": "Returned",
         "freightdock.ship.noShip": "No ship at dock",
         "freightdock.ship.leaving": "Waiting for final cargo",
         "freightdock.ship.departing": "Departing",
-        "freightdock.ship.loading": "Loading {time}",
+        "freightdock.ship.loadingFor": "Loading for {time}",
         "freightdock.ship.leavingIn": "Waiting for cargo - leaving automatically in {time}",
         "freightdock.ship.waiting": "Waiting for cargo",
         "freightdock.ship.offDuty": "Crew off duty",
@@ -95,9 +103,16 @@ pure fn Strings() -> map<name, string> {
         "freightdock.incoming.loading": "Loading at {dock}",
         "freightdock.incoming.sailing": "From {dock}, ~{time}",
         "freightdock.incoming.waiting": "Waiting for a ship",
+        "freightdock.incoming.noShip": "No ship: can't unload",
+        "freightdock.incoming.noOutputs": "No output warehouses linked",
+        "freightdock.incoming.noRequestsSet": "Output warehouses have no requests set",
+        "freightdock.incoming.satisfied": "Output warehouse requests satisfied",
+        "freightdock.incoming.hauling": "Remaining requests on their way by hauler",
         "freightdock.why.noProvider": "No provider on its networks",
         "freightdock.why.noStock": "No provider stock",
         "freightdock.why.busy": "Providers busy",
+        "freightdock.why.paused": "Providers paused",
+        "freightdock.why.noTakes": "No provider stocks this good",
         "freightdock.why.offDuty": "Providers off duty",
         "freightdock.why.noShips": "Providers missing ships",
         "freightdock.why.belowMinimum": "Below minimum load ({n} of {min})",
@@ -112,6 +127,9 @@ pure fn Strings() -> map<name, string> {
         // network map (WBP_FDMapPanel)
         "freightdock.map.routes": "Routes",
         "freightdock.map.routesTip": "Each provider's course to its job's target",
+        "freightdock.map.provides": "Provides",
+        "freightdock.map.requests": "Requests",
+        "freightdock.map.ship": "Ship",
 
         // network GUI (WBP_FDNetPanel, WBP_FDNetRow, WBP_FDNetTip) and the members tooltip (WBP_FDMembersTip)
         "freightdock.net.title": "FREIGHT NETWORKS",

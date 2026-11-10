@@ -20,6 +20,12 @@ var BodyFont: SlateFontInfo
 var SmallFont: SlateFontInfo
 var ProvIconTex: soft<Texture2D> = /Game/Assets/Icons/icons8-logout-rounded-100.icons8-logout-rounded-100
 var ReqIconTex: soft<Texture2D> = /Game/Assets/Icons/icons8-input-100_2_.icons8-input-100_2_
+// the rows' last height cap (Place)
+var RowsCap: float = 0.0
+// the rows' scrollbar, shown while the cursor is over the rows or for a second after they scrolled (BarStep)
+var BarOffset: float = 0.0
+var BarMoved: float = -100.0
+var BarShown: bool = true
 
 widget Width: SizeBox(WidthOverride: 740.0) {
     widget Stack: Overlay {
@@ -162,12 +168,42 @@ fn Labels() {
     }
 }
 
-// Bottom right corner at (Right, Bottom), viewport pixels. The rows may take up to 60% of the screen's height.
-fn Place(Right: float, Bottom: float) {
+// Bottom right corner at (Right, Bottom), viewport pixels; the top no higher than Top (the dock GUI's): the rows
+// scroll past what fits, less the frame, the title and the header (measured once laid out).
+fn Place(Right: float, Bottom: float, Top: float) {
     SetAlignmentInViewport(Vector2D(X: 1.0, Y: 1.0))
     SetPositionInViewport(Vector2D(X: Right, Y: Bottom), true)
     let scale = KismetMathLibrary.FMax(WidgetLayoutLibrary.GetViewportScale(), 0.1)
-    RowsMax.SetMaxDesiredHeight(WidgetLayoutLibrary.GetViewportSize().Y / scale * 0.6)
+    let chrome = 120.0
+    let whole = SlateBlueprintLibrary.GetAbsoluteSize(Width.GetCachedGeometry()).Y
+    let rows = SlateBlueprintLibrary.GetAbsoluteSize(RowsMax.GetCachedGeometry()).Y
+    if whole > 0.0 && rows > 0.0 {
+        chrome = (whole - rows) / scale
+    }
+    let cap = KismetMathLibrary.FMax((Bottom - Top) / scale - chrome, 100.0)
+    if KismetMathLibrary.Abs(cap - RowsCap) > 1.0 {
+        RowsCap = cap
+        RowsMax.SetMaxDesiredHeight(cap)
+    }
+}
+
+// The rows' scrollbar: shown while the cursor is over the rows, or for a second after they scrolled; otherwise hidden,
+// keeping its room (as the dock GUI's). Called each frame by the dock GUI.
+fn BarStep() {
+    let t = GameplayStatics.GetRealTimeSeconds()
+    let off = RowsBox.GetScrollOffset()
+    if KismetMathLibrary.Abs(off - BarOffset) > 0.5 {
+        BarOffset = off
+        BarMoved = t
+    }
+    let show = t - BarMoved < 1.0
+    if RowsBox.IsHovered() {
+        show = true
+    }
+    if show != BarShown {
+        BarShown = show
+        RowsBox.SetScrollBarVisibility(if show { ESlateVisibility.Visible } else { ESlateVisibility.Hidden })
+    }
 }
 
 // What the cursor is over in the table (see WBP_FDNetRow.HoverInfo); Net 0 when nothing.

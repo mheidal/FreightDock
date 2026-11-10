@@ -1,93 +1,23 @@
-"""Showing routes: DrawRoute, the route line meshes (SM_RouteStrip), cached route curves per dock, and the
-preview course from a dock.
+"""Showing routes (BPL_FDPairing.DrawRoute picks the curve): the route line meshes (SM_RouteStrip), cached route
+curves per dock, and the preview course from a dock.
 """
 from fdgen.core.graph import Graph, local_var
 from fdgen.core.types import (
-    BOOL, CLASSPIN, DOUBLE, EXEC, INT, MAP_INT_ACTOR, MAP_INT_BOOL, MAP_INT_INT,
-    MAP_INT_OBJ, MAP_INT_SHIP, MAP_INT_VECTOR, NAME, OBJ, SPLINE_SPACE, STRUCT)
+    BOOL, CLASSPIN, DOUBLE, EXEC, INT, MAP_INT_BOOL, MAP_INT_INT, MAP_INT_OBJ, MAP_INT_SHIP, MAP_INT_VECTOR,
+    NAME, OBJ, SPLINE_SPACE, STRUCT)
 from fdgen.core.paths import (
-    ACTOR, ACTORCOMP, K2, MAPLIB, MATHLIB, MATLIB, MID, PCPLAY, ROUTE_LINE_MAT, ROUTE_STRIP,
-    SHIP, SPLINE, SPLINEMESH, TRANSFORM, VECTOR, VECTOR2D, WORKDOCK)
+    ACTOR, ACTORCOMP, K2, MATHLIB, MATLIB, MID, ROUTE_LINE_MAT, ROUTE_STRIP, SHIP, SPLINE, SPLINEMESH,
+    TRANSFORM, VECTOR, VECTOR2D, WORKDOCK)
 from fdgen.core.specs import fn_spec
 from fdgen.core.nodes import (
-    arrfn, bnot, bop, branch, chain, clear_var, for_each, for_loop, get_local, get_self, ii,
-    is_valid, map_add, map_find, map_remove, self_var, set_local, set_self, user_call)
-from fdgen.features.arcs import queue_arc
+    arrfn, bop, branch, chain, clear_var, for_each, for_loop, get_local, get_self, ii, is_valid, map_add,
+    map_find, map_remove, self_var, set_local, set_self, user_call)
 from fdgen.routes.course import corner_leg
 
 
-def draw_route():
-    """DrawRoute(Id, PC): show the course of dock Id's own ship by leaving it in WantCurve for ShowRouteLine - while
-    sailing out or home, the voyage spline; while berthed, the outbound course; while waiting at the target, the
-    homeward course (both PreviewCourse; RouteCurve if the dock has no ship); or queue the straight
-    RouteStart -> RouteEnd arc when it has no route. Called from DrawArcs in place of its single route arc.
-    Local: Curve (Spline Component)."""
-    g = Graph()
-    F = "DrawRoute"
-    get_local(g, "GetId", F, "Id", INT, 0, 400)
-    get_local(g, "GetPC", F, "PC", OBJ(PCPLAY), 0, 500)
-    get_local(g, "GetCurve", F, "Curve", OBJ(SPLINE), 0, 600)
-    get_self(g, "GetRouteLen", "RouteLen", MAP_INT_INT, 0, 700)
-    get_self(g, "GetRouteStart", "RouteStart", STRUCT(VECTOR), 0, 800)
-    get_self(g, "GetRouteEnd", "RouteEnd", STRUCT(VECTOR), 0, 900)
-    get_self(g, "GetVSpline", "VoyageSpline", MAP_INT_OBJ(SPLINE), 0, 1000)
-    pc, key, curve = ("GetPC", "PC"), ("GetId", "Id"), ("GetCurve", "Curve")
-    map_find(g, "VSpline", ("GetVSpline", "VoyageSpline"), key, MAP_INT_OBJ(SPLINE), OBJ(SPLINE), 250, 300, key_type=INT)
-    is_valid(g, "HasSpline", SPLINE, 500, 300)
-    g.link(("VSpline", "Value"), ("HasSpline", "Object"))
-    # the last trip's course outlives the trip (the next departure replaces it): sailing only while in Voyages
-    get_self(g, "GetVoyages", "Voyages", MAP_INT_ACTOR, 0, 1200)
-    g.call("OnVoyage", MAPLIB, "Map_Contains", 500, 150,
-           [("TargetMap", "in", MAP_INT_ACTOR, None), ("Key", "in", INT, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("GetVoyages", "Voyages"), ("OnVoyage", "TargetMap"))
-    g.link(key, ("OnVoyage", "Key"))
-    get_self(g, "GetVPhase", "VoyagePhase", MAP_INT_INT, 0, 1300)
-    map_find(g, "Phase", ("GetVPhase", "VoyagePhase"), key, MAP_INT_INT, INT, 250, 1300, key_type=INT)
-    waiting = ii(g, "Waiting", "EqualEqual_IntInt", ("Phase", "Value"), None, 500, 1300, b_default="2", out=BOOL)
-    sailing = bop(g, "Sailing", "BooleanAND", ("HasSpline", "ReturnValue"), ("OnVoyage", "ReturnValue"), 750, 200)
-    sailing = bop(g, "Moving", "BooleanAND", sailing, bnot(g, "NotWaiting", waiting, 750, 1300), 1000, 200)
-    branch(g, "BrSailing", 0, 0)
-    g.link(sailing, ("BrSailing", "Condition"))
-    set_local(g, "UseVoyage", F, "Curve", OBJ(SPLINE), 250, -200)
-    g.link(("BrSailing", "then"), ("UseVoyage", "execute"))
-    g.link(("VSpline", "Value"), ("UseVoyage", "Curve"))
-    map_find(g, "N", ("GetRouteLen", "RouteLen"), key, MAP_INT_INT, INT, 250, 450, key_type=INT)
-    has = ii(g, "HasRoute", "Greater_IntInt", ("N", "Value"), None, 500, 450, b_default="1", out=BOOL)
-    branch(g, "BrRoute", 250, 0)
-    g.link(("BrSailing", "else"), ("BrRoute", "execute"))
-    g.link(has, ("BrRoute", "Condition"))
-    queue_arc(g, "S", pc, ("GetRouteStart", "RouteStart"), ("GetRouteEnd", "RouteEnd"), ("BrRoute", "else"), 500, 1200)
-    user_call(g, "Preview", "PreviewCourse", 500, 0, ins=[("Id", INT), ("ToHome", BOOL)], outs=[("Curve", OBJ(SPLINE))])
-    g.link(("BrRoute", "then"), ("Preview", "execute"))
-    g.link(key, ("Preview", "Id"))
-    g.link(bop(g, "WaitingNow", "BooleanAND", ("OnVoyage", "ReturnValue"), waiting, 750, 1450), ("Preview", "ToHome"))
-    is_valid(g, "PreviewOk", SPLINE, 750, 300)
-    g.link(("Preview", "Curve"), ("PreviewOk", "Object"))
-    branch(g, "BrPreview", 750, 0)
-    g.link(("Preview", "then"), ("BrPreview", "execute"))
-    g.link(("PreviewOk", "ReturnValue"), ("BrPreview", "Condition"))
-    set_local(g, "UsePreview", F, "Curve", OBJ(SPLINE), 1000, -100)
-    g.link(("BrPreview", "then"), ("UsePreview", "execute"))
-    g.link(("Preview", "Curve"), ("UsePreview", "Curve"))
-    user_call(g, "RCurve", "RouteCurve", 1000, 100, ins=[("Id", INT)], outs=[("Curve", OBJ(SPLINE))])
-    g.link(("BrPreview", "else"), ("RCurve", "execute"))
-    g.link(key, ("RCurve", "Id"))
-    set_local(g, "UseRoute", F, "Curve", OBJ(SPLINE), 1250, 100)
-    g.link(("RCurve", "then"), ("UseRoute", "execute"))
-    g.link(("RCurve", "Curve"), ("UseRoute", "Curve"))
-
-    # ShowRouteLine draws it (spline meshes, built once per curve)
-    set_self(g, "SetWant", "WantCurve", OBJ(SPLINE), 1500, 0)
-    g.link(("UseVoyage", "then"), ("SetWant", "execute"))
-    g.link(("UsePreview", "then"), ("SetWant", "execute"))
-    g.link(("UseRoute", "then"), ("SetWant", "execute"))
-    g.link(curve, ("SetWant", "WantCurve"))
-    return g.render()
-
-
 def show_route_line():
-    """ShowRouteLine (Event Tick, after DrawArcs): DrawRoute leaves the curve to show in WantCurve. When that's not
-    the curve already shown, the old line's meshes (ShownMeshes, kept apart from their curve, which may be gone) are
+    """ShowRouteLine (Event Tick, after DrawArcs): BPL_FDPairing.DrawRoute leaves the curve to show in WantCurve.
+    When that's not the curve already shown, the old line's meshes (ShownMeshes, kept apart from their curve, which may be gone) are
     destroyed and BuildRouteLine makes the new one. WantCurve is cleared for the next frame."""
     g = Graph()
     get_self(g, "GetWant", "WantCurve", OBJ(SPLINE), 0, 400)
@@ -439,8 +369,6 @@ def preview_course():
 
 
 SPECS = {
-    "DrawRoute": fn_spec(("BrSailing", "execute"), inputs=[("Id", INT), ("PC", OBJ(PCPLAY))],
-                         locals_=[("Curve", OBJ(SPLINE))]),
     "RouteCurve": fn_spec(("BrCached", "execute"), inputs=[("Id", INT)], outputs=[("Curve", OBJ(SPLINE))],
                           locals_=[("CurveSpline", OBJ(SPLINE))],
                           returns=[("UseCached", "then"), ("Store", "then")],
@@ -455,7 +383,6 @@ SPECS = {
 
 
 GRAPHS = {
-    "DrawRoute": draw_route,
     "RouteCurve": route_curve,
     "DropRouteCurve": drop_route_curve,
     "PreviewCourse": preview_course,

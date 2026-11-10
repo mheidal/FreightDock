@@ -56,6 +56,11 @@ var SmallFont: SlateFontInfo
 var TickOn: soft<Texture2D> = /Game/Assets/Icons/icons8-tick-box-96.icons8-tick-box-96
 var TickOff: soft<Texture2D> = /Game/Assets/Icons/icons8-tick-box-unchecked-96.icons8-tick-box-unchecked-96
 var RoutesTip: WBP_FDTip
+// the network name labels (NetNames): each label's network, what they were built for, the one hovered (0: none)
+var NetLabels: array<Border>
+var NetLabelNets: array<int>
+var NetLabelKey: string = ""
+var HoverNet: int = 0
 
 widget Width: SizeBox(WidthOverride: 560.0) {
     widget Stack: Overlay {
@@ -68,6 +73,9 @@ widget Width: SizeBox(WidthOverride: 560.0) {
                         widget RoutesTick: Image
                     }
                     widget RoutesLabel: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 4, Top: 0, Right: 0, Bottom: 0))
+                    widget BarGap: Spacer slot(Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+                    // the dock's networks by name, in their colours; hovering one shows only it (NetLabels)
+                    widget NetNames: HorizontalBox slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
                 }
                 widget MapBox: SizeBox(WidthOverride: 460.0, HeightOverride: 460.0) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center) {
                     widget MapStack: Overlay {
@@ -76,6 +84,25 @@ widget Width: SizeBox(WidthOverride: 560.0) {
                             widget NameText: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff")
                         }
                     }
+                }
+                // the markers' legend: providers, requesters, ships under way
+                widget Legend: HorizontalBox slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 0)) {
+                    // diamonds: outlined squares turned 45 degrees (Construct), as DrawDock's markers
+                    widget ProvSize: SizeBox(WidthOverride: 11.0, HeightOverride: 11.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 3, Top: 0, Right: 3, Bottom: 0)) {
+                        widget ProvSwatch: Border(BrushColor: "#000000ff", Padding: Margin(Left: 2, Top: 2, Right: 2, Bottom: 2)) {
+                            widget ProvFill: Border(BrushColor: "#e9594dff")
+                        }
+                    }
+                    widget ProvLabel: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 4, Top: 0, Right: 14, Bottom: 0))
+                    widget ReqSize: SizeBox(WidthOverride: 11.0, HeightOverride: 11.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 3, Top: 0, Right: 3, Bottom: 0)) {
+                        widget ReqSwatch: Border(BrushColor: "#000000ff", Padding: Margin(Left: 2, Top: 2, Right: 2, Bottom: 2)) {
+                            widget ReqFill: Border(BrushColor: "#71d0eaff")
+                        }
+                    }
+                    widget ReqLabel: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 4, Top: 0, Right: 14, Bottom: 0))
+                    // an outlined dot (Construct), as a ship under way
+                    widget ShipDot: Image slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 2, Top: 0, Right: 0, Bottom: 0))
+                    widget ShipLabel: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 4, Top: 0, Right: 0, Bottom: 0))
                 }
             }
         }
@@ -97,7 +124,7 @@ pure fn ChromeW() -> float {
 }
 
 pure fn ChromeH() -> float {
-    return 104.0
+    return 132.0
 }
 
 pure fn RowsPerFrame() -> int {
@@ -128,8 +155,23 @@ on Construct {
     MapBox.SetClipping(EWidgetClipping.ClipToBounds)
     MarksImg.SetVisibility(ESlateVisibility.HitTestInvisible)
     NameTag.SetVisibility(ESlateVisibility.Collapsed)
+    LegendMarks()
     Labels()
     SetVisibility(ESlateVisibility.Collapsed)
+}
+
+// The legend's markers in DrawDock's and DrawMarks' colours: dark-outlined diamonds and dot.
+fn LegendMarks() {
+    let dark = LinearColor(R: 0.03, G: 0.03, B: 0.05, A: 1.0)
+    ProvSwatch.SetBrushColor(dark)
+    ReqSwatch.SetBrushColor(dark)
+    ProvFill.SetBrushColor(KismetMathLibrary.Conv_ColorToLinearColor(BPL_FDNet.ProviderColor()))
+    ReqFill.SetBrushColor(KismetMathLibrary.Conv_ColorToLinearColor(BPL_FDNet.RequesterColor()))
+    ProvSwatch.SetRenderTransformAngle(45.0)
+    ReqSwatch.SetRenderTransformAngle(45.0)
+    let outline = SlateBrushOutlineSettings(RoundingType: ESlateBrushRoundingType.HalfHeightRadius, Color: SlateColor(SpecifiedColor: dark), Width: 2.0)
+    ShipDot.SetDesiredSizeOverride(Vector2D(X: 12.0, Y: 12.0))
+    ShipDot.SetBrush(SlateBrush(DrawAs: ESlateBrushDrawType.RoundedBox, TintColor: SlateColor(SpecifiedColor: LinearColor(R: 1.0, G: 0.95, B: 0.8, A: 1.0)), OutlineSettings: outline))
 }
 
 // Over the map: a button press starts dragging the view. Clicks, double-clicks and the wheel over the panel stay on
@@ -273,10 +315,17 @@ fn SetLook(Brush: SlateBrush, Tint: LinearColor, Body: SlateFontInfo, Small: Sla
     RoutesLabel.SetFont(Body)
     RoutesTip.Msg.SetFont(Small)
     NameText.SetFont(Small)
+    ProvLabel.SetFont(Small)
+    ReqLabel.SetFont(Small)
+    ShipLabel.SetFont(Small)
+    NetLabelKey = ""
 }
 
 fn Labels() {
     RoutesLabel.SetText(text(BPL_FDText.T("freightdock.map.routes")))
+    ProvLabel.SetText(text(BPL_FDText.T("freightdock.map.provides")))
+    ReqLabel.SetText(text(BPL_FDText.T("freightdock.map.requests")))
+    ShipLabel.SetText(text(BPL_FDText.T("freightdock.map.ship")))
     RoutesTip.Setup(BPL_FDText.T("freightdock.map.routesTip"), SmallFont)
     RoutesTick.SetBrushFromTexture(if ShowRoutes { TickOn.load() } else { TickOff.load() }, false)
     RoutesTick.SetColorAndOpacity(if ShowRoutes { LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0) } else { LinearColor(R: 0.61, G: 0.57, B: 0.49, A: 0.85) })
@@ -342,8 +391,13 @@ fn Update(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDoc
         Dock = InDock
         NextMarks = 0.0
     }
-    if Net != Focus {
-        Focus = Net
+    let tNames = BPL_FDNet.Now()
+    NetNameStep()
+    BPL_FDNet.Took(MapLoad, "map.netNames", tNames)
+    // a network name hovered here shows only that network, as one hovered in the dock GUI (Net) does
+    let want = if HoverNet > 0 { HoverNet } else { Net }
+    if want != Focus {
+        Focus = want
         NextMarks = 0.0
     }
     let t = BPL_FDNet.Now()
@@ -610,6 +664,52 @@ fn ShownNets() -> array<int> {
         }
     }
     return out
+}
+
+// The dock's networks by name in the bar, in their colours, rebuilt when they or their names change; HoverNet is the
+// one under the cursor (0: none).
+fn NetNameStep() {
+    let nets: array<int> = []
+    if Dock != none {
+        let u = BPL_FDNet.Unpack(Dock.activeTradePartnerId)
+        for n in u.Nets {
+            if n > 0 {
+                nets.Add(n)
+            }
+        }
+    }
+    let names = BPL_FDNet.NetNames(MapLoad)
+    let key = ""
+    for kn in nets {
+        key += BPL_FDNet.NetLabel(kn, names) + "|"
+    }
+    if key != NetLabelKey {
+        NetLabelKey = key
+        NetNames.ClearChildren()
+        NetLabels = []
+        NetLabelNets = []
+        for ln in nets {
+            let label = construct(TextBlock, self)
+            label.SetText(text(BPL_FDNet.NetLabel(ln, names)))
+            label.SetColorAndOpacity(SlateColor(SpecifiedColor: BPL_FDNet.NetLinear(ln)))
+            label.SetFont(BodyFont)
+            let box = construct(Border, self)
+            box.SetBrushColor(LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 0.0))
+            box.SetPadding(Margin(Left: 10, Top: 0, Right: 0, Bottom: 0))
+            box.SetContent(label)
+            NetNames.AddChildToHorizontalBox(box)
+            NetLabels.Add(box)
+            NetLabelNets.Add(ln)
+        }
+    }
+    HoverNet = 0
+    let i = 0
+    while i < NetLabels.Length() {
+        if NetLabels[i].IsHovered() {
+            HoverNet = NetLabelNets[i]
+        }
+        i += 1
+    }
 }
 
 // The markers layer.

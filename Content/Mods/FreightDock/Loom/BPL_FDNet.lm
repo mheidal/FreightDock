@@ -248,6 +248,13 @@ fn ColonyTime() -> float {
     return GameplayStatics.GetTimeSeconds()
 }
 
+// A good's name as the game shows it (its ResourceDef's stringKey); its internal name when it has none.
+fn GoodWord(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Good: name) -> string {
+    let rdef = ArcoGameInstance.GetResourceDefCopy(MapLoad, Good)
+    let word = LocManager.GetWordFromKey(rdef.stringKey)
+    return if word == "" { string(Good) } else { word }
+}
+
 pure fn Slots() -> int {
     return 3
 }
@@ -397,6 +404,19 @@ pure fn Provides(Stored: int, Net: int) -> bool {
 
 pure fn Requests(Stored: int, Net: int) -> bool {
     return (RoleOn(Stored, Net) & Request()) != 0
+}
+
+// Whether the dock has Role's bit (Provide() or Request()) on any of its networks.
+pure fn HasRole(Stored: int, Role: int) -> bool {
+    let u = Unpack(Stored)
+    let i = 0
+    while i < Slots() {
+        if u.Nets[i] > 0 && (u.Roles[i] & Role) != 0 {
+            return true
+        }
+        i += 1
+    }
+    return false
 }
 
 // The stored value with the dock's role on Net set to Role (0 removes it). Ok is false, and the value unchanged,
@@ -815,6 +835,123 @@ fn Manifest(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) ->
     return out
 }
 
+// Job states, per provider dock (MapLoad.JobState; a dock without an entry is idle). SetState is their only writer.
+// Voyages and the voyage maps hold a stand-in's data: a timed trip (no stand-in) has a state without them.
+// 0 idle: no job.
+// 1 loading: a job, its ship at home taking the manifest aboard.
+// 2 depart pending: ready (or sent with Deliver now), waiting for goods still being carried to the dock.
+// 3 outbound: sailing to the requester (a timed trip without a stand-in stays here until it delivers).
+// 4 dwell: delivered, waiting at the requester.
+// 5 homeward: sailing home.
+// 6 returned: home, until the dispatcher closes the job (BPL_FDDispatch.Complete).
+pure fn StateIdle() -> int {
+    return 0
+}
+
+pure fn StateLoading() -> int {
+    return 1
+}
+
+pure fn StateDepartPending() -> int {
+    return 2
+}
+
+pure fn StateOutbound() -> int {
+    return 3
+}
+
+pure fn StateDwell() -> int {
+    return 4
+}
+
+pure fn StateHomeward() -> int {
+    return 5
+}
+
+pure fn StateReturned() -> int {
+    return 6
+}
+
+pure fn StateName(State: int) -> string {
+    if State == 1 {
+        return "loading"
+    }
+    if State == 2 {
+        return "depart pending"
+    }
+    if State == 3 {
+        return "outbound"
+    }
+    if State == 4 {
+        return "dwell"
+    }
+    if State == 5 {
+        return "homeward"
+    }
+    if State == 6 {
+        return "returned"
+    }
+    return "idle"
+}
+
+// The moves a job makes: idle -> loading (given); loading -> depart pending, outbound, idle (cancelled); depart
+// pending -> outbound, idle; outbound -> dwell, returned (a timed trip, or its ship left its berth); dwell ->
+// homeward, returned; homeward -> returned; returned -> idle (complete).
+pure fn StateMove(From: int, To: int) -> bool {
+    if From == 0 {
+        return To == 1
+    }
+    if From == 1 {
+        return To == 2 || To == 3 || To == 0
+    }
+    if From == 2 {
+        return To == 3 || To == 0
+    }
+    if From == 3 {
+        return To == 4 || To == 6
+    }
+    if From == 4 {
+        return To == 5 || To == 6
+    }
+    if From == 5 {
+        return To == 6
+    }
+    return To == 0
+}
+
+pure fn StateOf(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> int {
+    let s = MapLoad.JobState.Find(Id)
+    return if s.ReturnValue { s.Value } else { 0 }
+}
+
+// Away from home: outbound, at the requester or homeward.
+pure fn IsSailing(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> bool {
+    let s = StateOf(MapLoad, Id)
+    return s >= 3 && s <= 5
+}
+
+// Dock Id's job moves to state To, logged as "State: dock <id> <from> -> <to>"; a move StateMove doesn't have is
+// made all the same and marked in the log.
+fn SetState(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, To: int) {
+    let from = StateOf(MapLoad, Id)
+    if from == To {
+        return
+    }
+    if To == 0 {
+        MapLoad.JobState.Remove(Id)
+    } else {
+        MapLoad.JobState[Id] = To
+    }
+    let legal = StateMove(from, To)
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "State: dock " + string(Id) + " " + StateName(from) + " -> " + StateName(To) + (if legal { "" } else { " (UNEXPECTED MOVE)" }), false)
+}
+
+// After a load (BPL_FDLoad.RestoreJob): dock Id's job is in state To, as it was saved.
+fn RestoreState(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, To: int) {
+    MapLoad.JobState[Id] = To
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "State: dock " + string(Id) + " restored as " + StateName(To), false)
+}
+
 // Removes the job and its manifest.
 fn DropJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
     let prefix = string(Id) + "|"
@@ -828,16 +965,16 @@ fn DropJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
         MapLoad.JobGoods.Remove(key)
     }
     MapLoad.JobTo.Remove(Id)
-    MapLoad.JobSailed.Remove(Id)
     MapLoad.JobDropped.Remove(Id)
     MapLoad.JobShort.Remove(Id)
     MapLoad.ManualDepart.Remove(Id)
+    SetState(MapLoad, Id, StateIdle())
     BPL_FDStore.Set(MapLoad, "j" + string(Id), "")
 }
 
 // The format version of job entries (JobEntry).
 pure fn JobFormat() -> string {
-    return "1"
+    return "2"
 }
 
 // A time as whole colony-clock seconds, or "" without one.
@@ -847,21 +984,20 @@ fn TimeField(Times: map<int, float>, Id: int) -> string {
 }
 
 // Job Id as a colony event-flag entry ("j<provider>", lower case, fields split by ";"): format version; requester;
-// loading since, departing since, departed at (colony clock, "" when not set); "m" when sent with Deliver now; voyage
-// phase and the end of the dwell at the requester; the manifest "good:units:parked,..."; the left-short / sent-early
-// note (JobShort, "/" as "-": names may not keep a "/"); the dropped-goods note (JobDropped). Without the notes when
-// it would be longer than BPL_FDStore.MaxLongLength.
+// state (StateOf); loading since, departed at (colony clock, "" when not set); "m" when sent with Deliver now; the
+// end of the dwell at the requester; the manifest "good:units:parked,..."; the left-short / sent-early note
+// (JobShort, "/" as "-": names may not keep a "/"); the dropped-goods note (JobDropped). Without the notes when it
+// would be longer than BPL_FDStore.MaxLongLength. BPL_FDLoad.RestoreJob also reads the format before this one.
 fn JobEntry(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> string {
     let goods = ""
     for res, units in Manifest(MapLoad, Id) {
         let pk = MapLoad.JobGoods.Find(ParkKey(Id, res))
         goods += (if goods == "" { "" } else { "," }) + string(res) + ":" + string(units) + ":" + string(if pk.ReturnValue { pk.Value } else { 0 })
     }
-    let ph = MapLoad.VoyagePhase.Find(Id)
     let wait = MapLoad.VoyageWait.Find(Id)
     let short = MapLoad.JobShort.Find(Id)
     let dropped = MapLoad.JobDropped.Find(Id)
-    let head = JobFormat() + ";" + string(MapLoad.JobTo[Id]) + ";" + TimeField(MapLoad.LoadingSince, Id) + ";" + TimeField(MapLoad.DepartingSince, Id) + ";" + TimeField(MapLoad.DepartedAt, Id) + ";" + (if MapLoad.ManualDepart.Contains(Id) { "m" } else { "" }) + ";" + (if ph.ReturnValue { string(ph.Value) } else { "" }) + ";" + (if wait.ReturnValue { string(KismetMathLibrary.Round(wait.Value)) } else { "" }) + ";" + goods
+    let head = JobFormat() + ";" + string(MapLoad.JobTo[Id]) + ";" + string(StateOf(MapLoad, Id)) + ";" + TimeField(MapLoad.LoadingSince, Id) + ";" + TimeField(MapLoad.DepartedAt, Id) + ";" + (if MapLoad.ManualDepart.Contains(Id) { "m" } else { "" }) + ";" + (if wait.ReturnValue { string(KismetMathLibrary.Round(wait.Value)) } else { "" }) + ";" + goods
     let notes = ";" + KismetStringLibrary.Replace(if short.ReturnValue { short.Value } else { "" }, "/", "-", ESearchCase.CaseSensitive) + ";" + (if dropped.ReturnValue { dropped.Value } else { "" })
     let entry = KismetStringLibrary.ToLower(head + notes)
     if KismetStringLibrary.Len(entry) > BPL_FDStore.MaxLongLength() {

@@ -7,6 +7,37 @@ fn Queue(PC: PlayerController_Play, A: Vector, B: Vector, Tint: Color, Width: fl
     PC.QueueSynchronizedArcPlanForFrame(ArcPlan(worldStart: A, worldEnd: B, Color: Tint, linewidthTop: Width, linewidthEnd: Width, arcHeightRatioOfLength: Height))
 }
 
+// Shows the course of dock Id's own ship by leaving it in MapLoad.WantCurve for BP_MapLoad.ShowRouteLine (ported
+// from fdgen): sailing out or home, its voyage's course; berthed, the outbound course; waiting at the requester, the
+// homeward course (both PreviewCourse; RouteCurve when there is none); without a route, the straight RouteStart ->
+// RouteEnd arc.
+fn DrawRoute(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, PC: PlayerController_Play) {
+    let jobState = BPL_FDNet.StateOf(MapLoad, Id)
+    // the last trip's course outlives the trip (the next departure replaces it): sailing only with a stand-in
+    let onVoyage = MapLoad.Voyages.Contains(Id)
+    let waiting = false
+    if onVoyage {
+        waiting = jobState == BPL_FDNet.StateDwell()
+    }
+    let course = MapLoad.VoyageSpline.Find(Id)
+    if onVoyage && !waiting && course.ReturnValue {
+        if KismetSystemLibrary.IsValid(course.Value) {
+            MapLoad.WantCurve = course.Value
+            return
+        }
+    }
+    let n = MapLoad.RouteLen.Find(Id)
+    if n.Value <= 1 {
+        Queue(PC, MapLoad.RouteStart, MapLoad.RouteEnd, MapLoad.ArcColor, MapLoad.ArcWidth, MapLoad.ArcHeight)
+        return
+    }
+    let curve = MapLoad.PreviewCourse(Id, waiting).Curve
+    if !KismetSystemLibrary.IsValid(curve) {
+        curve = MapLoad.RouteCurve(Id).Curve
+    }
+    MapLoad.WantCurve = curve
+}
+
 // Every frame (Event Tick, also while paused): the selected paired dock's route, and each voyage's arc (stand-in to
 // where it's heading) while the stand-in is hovered or its dock or target is selected; while hovered, also one to
 // its home dock and its course as the route line. Then the selected pair's arc (PairArcs).
@@ -50,7 +81,7 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     if MapLoad.RouteValid {
         // nothing while its route is being worked out, rather than a straight line it won't take
         if !BPL_FDVoyage.RoutePending(MapLoad, MapLoad.RouteSelId) {
-            MapLoad.DrawRoute(MapLoad.RouteSelId, play)
+            DrawRoute(MapLoad, MapLoad.RouteSelId, play)
         }
     }
     BPL_FDNet.Took(MapLoad, "arcs.route", tPart)
@@ -60,17 +91,16 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     for id, proxy in MapLoad.Voyages {
         if KismetSystemLibrary.IsValid(proxy) {
             let pos = proxy.K2_GetActorLocation()
-            let phase = MapLoad.VoyagePhase.Find(id)
             let home = MapLoad.VoyageHome.Find(id)
             let away = MapLoad.VoyageTarget.Find(id)
-            let dest = if phase.Value >= 2 { home.Value } else { away.Value }
+            let dest = if BPL_FDNet.StateOf(MapLoad, id) >= BPL_FDNet.StateDwell() { home.Value } else { away.Value }
             let hovered = KismetMathLibrary.Vector_Distance2D(cursor, pos) <= MapLoad.HoverRadius
             if hovered || id == selId || id == selTargetId {
                 Queue(play, pos, dest, MapLoad.ArcColor, MapLoad.ArcWidth, MapLoad.ArcHeight)
                 if hovered {
                     Queue(play, pos, home.Value, MapLoad.ArcColor, MapLoad.ArcWidth, MapLoad.ArcHeight)
                     // after the selected dock's route, so the hovered ship's course wins
-                    MapLoad.DrawRoute(id, play)
+                    DrawRoute(MapLoad, id, play)
                 }
             }
         }

@@ -210,35 +210,6 @@
   "returnValues": [],
   "returns": []
  },
- "DrawRoute": {
-  "entry": [
-   "BrSailing",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Id",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "PC",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.PlayerController_Play'\")"
-   }
-  ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Curve",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.SplineComponent'\")"
-   }
-  ],
-  "outputs": [],
-  "pure": false,
-  "returnValues": [],
-  "returns": []
- },
  "DropRouteCurve": {
   "entry": [
    "Start",
@@ -1078,6 +1049,46 @@
    ]
   ]
  },
+ "SpawnStandIn": {
+  "entry": [
+   "Spawn",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Model",
+    "type": "(PinCategory=\"class\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
+   },
+   {
+    "default": "",
+    "name": "At",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Proxy",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Spawn",
+    "ReturnValue",
+    "Proxy"
+   ]
+  ],
+  "returns": [
+   [
+    "Spawn",
+    "then"
+   ]
+  ]
+ },
  "Stamp": {
   "entry": [
    "Pass",
@@ -1164,50 +1175,6 @@
     "then"
    ]
   ]
- },
- "StartVoyage": {
-  "entry": [
-   "SetId",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Dock",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   },
-   {
-    "default": "",
-    "name": "Target",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   },
-   {
-    "default": "",
-    "name": "Ship",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
-   }
-  ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Id",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Proxy",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/Engine.Actor'\")"
-   },
-   {
-    "default": "",
-    "name": "BerthTo",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalDock'\")"
-   }
-  ],
-  "outputs": [],
-  "pure": false,
-  "returnValues": [],
-  "returns": []
  },
  "SyncStevedores": {
   "entry": [

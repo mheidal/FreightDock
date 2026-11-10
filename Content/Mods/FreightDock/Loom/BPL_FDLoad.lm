@@ -70,17 +70,69 @@ fn RestoreJobs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     FreightTick(MapLoad)
 }
 
-// Job Pid from its entry (BPL_FDNet.JobEntry): 1 loading, 2 sailing, 0 dropped (wrong format, or its dock, ship or
-// requester is gone). A sailing job sails on: its voyage starts again (BP_MapLoad.StartVoyage) and the stand-in is put
-// where the colony clock says - outbound, the distance sailed since departure, while the manifest's goods are still
-// aboard (no goods aboard: it has delivered, and waits at the requester); at the requester until the end of the
-// dwell; homeward, the distance sailed since the dwell ended.
+// Job Pid from its entry (BPL_FDNet.JobEntry; or the format before it, "1": loading since, departing since, departed
+// at, "m", voyage phase, dwell end, manifest, notes - its state follows from which of those are set): 1 at its dock
+// (loading, depart pending or returned), 2 sailing, 0 dropped (wrong format, or its dock, ship or requester is gone).
+// A sailing job sails on: its voyage starts again (BPL_FDVoyage.StartVoyage) and the stand-in is put where the colony
+// clock says - outbound, the distance sailed since departure, while the manifest's goods are still aboard (no goods
+// aboard: it has delivered, and waits at the requester); at the requester until the end of the dwell; homeward, the
+// distance sailed since the dwell ended.
 fn RestoreJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pid: int, Value: string, Now: float) -> int {
     let f = KismetStringLibrary.ParseIntoArray(Value, ";", false)
-    if f.Length() < 9 {
+    if f.Length() < 8 {
         return 0
     }
-    if f[0] != BPL_FDNet.JobFormat() {
+    let loading = BPL_FDNet.StateLoading()
+    let outbound = BPL_FDNet.StateOutbound()
+    let dwell = BPL_FDNet.StateDwell()
+    let homeward = BPL_FDNet.StateHomeward()
+    // the fields, by format
+    let jobState = 0
+    let loadingField = ""
+    let departedField = ""
+    let manual = false
+    let waitField = ""
+    let goodsField = ""
+    let shortNote = ""
+    let droppedNote = ""
+    if f[0] == BPL_FDNet.JobFormat() {
+        jobState = KismetStringLibrary.Conv_StringToInt(f[2])
+        loadingField = f[3]
+        departedField = f[4]
+        manual = f[5] == "m"
+        waitField = f[6]
+        goodsField = f[7]
+        if f.Length() > 8 {
+            shortNote = f[8]
+        }
+        if f.Length() > 9 {
+            droppedNote = f[9]
+        }
+    } else if f[0] == "1" {
+        if f.Length() < 9 {
+            return 0
+        }
+        loadingField = f[2]
+        departedField = f[4]
+        manual = f[5] == "m"
+        waitField = f[7]
+        goodsField = f[8]
+        if f.Length() > 9 {
+            shortNote = f[9]
+        }
+        if f.Length() > 10 {
+            droppedNote = f[10]
+        }
+        if departedField == "" {
+            jobState = if f[3] == "" { loading } else { BPL_FDNet.StateDepartPending() }
+        } else {
+            let phase = if f[6] == "" { 1 } else { KismetStringLibrary.Conv_StringToInt(f[6]) }
+            jobState = if phase <= 1 { outbound } else if phase == 2 { dwell } else { homeward }
+        }
+    } else {
+        return 0
+    }
+    if jobState < loading || jobState > BPL_FDNet.StateReturned() {
         return 0
     }
     let rid = KismetStringLibrary.Conv_StringToInt(f[1])
@@ -94,7 +146,7 @@ fn RestoreJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pid: int,
         return 0
     }
     MapLoad.JobTo[Pid] = rid
-    for g in KismetStringLibrary.ParseIntoArray(f[8], ",", true) {
+    for g in KismetStringLibrary.ParseIntoArray(goodsField, ",", true) {
         let gp = KismetStringLibrary.ParseIntoArray(g, ":", true)
         if gp.Length() >= 3 {
             let res = name(gp[0])
@@ -105,36 +157,29 @@ fn RestoreJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pid: int,
             }
         }
     }
-    if f[2] != "" {
-        MapLoad.LoadingSince[Pid] = KismetStringLibrary.Conv_StringToDouble(f[2])
+    if loadingField != "" {
+        MapLoad.LoadingSince[Pid] = KismetStringLibrary.Conv_StringToDouble(loadingField)
     }
-    if f[3] != "" {
-        MapLoad.DepartingSince[Pid] = KismetStringLibrary.Conv_StringToDouble(f[3])
-    }
-    if f[5] == "m" {
+    if manual {
         MapLoad.ManualDepart[Pid] = true
     }
-    if f.Length() > 9 {
-        let note = f[9]
-        if note != "" {
-            // "s:" / "t:" back to capitals, "-" back to "/"
-            MapLoad.JobShort[Pid] = KismetStringLibrary.Replace(KismetStringLibrary.ToUpper(KismetStringLibrary.Left(note, 1)) + KismetStringLibrary.RightChop(note, 1), "-", "/", ESearchCase.CaseSensitive)
-        }
+    if shortNote != "" {
+        // "s:" / "t:" back to capitals, "-" back to "/"
+        MapLoad.JobShort[Pid] = KismetStringLibrary.Replace(KismetStringLibrary.ToUpper(KismetStringLibrary.Left(shortNote, 1)) + KismetStringLibrary.RightChop(shortNote, 1), "-", "/", ESearchCase.CaseSensitive)
     }
-    if f.Length() > 10 {
-        if f[10] != "" {
-            MapLoad.JobDropped[Pid] = f[10]
-        }
+    if droppedNote != "" {
+        MapLoad.JobDropped[Pid] = droppedNote
     }
-    if f[4] == "" {
+    // at its dock: loading, departure pending, or returned (the next dispatch pass closes that job)
+    if jobState < outbound || jobState > homeward {
         BPL_FDNet.SlotProbe(MapLoad, dock, "restore")
+        BPL_FDNet.RestoreState(MapLoad, Pid, jobState)
         return 1
     }
-    let departed = KismetStringLibrary.Conv_StringToDouble(f[4])
+    let departed = if departedField == "" { Now } else { KismetStringLibrary.Conv_StringToDouble(departedField) }
     MapLoad.DepartedAt[Pid] = departed
-    let phase = if f[6] == "" { 1 } else { KismetStringLibrary.Conv_StringToInt(f[6]) }
-    let waitEnd = if f[7] == "" { Now + MapLoad.DwellSeconds } else { KismetStringLibrary.Conv_StringToDouble(f[7]) }
-    if phase <= 1 {
+    let waitEnd = if waitField == "" { Now + MapLoad.DwellSeconds } else { KismetStringLibrary.Conv_StringToDouble(waitField) }
+    if jobState == outbound {
         // outbound: delivered already when none of the manifest is aboard any more
         let hold = MapLoad.HoldCounts(ship).Counts
         let aboard = false
@@ -144,11 +189,13 @@ fn RestoreJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pid: int,
             }
         }
         if !aboard {
-            phase = 2
+            jobState = dwell
             waitEnd = Now + MapLoad.DwellSeconds
         }
     }
-    MapLoad.StartVoyage(dock, target, ship)
+    // the state first: the voyage's steps read it
+    BPL_FDNet.RestoreState(MapLoad, Pid, jobState)
+    BPL_FDVoyage.StartVoyage(MapLoad, dock, target, ship)
     // no stand-in (a timed trip): FreightTick delivers TripSeconds after DepartedAt
     if !MapLoad.Voyages.Contains(Pid) {
         return 2
@@ -158,14 +205,12 @@ fn RestoreJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pid: int,
         return 2
     }
     let len = spline.GetSplineLength()
-    if phase <= 1 {
+    if jobState == outbound {
         MapLoad.VoyageDist[Pid] = KismetMathLibrary.FMin(KismetMathLibrary.FMax(Now - departed, 0.0) * MapLoad.ShipSpeed, len)
-    } else if phase == 2 {
-        MapLoad.VoyagePhase[Pid] = 2
+    } else if jobState == dwell {
         MapLoad.VoyageDist[Pid] = len
         MapLoad.VoyageWait[Pid] = waitEnd
     } else {
-        MapLoad.VoyagePhase[Pid] = 3
         MapLoad.VoyageWait[Pid] = waitEnd
         spline.K2_DestroyComponent()
         let home = MapLoad.MakeCourse(Pid, ship, true).Course
@@ -246,14 +291,6 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
     }
     let now = BPL_FDNet.ColonyTime()
     let id = BPL_FDNet.DockId(Dock)
-    // back from its voyage, waiting for the dispatcher to close the job (BPL_FDDispatch.Complete): nothing is
-    // requested or checked for a stall (its goods were delivered, not lost: a stall cut would drop them and bar the
-    // good from this dock), and Remaining 1 keeps it from sailing again
-    let sailed = MapLoad.JobSailed.Find(id)
-    if sailed.ReturnValue && sailed.Value {
-        Remaining = 1
-        return
-    }
     BoardParked(MapLoad, Dock, Ship, id)
     // the ship carries only the job's freight: anything else that got aboard goes to the delivered-goods store
     BPL_FDNet.ParkStray(MapLoad, Dock, BPL_FDNet.Manifest(MapLoad, id))
@@ -389,7 +426,7 @@ fn RequestFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
 
 // The panel's Deliver now button (BP_MapLoad.DeliverSelected, ported from fdgen): the selected freight dock's ship sails
 // now with what it has, not waiting for goods still being carried to it: its departure is marked pending
-// (DepartingSince) and sent by hand (ManualDepart), so it doesn't wait for carriers, and FreightTick runs at once.
+// (state depart pending) and sent by hand (ManualDepart), so it doesn't wait for carriers, and FreightTick runs at once.
 // ManualDepart also makes BPL_FDDispatch.Trim note a short departure as sent early.
 // No job, ship away or nothing aboard: nothing (the button is disabled then).
 fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
@@ -399,7 +436,11 @@ fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     }
     let id = BPL_FDNet.DockId(dock)
     // the dock GUI disables the button then, with the reason as its tooltip
-    if MapLoad.Voyages.Contains(id) {
+    if BPL_FDNet.IsSailing(MapLoad, id) {
+        return
+    }
+    // back from its trip: the job is over (what it couldn't deliver doesn't go out again)
+    if BPL_FDNet.StateOf(MapLoad, id) == BPL_FDNet.StateReturned() {
         return
     }
     if BPL_FDNet.TargetOf(MapLoad, dock) == none {
@@ -412,8 +453,8 @@ fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     if MapLoad.HoldCounts(ship).Total <= 0 {
         return
     }
-    MapLoad.DepartingSince[id] = BPL_FDNet.ColonyTime()
     MapLoad.ManualDepart[id] = true
+    BPL_FDNet.SetState(MapLoad, id, BPL_FDNet.StateDepartPending())
     FreightTick(MapLoad)
 }
 
@@ -421,7 +462,7 @@ fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
 // timed trip (no stand-in) arrives TripSeconds after departure; a ship loading asks for its manifest (UpdateRequest)
 // and departs (Depart) when full (hold + in flight), when nothing is left to request, or after MaxWaitSeconds since
 // its first freight came aboard (LoadingSince). A ship that is full or has nothing left to request while goods are
-// still being carried to its dock waits for them first (DepartingSince; the request then only covers what is in
+// still being carried to its dock waits for them first (depart pending; the request then only covers what is in
 // flight), however long that takes; the depart-after time and Deliver now (ManualDepart) send it at once.
 fn FreightTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     // not before this load's jobs are back (RestoreJobs)
@@ -442,21 +483,28 @@ fn FreightTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
 fn DockTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Target: WorkDock, Now: float) {
     let id = BPL_FDNet.DockId(Dock)
     let ship = BPL_FDNet.ShipAtDock(MapLoad, Dock)
-    let departed = MapLoad.DepartedAt.Find(id)
-    if departed.ReturnValue {
+    if BPL_FDNet.IsSailing(MapLoad, id) {
         // under way: a voyage arrives by itself (BPL_FDVoyage.VoyageTick); a timed trip after TripSeconds
         if !MapLoad.Voyages.Contains(id) {
+            let departed = MapLoad.DepartedAt.Find(id)
             if Now - departed.Value >= MapLoad.TripSeconds {
                 MapLoad.TransferFrom(Dock, Target)
                 MapLoad.DepartedAt.Remove(id)
                 MapLoad.LoadingSince.Remove(id)
                 MapLoad.ClearRequested(id)
+                BPL_FDNet.SetState(MapLoad, id, BPL_FDNet.StateReturned())
             }
         }
         return
     }
+    // back from its voyage, waiting for the dispatcher to close the job (BPL_FDDispatch.Complete): nothing is
+    // requested or checked for a stall (its goods were delivered, not lost: a stall cut would drop them and bar the
+    // good from this dock), no loading clock starts, and it doesn't sail again with goods it couldn't deliver
+    if BPL_FDNet.StateOf(MapLoad, id) == BPL_FDNet.StateReturned() {
+        return
+    }
     MapLoad.RecordRequested(Dock)
-    let pending = MapLoad.DepartingSince.Contains(id)
+    let pending = BPL_FDNet.StateOf(MapLoad, id) == BPL_FDNet.StateDepartPending()
     BPL_FDNet.SlotProbe(MapLoad, Dock, "tick, before request")
     let req = MapLoad.UpdateRequest(Dock, Target, ship, pending)
     BPL_FDNet.SlotProbe(MapLoad, Dock, "tick, after request")
@@ -494,7 +542,7 @@ fn DockTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkD
     }
     if inFlight > 0 {
         // ready, but goods still on their way to the dock: wait for them
-        MapLoad.DepartingSince[id] = Now
+        BPL_FDNet.SetState(MapLoad, id, BPL_FDNet.StateDepartPending())
         return
     }
     Depart(MapLoad, Dock, Target, ship, Now)
@@ -503,7 +551,7 @@ fn DockTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkD
 fn Depart(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Target: WorkDock, Ship: NauticalShip, Now: float) {
     let id = BPL_FDNet.DockId(Dock)
     MapLoad.DepartedAt[id] = Now
-    MapLoad.DepartingSince.Remove(id)
     MapLoad.PauseLoading(Dock)
-    MapLoad.StartVoyage(Dock, Target, Ship)
+    BPL_FDVoyage.StartVoyage(MapLoad, Dock, Target, Ship)
+    BPL_FDNet.SetState(MapLoad, id, BPL_FDNet.StateOutbound())
 }
