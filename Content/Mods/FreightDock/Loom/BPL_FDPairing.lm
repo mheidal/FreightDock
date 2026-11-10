@@ -245,6 +245,8 @@ fn Highlight(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, 
 // which the panel's network picker replaced): the dispatcher (BPL_FDDispatch), route searches (BPL_FDVoyage.RouteStep),
 // stand-in clicks, then the panel.
 fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    // once per load: the jobs kept in the colony come back before anything runs on them
+    BPL_FDLoad.RestoreJobs(MapLoad)
     let t = BPL_FDNet.Now()
     BPL_FDDispatch.Tick(MapLoad)
     BPL_FDNet.Took(MapLoad, "frame.dispatchTick", t)

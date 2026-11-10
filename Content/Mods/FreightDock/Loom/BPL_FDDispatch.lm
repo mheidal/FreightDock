@@ -92,6 +92,10 @@ pure fn Ascii(S: string) -> string {
 }
 
 fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    // not before this load's jobs are back (BPL_FDLoad.RestoreJobs)
+    if !MapLoad.JobsRestored {
+        return
+    }
     let now = GameplayStatics.GetTimeSeconds()
     if now < MapLoad.NextDispatch {
         return
@@ -113,7 +117,15 @@ fn Pass(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let t = BPL_FDNet.Now()
     // stale input-slot counts (no haul under way) would block hauling
     for d in BPL_FDNet.FreightDocks(MapLoad) {
+        if MapLoad.JobTo.Contains(BPL_FDNet.DockId(d)) {
+            BPL_FDNet.SlotProbe(MapLoad, d, "pass, before count reset")
+        }
         let cleared = BPL_FDNet.ClearInputCounts(d)
+        if cleared != "" {
+            if BPL_FDNet.LoadProbing() {
+                Log(MapLoad, "Slots: dock " + string(BPL_FDNet.DockId(d)) + " counts zeroed:" + cleared)
+            }
+        }
         if cleared != "" {
             Probe(MapLoad, "Probe: dock " + string(BPL_FDNet.DockId(d)) + " stale input counts zeroed:" + cleared)
         }
@@ -139,6 +151,7 @@ fn Pass(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     BPL_FDNet.Took(MapLoad, "dispatch.assign", t)
     MapLoad.InPass = false
     MapLoad.PassDeficits.Clear()
+    BPL_FDNet.SaveJobs(MapLoad)
 }
 
 // Jobs back home complete; jobs whose provider and requester no longer share a network (or are gone) are cancelled.
@@ -355,7 +368,7 @@ fn Shrink(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
 // Per requester and good ("<requester>|<good>"): its output warehouses' unmet requests, less what is unloaded at it,
 // less what every job not yet delivered brings it. Ages it (DemandSince); Oldest[requester] is its oldest demand.
 fn Demand(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>, Oldest: ref map<int, float>) {
-    let now = GameplayStatics.GetTimeSeconds()
+    let now = BPL_FDNet.ColonyTime()
     let bound: map<string, int> = {}
     for pid, rid in MapLoad.JobTo {
         let ph = MapLoad.VoyagePhase.Find(pid)
@@ -534,7 +547,7 @@ fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<s
 // New jobs for idle providers (a ship at home, no job, not sailing): the best-scoring (provider, requester) pair
 // first, until none scores above zero. Records why a provider stays idle (IdleWhy).
 fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>, Oldest: ref map<int, float>) {
-    let now = GameplayStatics.GetTimeSeconds()
+    let now = BPL_FDNet.ColonyTime()
     let tA = BPL_FDNet.Now()
     // idle providers and their supply ("<provider>|<good>")
     let idle: array<WorkDock> = []

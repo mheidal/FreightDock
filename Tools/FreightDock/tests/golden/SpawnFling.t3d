@@ -1,0 +1,25 @@
+Begin Object Class=/Script/BlueprintGraph.K2Node_VariableGet Name="GetAt"
+   VariableReference=(MemberScope="SpawnFling",MemberName="At")
+   NodeComment="GetAt"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=0
+   NodePosY=250
+   NodeGuid=00000000000000000000000000000001
+   CustomProperties Pin (PinId=00000000000000000000000000000002,PinName="At",Direction="EGPD_Output",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",LinkedTo=(Spawn 00000000000000000000000000000003,),)
+End Object
+Begin Object Class=/Script/BlueprintGraph.K2Node_SpawnActorFromClass Name="Spawn"
+   NodeComment="Spawn"
+   bCommentBubblePinned=True
+   bCommentBubbleVisible=True
+   NodePosX=250
+   NodePosY=0
+   NodeGuid=00000000000000000000000000000004
+   CustomProperties Pin (PinId=00000000000000000000000000000005,PinName="execute",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000006,PinName="then",Direction="EGPD_Output",PinType.PinCategory="exec",)
+   CustomProperties Pin (PinId=00000000000000000000000000000007,PinName="Class",PinType.PinCategory="class",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",DefaultObject="/Script/CoreUObject.Class'/Game/Mods/FreightDock/Loom/BP_FDFling.BP_FDFling_C'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000008,PinName="ReturnValue",Direction="EGPD_Output",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Game/Mods/FreightDock/Loom/BP_FDFling.BP_FDFling_C'",)
+   CustomProperties Pin (PinId=00000000000000000000000000000003,PinName="SpawnTransform",PinType.PinCategory="struct",PinType.PinSubCategoryObject="/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'",LinkedTo=(GetAt 00000000000000000000000000000002,),)
+   CustomProperties Pin (PinId=00000000000000000000000000000009,PinName="CollisionHandlingOverride",PinType.PinCategory="byte",PinType.PinSubCategoryObject="/Script/CoreUObject.Enum'/Script/Engine.ESpawnActorCollisionHandlingMethod'",DefaultValue="AlwaysSpawn",)
+   CustomProperties Pin (PinId=0000000000000000000000000000000A,PinName="Owner",PinType.PinCategory="object",PinType.PinSubCategoryObject="/Script/CoreUObject.Class'/Script/Engine.Actor'",)
+End Object

@@ -233,6 +233,21 @@ fn Took(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Key: string, T0
     }
 }
 
+// The colony clock: seconds of game time the colony has run (WorldTime.m_totalWorldTimeElapsed). It stops when paused,
+// speeds up with the game and is kept in the save, so times measured on it carry across a reload. Every persistent
+// FreightDock time uses it (loading, departure, dwell, demand ages, stall clocks); game time only before the world is
+// ready.
+fn ColonyTime() -> float {
+    let arco = ArcoSystems.GetArcoSys().ReturnValue
+    if arco != none {
+        let wt = arco.m_worldTime
+        if wt != none {
+            return wt.m_totalWorldTimeElapsed
+        }
+    }
+    return GameplayStatics.GetTimeSeconds()
+}
+
 pure fn Slots() -> int {
     return 3
 }
@@ -634,8 +649,8 @@ pure fn IsPaired(Stored: int) -> bool {
     return IsMember(Stored) || u.OldTarget >= 0
 }
 
-// Whether the dock's crew is at work: by day, from when its first worker is at the dock (MapLoad.CrewArrived) until
-// nightfall. Off duty (at night, or in the morning before anyone has walked in), nobody hauls its cargo. Docks have
+// Whether the dock's crew is at work: by day, from when its first worker is at the dock or the first goods are being
+// carried to it (MapLoad.CrewArrived) until nightfall. Off duty (at night, or in the morning before anyone has walked in), nobody hauls its cargo. Docks have
 // no overtime.
 fn OnDuty(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> bool {
     let wt = cast(GameplayStatics.GetActorOfClass(WorldTime), WorldTime)
@@ -652,6 +667,13 @@ fn OnDuty(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDoc
     }
     for slot in Dock.m_workers.m_workerSlots {
         if slot.present {
+            MapLoad.CrewArrived[id] = true
+            return true
+        }
+    }
+    // workers go from home straight to fetch cargo, so goods being carried to the dock also mean the crew is at work
+    for res, inSlot in Dock.m_inputStockpile.Slots {
+        if inSlot.reservedSpaceForDropoff > 0 {
             MapLoad.CrewArrived[id] = true
             return true
         }
@@ -810,6 +832,93 @@ fn DropJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
     MapLoad.JobDropped.Remove(Id)
     MapLoad.JobShort.Remove(Id)
     MapLoad.ManualDepart.Remove(Id)
+    BPL_FDStore.Set(MapLoad, "j" + string(Id), "")
+}
+
+// The format version of job entries (JobEntry).
+pure fn JobFormat() -> string {
+    return "1"
+}
+
+// A time as whole colony-clock seconds, or "" without one.
+fn TimeField(Times: map<int, float>, Id: int) -> string {
+    let t = Times.Find(Id)
+    return if t.ReturnValue { string(KismetMathLibrary.Round(t.Value)) } else { "" }
+}
+
+// Job Id as a colony event-flag entry ("j<provider>", lower case, fields split by ";"): format version; requester;
+// loading since, departing since, departed at (colony clock, "" when not set); "m" when sent with Deliver now; voyage
+// phase and the end of the dwell at the requester; the manifest "good:units:parked,..."; the left-short / sent-early
+// note (JobShort, "/" as "-": names may not keep a "/"); the dropped-goods note (JobDropped). Without the notes when
+// it would be longer than BPL_FDStore.MaxLongLength.
+fn JobEntry(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> string {
+    let goods = ""
+    for res, units in Manifest(MapLoad, Id) {
+        let pk = MapLoad.JobGoods.Find(ParkKey(Id, res))
+        goods += (if goods == "" { "" } else { "," }) + string(res) + ":" + string(units) + ":" + string(if pk.ReturnValue { pk.Value } else { 0 })
+    }
+    let ph = MapLoad.VoyagePhase.Find(Id)
+    let wait = MapLoad.VoyageWait.Find(Id)
+    let short = MapLoad.JobShort.Find(Id)
+    let dropped = MapLoad.JobDropped.Find(Id)
+    let head = JobFormat() + ";" + string(MapLoad.JobTo[Id]) + ";" + TimeField(MapLoad.LoadingSince, Id) + ";" + TimeField(MapLoad.DepartingSince, Id) + ";" + TimeField(MapLoad.DepartedAt, Id) + ";" + (if MapLoad.ManualDepart.Contains(Id) { "m" } else { "" }) + ";" + (if ph.ReturnValue { string(ph.Value) } else { "" }) + ";" + (if wait.ReturnValue { string(KismetMathLibrary.Round(wait.Value)) } else { "" }) + ";" + goods
+    let notes = ";" + KismetStringLibrary.Replace(if short.ReturnValue { short.Value } else { "" }, "/", "-", ESearchCase.CaseSensitive) + ";" + (if dropped.ReturnValue { dropped.Value } else { "" })
+    let entry = KismetStringLibrary.ToLower(head + notes)
+    if KismetStringLibrary.Len(entry) > BPL_FDStore.MaxLongLength() {
+        entry = KismetStringLibrary.ToLower(head + ";;")
+    }
+    return entry
+}
+
+// Writes every job's entry (JobEntry, "j<provider>") and each requester's demand ages ("a<requester>":
+// "good:since,...", colony clock) where they differ from what is stored. After each dispatch pass and FreightTick,
+// and when a voyage arrives or turns for home; DropJob removes a job's entry when it ends.
+fn SaveJobs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    // not before this load's entries have been read back (BPL_FDLoad.RestoreJobs)
+    if !MapLoad.JobsRestored {
+        return
+    }
+    for pid, rid in MapLoad.JobTo {
+        let jv = JobEntry(MapLoad, pid)
+        let jk = "j" + string(pid)
+        if BPL_FDStore.Get(MapLoad, jk) != jv {
+            BPL_FDStore.SetLong(MapLoad, jk, jv)
+        }
+    }
+    let ages: map<int, string> = {}
+    for dk, t0 in MapLoad.DemandSince {
+        let parts = KismetStringLibrary.Split(dk, "|", ESearchCase.CaseSensitive, ESearchDir.FromStart)
+        let rq = KismetStringLibrary.Conv_StringToInt(parts.LeftS)
+        let had = ages.Find(rq)
+        let part = KismetStringLibrary.ToLower(parts.RightS) + ":" + string(KismetMathLibrary.Round(t0))
+        ages[rq] = if had.ReturnValue { had.Value + "," + part } else { part }
+    }
+    for rq2, av in ages {
+        let ak = "a" + string(rq2)
+        if BPL_FDStore.Get(MapLoad, ak) != av {
+            BPL_FDStore.SetLong(MapLoad, ak, av)
+        }
+    }
+    // requesters with no open demand any more: their entry goes
+    for key, value in BPL_FDStore.Entries(MapLoad) {
+        let rq3 = EntryId(key, "a")
+        if rq3 > 0 {
+            if !ages.Contains(rq3) {
+                BPL_FDStore.Set(MapLoad, key, "")
+            }
+        }
+    }
+}
+
+// The ID in an entry key of the form Prefix + a number ("j12387" with "j"), or 0 for any other key (other kinds,
+// or keys a later version may add, which are left alone).
+pure fn EntryId(Key: string, Prefix: string) -> int {
+    if !KismetStringLibrary.StartsWith(Key, Prefix, ESearchCase.CaseSensitive) {
+        return 0
+    }
+    let rest = KismetStringLibrary.RightChop(Key, KismetStringLibrary.Len(Prefix))
+    let id = KismetStringLibrary.Conv_StringToInt(rest)
+    return if id > 0 && string(id) == rest { id } else { 0 }
 }
 
 // Moves up to Units of Res from the hold of the dock's ship to its delivered-goods store. Returns the units moved.
@@ -853,6 +962,35 @@ fn ParkUnits(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Work
         ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Probe: dock " + string(DockId(Dock)) + " hold to delivered-goods store: " + string(Res) + "=" + string(move) + " (store now " + string(slot.count) + ")", false)
     }
     return move
+}
+
+// Development only: true logs the input slots of docks with jobs (SlotProbe) in the first 90 s of real time after a
+// load. Keep false in a release.
+pure fn LoadProbing() -> bool {
+    return false
+}
+
+// Development only (LoadProbing): "Slots <label>: dock <id> good count/reserved dropoff/reserved pickup/capacity ...;
+// hold <n>", in the first 90 s after a load.
+fn SlotProbe(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Label: string) {
+    if !LoadProbing() {
+        return
+    }
+    if Dock == none {
+        return
+    }
+    if GameplayStatics.GetRealTimeSeconds() > 90.0 {
+        return
+    }
+    let line = "Slots " + Label + ": dock " + string(DockId(Dock))
+    for res, slot in Dock.m_inputStockpile.Slots {
+        line += " " + string(res) + " " + string(slot.count) + "/" + string(slot.reservedSpaceForDropoff) + "/" + string(slot.reservedForPickup) + "/" + string(slot.capacity)
+    }
+    let ship = ShipAtDock(MapLoad, Dock)
+    if ship != none {
+        line += "; hold " + string(MapLoad.HoldCounts(ship).Total)
+    }
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + line, false)
 }
 
 // Zeroes the count of each input slot no hauler is bringing goods to (no dropoff reserved): the count isn't goods but

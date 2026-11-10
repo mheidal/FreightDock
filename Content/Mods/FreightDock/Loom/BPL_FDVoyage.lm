@@ -1252,6 +1252,106 @@ fn FillCourse(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, 
 // to VoyageArrive. A stand-in turns in place (at TurnRate) at the start of a course until it faces along it, and at the
 // end until it faces VoyageEndFwd, before it counts as arrived - so its heading never jumps. It bobs like a moored
 // ship (BobPose), sailing or waiting; TurnRate only steers its yaw, so the bob's tilt doesn't build up.
+// A stand-in reached the end of its course (ported from fdgen). Outbound (phase 1), at the target: the hold is
+// delivered, shown as goods flying from the stand-in to the target dock (BP_FDFling, spawned by BP_MapLoad.SpawnFling:
+// Before records the target's dock store, Launch flies what it gained), and the wait there starts (phase 2,
+// VoyageWait). Home (or the stand-in lost): the stand-in goes, the ship shows again, and the trip ends.
+fn VoyageArrive(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
+    let proxy = MapLoad.Voyages.Find(Id)
+    let proxyOk = false
+    if proxy.ReturnValue {
+        proxyOk = KismetSystemLibrary.IsValid(proxy.Value)
+    }
+    let ph = MapLoad.VoyagePhase.Find(Id)
+    let outbound = false
+    if ph.ReturnValue {
+        outbound = ph.Value == 1
+    }
+    if proxyOk && outbound {
+        let dock = BPL_FDNet.DockById(MapLoad, Id)
+        let tid = MapLoad.VoyageTargetId.Find(Id)
+        let target: WorkDock = none
+        if tid.ReturnValue {
+            target = BPL_FDNet.DockById(MapLoad, tid.Value)
+        }
+        if target != none {
+            let fling = MapLoad.SpawnFling(proxy.Value.GetTransform()).Fling
+            if fling != none {
+                fling.Before(target)
+            }
+            MapLoad.TransferFrom(dock, target)
+            if fling != none {
+                fling.Launch(target)
+            }
+            MapLoad.ClearRequested(Id)
+        }
+        MapLoad.VoyageWait[Id] = BPL_FDNet.ColonyTime() + MapLoad.DwellSeconds
+        MapLoad.VoyagePhase[Id] = 2
+        BPL_FDNet.SaveJobs(MapLoad)
+        return
+    }
+    if proxyOk {
+        proxy.Value.K2_DestroyActor()
+    }
+    let vs = MapLoad.VoyageShip.Find(Id)
+    if vs.ReturnValue {
+        let ship = vs.Value
+        if KismetSystemLibrary.IsValid(ship) {
+            ship.SetActorHiddenInGame(false)
+            ship.SetActorEnableCollision(true)
+            let model = ship.zoomedActor.ChildActor
+            if model != none {
+                model.SetActorHiddenInGame(false)
+                model.SetActorEnableCollision(true)
+            }
+        }
+    }
+    MapLoad.Voyages.Remove(Id)
+    MapLoad.VoyageShip.Remove(Id)
+    MapLoad.VoyageHome.Remove(Id)
+    MapLoad.VoyageTarget.Remove(Id)
+    MapLoad.VoyagePhase.Remove(Id)
+    MapLoad.VoyageWait.Remove(Id)
+    MapLoad.DepartedAt.Remove(Id)
+    MapLoad.LoadingSince.Remove(Id)
+    MapLoad.VoyageBerth.Remove(Id)
+    MapLoad.VoyageTargetId.Remove(Id)
+}
+
+// Puts voyage Id's stand-in where its course and phase say, facing the way it would by then (after a reload,
+// BPL_FDLoad.RestoreJob): along the course at VoyageDist, or during the wait at the course's end facing its end
+// heading (VoyageEndFwd).
+fn PlaceStandIn(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
+    let pf = MapLoad.Voyages.Find(Id)
+    let sp = MapLoad.VoyageSpline.Find(Id)
+    let sh = MapLoad.VoyageShip.Find(Id)
+    if !pf.ReturnValue || !sp.ReturnValue || !sh.ReturnValue {
+        return
+    }
+    let proxy = pf.Value
+    let spline = sp.Value
+    if !KismetSystemLibrary.IsValid(proxy) {
+        return
+    }
+    if !KismetSystemLibrary.IsValid(spline) {
+        return
+    }
+    let offset = FacingOffset(sh.Value)
+    let len = spline.GetSplineLength()
+    let ph = MapLoad.VoyagePhase.Find(Id)
+    let df = MapLoad.VoyageDist.Find(Id)
+    let dist = KismetMathLibrary.FMin(if df.ReturnValue { df.Value } else { 0.0 }, len)
+    let pos = spline.GetLocationAtDistanceAlongSpline(dist, ESplineCoordinateSpace.World)
+    let rot = ProxyRot(spline.GetDirectionAtDistanceAlongSpline(dist, ESplineCoordinateSpace.World), offset)
+    if ph.ReturnValue {
+        if ph.Value == 2 {
+            pos = spline.GetLocationAtDistanceAlongSpline(len, ESplineCoordinateSpace.World)
+            rot = ProxyRot(MapLoad.VoyageEndFwd.Find(Id).Value, offset)
+        }
+    }
+    proxy.K2_SetActorLocationAndRotation(pos, rot, false, true)
+}
+
 fn VoyageTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let t = BPL_FDNet.Now()
     VoyageStep(MapLoad)
@@ -1285,7 +1385,7 @@ fn VoyageStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
                 proxy.K2_DestroyActor()
             }
             ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Dock " + string(id) + ": ship left its berth - voyage cancelled, freight stays aboard", false)
-            MapLoad.VoyageArrive(id)
+            VoyageArrive(MapLoad, id)
             continue
         }
         let spline = MapLoad.VoyageSpline.Find(id).Value
@@ -1295,8 +1395,9 @@ fn VoyageStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         // phase 2: wait at the target, then turn for home (phase 3) on a new course from 0
         if phase == 2 {
             let wf = MapLoad.VoyageWait.Find(id)
-            if GameplayStatics.GetTimeSeconds() >= wf.Value {
+            if BPL_FDNet.ColonyTime() >= wf.Value {
                 MapLoad.VoyagePhase[id] = 3
+                BPL_FDNet.SaveJobs(MapLoad)
                 if KismetSystemLibrary.IsValid(spline) {
                     spline.K2_DestroyComponent()
                 }
@@ -1314,7 +1415,7 @@ fn VoyageStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
 
         // phases 1 and 3: advance along the course (gone, e.g. destroyed: finish so the ship is shown again)
         if !ok {
-            MapLoad.VoyageArrive(id)
+            VoyageArrive(MapLoad, id)
             continue
         }
         let len = spline.GetSplineLength()
@@ -1340,7 +1441,7 @@ fn VoyageStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         proxy.K2_SetActorLocationAndRotation(sailing.OutPos, sailing.OutRot, false, true)
         MapLoad.VoyageDist[id] = newDist
         if atEnd && Lined(turned, endRot) {
-            MapLoad.VoyageArrive(id)
+            VoyageArrive(MapLoad, id)
         }
     }
 }

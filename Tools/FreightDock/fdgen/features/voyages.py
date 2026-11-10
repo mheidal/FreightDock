@@ -1,5 +1,5 @@
 """Voyages: StartVoyage spawns the stand-in and course, VoyageTick moves it along the spline (moored / sailing /
-waiting phases), VoyageArrive unloads (with goods flying to the dock, BP_FDFling) and returns the ship.
+waiting phases), BPL_FDVoyage.VoyageArrive unloads (with goods flying to the dock, BP_FDFling) and returns the ship.
 """
 from fdgen.core.graph import Graph
 from fdgen.core.types import (
@@ -183,144 +183,18 @@ def voyage_tick():
     return g.render()
 
 
-def voyage_arrive():
-    """Phase 1 (at the target): deliver the hold, shown as goods flying from the stand-in to the target dock
-    (BP_FDFling, spawned at the stand-in: Before records the target's dock store, Launch flies what it gained),
-    start the wait. Phase 3 (home): remove the stand-in, show the ship,
-    end the trip. A missing stand-in also ends the trip."""
+def spawn_fling():
+    """SpawnFling(At) -> Fling: a BP_FDFling at At (for BPL_FDVoyage.VoyageArrive: Loom can't spawn actors)."""
     g = Graph()
-    F = "VoyageArrive"
-    get_self(g, "GetVoyages", "Voyages", MAP_INT_ACTOR, 0, 600)
-    get_self(g, "GetVShip", "VoyageShip", MAP_INT_SHIP, 0, 700)
-    get_self(g, "GetVHome", "VoyageHome", MAP_INT_VECTOR, 0, 800)
-    get_self(g, "GetVTarget", "VoyageTarget", MAP_INT_VECTOR, 0, 900)
-    get_self(g, "GetVPhase", "VoyagePhase", MAP_INT_INT, 0, 1000)
-    get_self(g, "GetVWait", "VoyageWait", MAP_INT_DOUBLE, 0, 1100)
-    get_self(g, "GetDeparted", "DepartedAt", MAP_INT_DOUBLE, 0, 1200)
-    get_self(g, "GetSince", "LoadingSince", MAP_INT_DOUBLE, 0, 1300)
-    get_self(g, "GetDwell", "DwellSeconds", DOUBLE, 0, 1400)
-    get_local(g, "GetId", F, "Id", INT, 0, 1500)
-    get_local(g, "GetDock", F, "Dock", OBJ(WORKDOCK), 0, 1600)
-    get_local(g, "GetTarget", F, "Target", OBJ(WORKDOCK), 0, 1700)
-    key = ("GetId", "Id")
-
-    map_find(g, "FindProxy", ("GetVoyages", "Voyages"), key, MAP_INT_ACTOR, OBJ(ACTOR), 0, 250, key_type=INT)
-    is_valid(g, "ProxyOk", ACTOR, 250, 250)
-    g.link(("FindProxy", "Value"), ("ProxyOk", "Object"))
-    map_find(g, "FindPhase", ("GetVPhase", "VoyagePhase"), key, MAP_INT_INT, INT, 0, 400, key_type=INT)
-    outbound = int_op(g, "Outbound", "EqualEqual_IntInt", ("FindPhase", "Value"), None, 250, 400, b_default="1")
-    g.call("Deliver", MATHLIB, "BooleanAND", 500, 300,
-           [("A", "in", BOOL, None), ("B", "in", BOOL, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(("ProxyOk", "ReturnValue"), ("Deliver", "A"))
-    g.link(outbound, ("Deliver", "B"))
-    branch(g, "BrDeliver", 0, 0)
-    g.link(("Deliver", "ReturnValue"), ("BrDeliver", "Condition"))
-
-    # --- arrival at the target: deliver, then wait
-    user_call(g, "FindDock", "DockById", 250, -400, ins=[("Id", INT)], outs=[("Dock", OBJ(WORKDOCK))])
-    g.link(("BrDeliver", "then"), ("FindDock", "execute"))
-    g.link(key, ("FindDock", "Id"))
-    set_local(g, "SetDock", F, "Dock", OBJ(WORKDOCK), 500, -400)
-    g.link(("FindDock", "then"), ("SetDock", "execute"))
-    g.link(("FindDock", "Dock"), ("SetDock", "Dock"))
-    get_self(g, "GetVTargetId", "VoyageTargetId", MAP_INT_INT, 0, 1800)
-    get_self(g, "GetVBerth", "VoyageBerth", MAP_INT_OBJ(NDOCK), 0, 1900)
-    map_find(g, "FindTargetId", ("GetVTargetId", "VoyageTargetId"), key, MAP_INT_INT, INT, 750, -550, key_type=INT)
-    user_call(g, "FindTarget", "DockById", 750, -400, ins=[("Id", INT)], outs=[("Dock", OBJ(WORKDOCK))])
-    g.link(("SetDock", "then"), ("FindTarget", "execute"))
-    g.link(("FindTargetId", "Value"), ("FindTarget", "Id"))
-    set_local(g, "SetTarget", F, "Target", OBJ(WORKDOCK), 1000, -400)
-    g.link(("FindTarget", "then"), ("SetTarget", "execute"))
-    g.link(("FindTarget", "Dock"), ("SetTarget", "Target"))
-    is_valid(g, "TargetOk", WORKDOCK, 1250, -250)
-    g.link(("GetTarget", "Target"), ("TargetOk", "Object"))
-    branch(g, "BrTarget", 1250, -400)
-    g.link(("SetTarget", "then"), ("BrTarget", "execute"))
-    g.link(("TargetOk", "ReturnValue"), ("BrTarget", "Condition"))
-    fling_t = OBJ(FD_FLING_CLASS)
-    fling_cls = f"/Script/Engine.BlueprintGeneratedClass'{FD_FLING_CLASS}'"
-    g.call("ProxyXform", f"/Script/CoreUObject.Class'{ACTOR}'", "GetTransform", 1250, -900,
-           [("self", "in", OBJ(ACTOR), None), ("ReturnValue", "out", STRUCT(TRANSFORM), None)])
-    g.link(("FindProxy", "Value"), ("ProxyXform", "self"))
+    get_local(g, "GetAt", "SpawnFling", "At", STRUCT(TRANSFORM), 0, 250)
     fct, fcd = CLASSPIN(ACTOR, FD_FLING_CLASS)
-    g.node("SpawnFling", K2 + "K2Node_SpawnActorFromClass", [], 1500, -900,
+    g.node("Spawn", K2 + "K2Node_SpawnActorFromClass", [], 250, 0,
            [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
-            ("Class", "in", fct, fcd), ("ReturnValue", "out", fling_t, None),
+            ("Class", "in", fct, fcd), ("ReturnValue", "out", OBJ(FD_FLING_CLASS), None),
             ("SpawnTransform", "in", STRUCT(TRANSFORM), None),
             ("CollisionHandlingOverride", "in", COLLISION_PIN, 'DefaultValue="AlwaysSpawn"'),
             ("Owner", "in", OBJ(ACTOR), None)])
-    g.link(("BrTarget", "then"), ("SpawnFling", "execute"))
-    g.link(("ProxyXform", "ReturnValue"), ("SpawnFling", "SpawnTransform"))
-    g.call("FlingBefore", fling_cls, "Before", 1750, -900,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", fling_t, None),
-            ("Target", "in", OBJ(WORKDOCK), None)])
-    g.link(("SpawnFling", "then"), ("FlingBefore", "execute"))
-    g.link(("SpawnFling", "ReturnValue"), ("FlingBefore", "self"))
-    g.link(("GetTarget", "Target"), ("FlingBefore", "Target"))
-    user_call(g, "Transfer", "TransferFrom", 1500, -400,
-              ins=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK))], outs=[("Total", INT)])
-    g.link(("FlingBefore", "then"), ("Transfer", "execute"))
-    g.call("FlingLaunch", fling_cls, "Launch", 2000, -900,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", fling_t, None),
-            ("Target", "in", OBJ(WORKDOCK), None)])
-    g.link(("SpawnFling", "ReturnValue"), ("FlingLaunch", "self"))
-    g.link(("GetTarget", "Target"), ("FlingLaunch", "Target"))
-    g.link(("GetDock", "Dock"), ("Transfer", "Dock"))
-    g.link(("GetTarget", "Target"), ("Transfer", "Target"))
-    user_call(g, "ClearReq", "ClearRequested", 1750, -200, ins=[("Id", INT)])
-    g.link(("Transfer", "then"), ("FlingLaunch", "execute"))
-    g.link(("FlingLaunch", "then"), ("ClearReq", "execute"))
-    g.link(key, ("ClearReq", "Id"))
-    g.call("Now", SYSLIB, "GetGameTimeInSeconds", 2250, -650, [("ReturnValue", "out", DOUBLE, None)])
-    g.call("WaitEnd", MATHLIB, "Add_DoubleDouble", 2500, -650,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Now", "ReturnValue"), ("WaitEnd", "A"))
-    g.link(("GetDwell", "DwellSeconds"), ("WaitEnd", "B"))
-    map_add(g, "SetWait", ("GetVWait", "VoyageWait"), key, ("WaitEnd", "ReturnValue"), MAP_INT_DOUBLE, DOUBLE,
-            2250, -400, key_type=INT)
-    g.link(("ClearReq", "then"), ("SetWait", "execute"))
-    g.link(("BrTarget", "else"), ("SetWait", "execute"))
-    map_add(g, "SetWaiting", ("GetVPhase", "VoyagePhase"), key, None, MAP_INT_INT, INT, 2500, -400, key_type=INT)
-    g.link(("SetWait", "then"), ("SetWaiting", "execute"))
-    set_pin_default(g, "SetWaiting", "Value", "2")
-
-    # --- back home (or stand-in lost): remove the stand-in, show the ship, end the trip
-    branch(g, "BrHasProxy", 250, 300)
-    g.link(("BrDeliver", "else"), ("BrHasProxy", "execute"))
-    g.link(("ProxyOk", "ReturnValue"), ("BrHasProxy", "Condition"))
-    g.call("Destroy", f"/Script/CoreUObject.Class'{ACTOR}'", "K2_DestroyActor", 500, 300,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("self", "in", OBJ(ACTOR), None)])
-    g.link(("BrHasProxy", "then"), ("Destroy", "execute"))
-    g.link(("FindProxy", "Value"), ("Destroy", "self"))
-    map_find(g, "FindShip", ("GetVShip", "VoyageShip"), key, MAP_INT_SHIP, OBJ(SHIP), 500, 600, key_type=INT)
-    is_valid(g, "ShipOk", SHIP, 750, 600)
-    g.link(("FindShip", "Value"), ("ShipOk", "Object"))
-    branch(g, "BrShip", 750, 300)
-    g.link(("Destroy", "then"), ("BrShip", "execute"))
-    g.link(("BrHasProxy", "else"), ("BrShip", "execute"))
-    g.link(("ShipOk", "ReturnValue"), ("BrShip", "Condition"))
-    _, child = zoomed_child(g, "Z", ("FindShip", "Value"), 1000, 600)
-    set_hidden(g, "ShowShip", ("FindShip", "Value"), False, 1000, 300)
-    g.link(("BrShip", "then"), ("ShowShip", "execute"))
-    set_hidden(g, "ShowChild", child, False, 1250, 300)
-    g.link(("ShowShip", "then"), ("ShowChild", "execute"))
-
-    prev_list = [("ShowChild", "then"), ("BrShip", "else")]
-    for i, (name, mp, mtype) in enumerate((
-            ("RemVoyage", ("GetVoyages", "Voyages"), MAP_INT_ACTOR),
-            ("RemShip", ("GetVShip", "VoyageShip"), MAP_INT_SHIP),
-            ("RemHome", ("GetVHome", "VoyageHome"), MAP_INT_VECTOR),
-            ("RemTarget", ("GetVTarget", "VoyageTarget"), MAP_INT_VECTOR),
-            ("RemPhase", ("GetVPhase", "VoyagePhase"), MAP_INT_INT),
-            ("RemWait", ("GetVWait", "VoyageWait"), MAP_INT_DOUBLE),
-            ("RemDeparted", ("GetDeparted", "DepartedAt"), MAP_INT_DOUBLE),
-            ("RemSince", ("GetSince", "LoadingSince"), MAP_INT_DOUBLE),
-            ("RemBerth", ("GetVBerth", "VoyageBerth"), MAP_INT_OBJ(NDOCK)),
-            ("RemTargetId", ("GetVTargetId", "VoyageTargetId"), MAP_INT_INT))):
-        map_remove(g, name, mp, key, mtype, 1500 + 250 * i, 300)
-        for prev in prev_list:
-            g.link(prev, (name, "execute"))
-        prev_list = [(name, "then")]
+    g.link(("GetAt", "At"), ("Spawn", "SpawnTransform"))
     return g.render()
 
 
@@ -328,13 +202,13 @@ SPECS = {
     "VoyageTick": fn_spec(("Call", "execute")),
     "StartVoyage": fn_spec(("SetId", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK)), ("Ship", OBJ(SHIP))],
                            locals_=[("Id", INT), ("Proxy", OBJ(ACTOR)), ("BerthTo", OBJ(NDOCK))]),
-    "VoyageArrive": fn_spec(("BrDeliver", "execute"), inputs=[("Id", INT)],
-                            locals_=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK))]),
+    "SpawnFling": fn_spec(("Spawn", "execute"), inputs=[("At", STRUCT(TRANSFORM))], outputs=[("Fling", OBJ(FD_FLING_CLASS))],
+                          returns=[("Spawn", "then")], values=[("Spawn", "ReturnValue", "Fling")]),
 }
 
 
 GRAPHS = {
     "StartVoyage": start_voyage,
     "VoyageTick": voyage_tick,
-    "VoyageArrive": voyage_arrive,
+    "SpawnFling": spawn_fling,
 }

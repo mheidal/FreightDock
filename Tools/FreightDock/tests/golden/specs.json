@@ -320,57 +320,11 @@
  },
  "FreightTick": {
   "entry": [
-   "Refresh",
+   "Call",
    "execute"
   ],
   "inputs": [],
-  "locals": [
-   {
-    "default": "",
-    "name": "Target",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   },
-   {
-    "default": "",
-    "name": "Id",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Ship",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/NauticalKit.NauticalShip'\")"
-   },
-   {
-    "default": "",
-    "name": "Remaining",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Loaded",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Now",
-    "type": "(PinCategory=\"real\",PinSubCategory=\"double\")"
-   },
-   {
-    "default": "",
-    "name": "Freight",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "InFlight",
-    "type": "(PinCategory=\"int\")"
-   },
-   {
-    "default": "",
-    "name": "Reason",
-    "type": "(PinCategory=\"string\")"
-   }
-  ],
+  "locals": [],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -1089,6 +1043,41 @@
   "returnValues": [],
   "returns": []
  },
+ "SpawnFling": {
+  "entry": [
+   "Spawn",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "At",
+    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Transform'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Fling",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Game/Mods/FreightDock/Loom/BP_FDFling.BP_FDFling_C'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Spawn",
+    "ReturnValue",
+    "Fling"
+   ]
+  ],
+  "returns": [
+   [
+    "Spawn",
+    "then"
+   ]
+  ]
+ },
  "Stamp": {
   "entry": [
    "Pass",
@@ -1417,35 +1406,6 @@
     "else"
    ]
   ]
- },
- "VoyageArrive": {
-  "entry": [
-   "BrDeliver",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Id",
-    "type": "(PinCategory=\"int\")"
-   }
-  ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Dock",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   },
-   {
-    "default": "",
-    "name": "Target",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
-   }
-  ],
-  "outputs": [],
-  "pure": false,
-  "returnValues": [],
-  "returns": []
  },
  "VoyageTick": {
   "entry": [

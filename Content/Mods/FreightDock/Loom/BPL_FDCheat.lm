@@ -105,6 +105,26 @@ fn DrawCells(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Cells: map
 // Loading probe: every 2 s of game time, per job still loading, per good of its manifest: the hold, the dock's input
 // slot (count, capacity, carried), the dock's requests (dock-specific, live), its delivered-goods store, and each
 // input warehouse's slot (count, reserved, request level, whether it accepts the good). Returns the next time.
+// Development only: the colony clock candidates every 10 s of real time (and at the first call after a load), to
+// see which advance with game speed, stop when paused and carry across a save and reload. Returns the next time.
+fn ClockProbe(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, At: float) -> float {
+    let real = GameplayStatics.GetRealTimeSeconds()
+    if real < At {
+        return At
+    }
+    let arco = ArcoSystems.GetArcoSys().ReturnValue
+    let line = "Clock: real " + string(KismetMathLibrary.Round(real)) + " game " + string(KismetMathLibrary.Round(GameplayStatics.GetTimeSeconds()))
+    if arco != none {
+        line += " totalPlay " + string(KismetMathLibrary.Round(arco.GetTotalPlaySeconds())) + " sessionPlay " + string(KismetMathLibrary.Round(arco.GetSessionPlaySeconds()))
+        let wt = arco.m_worldTime
+        if wt != none {
+            line += " worldElapsed " + string(KismetMathLibrary.Round(wt.m_totalWorldTimeElapsed)) + " live " + string(KismetMathLibrary.Round(wt.GetLiveTime())) + " day " + string(wt.m_day) + " timeOfDay " + string(KismetMathLibrary.Round(wt.m_timeOfDay * 100.0)) + "/100 paused " + string(wt.m_paused)
+        }
+    }
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + line, false)
+    return real + 10.0
+}
+
 fn Probe(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, At: float) -> float {
     let now = GameplayStatics.GetTimeSeconds()
     if now < At {

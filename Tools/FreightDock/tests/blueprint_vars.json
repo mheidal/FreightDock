@@ -150,7 +150,8 @@
   "SearchPrev": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "SearchPts": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(),ContainerType=Array)",
   "JobShort": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"string\"),ContainerType=Map)",
-  "ManualDepart": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"bool\"),ContainerType=Map)"
+  "ManualDepart": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"bool\"),ContainerType=Map)",
+  "JobsRestored": "(PinCategory=\"bool\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())"
  },
  "BP_Startup": {
   "ModAPI": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())"

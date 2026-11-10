@@ -106,6 +106,9 @@ var CtrlR: Key
 //     ProbeIdle(Owner)
 // and set BPL_FDNet.Probing() true for the dispatcher's "Probe:" lines.
 var ProbeAt: float = 0.0
+// Development only, unhooked: BPL_FDCheat.ClockProbe's next time; to use it add to Step
+//     ClockAt = BPL_FDCheat.ClockProbe(Owner, ClockAt)
+var ClockAt: float = 0.0
 
 // Development only: ProbeLog's last line per "<dock>|<category>", and ProbeIdle's next check
 var ProbeSeen: map<string, string>
@@ -1236,7 +1239,19 @@ pure fn Clock(Seconds: int) -> string {
 }
 
 // "Medium warehouse" for a medium_warehouse building.
+// The building's name as the game shows it (its definition's stringKey, in the player's language); its class name
+// when it has none.
 fn BuildingName(Building: Actor) -> string {
+    let grid = cast(Building, GridActor)
+    if grid != none {
+        let def = grid.GetGridActorDefinition()
+        if def.ReturnValue && def.Out.stringKey != "" {
+            let word = LocManager.GetWordFromKey(name(def.Out.stringKey))
+            if word != "" {
+                return word
+            }
+        }
+    }
     let raw = KismetSystemLibrary.GetClassDisplayName(GameplayStatics.GetObjectClass(Building))
     if KismetStringLibrary.EndsWith(raw, "_C", ESearchCase.CaseSensitive) {
         raw = KismetStringLibrary.LeftChop(raw, 2)
@@ -1311,10 +1326,10 @@ fn Refresh(Dock: WorkDock) {
         aboard = MapLoad.HoldCounts(berthed).Total
     }
     let pending = MapLoad.DepartingSince.Find(id)
-    // pending since before 0: Deliver now was pressed (ShipLine); a departure waiting for haulers can still be sped up
+    // Deliver now was pressed (ManualDepart, departure pending); a departure waiting for haulers can still be sped up
     let pressed = false
     if pending.ReturnValue {
-        pressed = pending.Value < 0.0
+        pressed = MapLoad.ManualDepart.Contains(id)
     }
     let canDeliver = !away && aboard > 0 && !pressed
     Deliver.SetIsEnabled(canDeliver)
@@ -1434,11 +1449,11 @@ fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
                 if pending.ReturnValue {
                     // Deliver now marks it pending since long ago (below 0): it sails at once
                     // waiting for the haulers still on their way (no time limit), or sent with Deliver now
-                    s = BPL_FDText.T(if pending.Value < 0.0 { "freightdock.ship.departing" } else { "freightdock.ship.leaving" }) + "\n"
+                    s = BPL_FDText.T(if MapLoad.ManualDepart.Contains(Id) { "freightdock.ship.departing" } else { "freightdock.ship.leaving" }) + "\n"
                 } else if !BPL_FDNet.OnDuty(MapLoad, Dock) {
                     s = BPL_FDText.T("freightdock.ship.offDuty") + "\n"
                 } else if MapLoad.LoadingSince.Contains(Id) {
-                    let waitedFor = GameplayStatics.GetTimeSeconds() - MapLoad.LoadingSince[Id]
+                    let waitedFor = BPL_FDNet.ColonyTime() - MapLoad.LoadingSince[Id]
                     let limit = MapLoad.MaxWaitSeconds
                     let left = KismetMathLibrary.FMax(limit - waitedFor, 0.0)
                     if limit > 100000.0 {
