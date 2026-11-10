@@ -139,7 +139,7 @@ fn Probe(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, At: float) -> 
                 let linker = cast(dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
                 if linker != none {
                     for bid in linker.m_sourceStockpileIds {
-                        let b = MapLoad.BuildingById(bid).Building
+                        let b = BPL_FDNet.BuildingById(MapLoad, bid)
                         if b != none {
                             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
                             if rb != none {

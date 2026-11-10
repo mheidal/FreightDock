@@ -280,7 +280,7 @@ fn NetRenamed(Net: int, Name: string) {
     if Dock == none || MapLoad == none {
         return
     }
-    BPL_FDNet.SetNetName(Net, Name)
+    BPL_FDNet.SetNetName(MapLoad, Net, Name)
     Show(MapLoad, Dock)
     Changed.broadcast()
 }

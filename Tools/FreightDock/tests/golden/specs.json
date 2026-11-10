@@ -17,6 +17,41 @@
   "returnValues": [],
   "returns": []
  },
+ "BuildingById": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Building",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Call",
+    "ReturnValue",
+    "Building"
+   ]
+  ],
+  "returns": [
+   [
+    "Call",
+    "then"
+   ]
+  ]
+ },
  "ClearLine": {
   "entry": [
    "Call",
@@ -83,7 +118,7 @@
  },
  "DeficitsFor": {
   "entry": [
-   "ClearCounts",
+   "Call",
    "execute"
   ],
   "inputs": [
@@ -93,23 +128,7 @@
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    }
   ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Counts",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
-   },
-   {
-    "default": "",
-    "name": "Linker",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.StockpileLinker'\")"
-   },
-   {
-    "default": "",
-    "name": "Deficit",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
-   }
-  ],
+  "locals": [],
   "outputs": [
    {
     "default": "",
@@ -120,15 +139,15 @@
   "pure": false,
   "returnValues": [
    [
-    "MakeWant",
-    "ResourceCollection",
+    "Call",
+    "ReturnValue",
     "Want"
    ]
   ],
   "returns": [
    [
-    "ForIds",
-    "Completed"
+    "Call",
+    "then"
    ]
   ]
  },
@@ -143,6 +162,41 @@
   "pure": false,
   "returnValues": [],
   "returns": []
+ },
+ "DockById": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Id",
+    "type": "(PinCategory=\"int\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [
+   {
+    "default": "",
+    "name": "Dock",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
+   }
+  ],
+  "pure": false,
+  "returnValues": [
+   [
+    "Call",
+    "ReturnValue",
+    "Dock"
+   ]
+  ],
+  "returns": [
+   [
+    "Call",
+    "then"
+   ]
+  ]
  },
  "DrawArcs": {
   "entry": [
@@ -202,46 +256,6 @@
   "pure": false,
   "returnValues": [],
   "returns": []
- },
- "FindPath": {
-  "entry": [
-   "Call",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Start",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Goal",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   }
-  ],
-  "locals": [],
-  "outputs": [
-   {
-    "default": "",
-    "name": "Found",
-    "type": "(PinCategory=\"bool\")"
-   }
-  ],
-  "pure": false,
-  "returnValues": [
-   [
-    "Call",
-    "ReturnValue",
-    "Found"
-   ]
-  ],
-  "returns": [
-   [
-    "Call",
-    "then"
-   ]
-  ]
  },
  "FreightCounts": {
   "entry": [
@@ -361,62 +375,6 @@
   "pure": false,
   "returnValues": [],
   "returns": []
- },
- "KeepEmptyDeficits": {
-  "entry": [
-   "ClearResult",
-   "execute"
-  ],
-  "inputs": [
-   {
-    "default": "",
-    "name": "Storage",
-    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.ResourceBuilding'\")"
-   }
-  ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Result",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
-   },
-   {
-    "default": "",
-    "name": "Inbound",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
-   },
-   {
-    "default": "",
-    "name": "Slots",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"struct\",TerminalSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/ProjectArco.ResourceStockpileSlot'\"))"
-   },
-   {
-    "default": "",
-    "name": "Need",
-    "type": "(PinCategory=\"int\")"
-   }
-  ],
-  "outputs": [
-   {
-    "default": "",
-    "name": "Deficit",
-    "type": "(PinCategory=\"name\",ContainerType=Map,PinValueType=(TerminalCategory=\"int\"))"
-   }
-  ],
-  "pure": false,
-  "returnValues": [
-   [
-    "GetResultForReturn",
-    "Result",
-    "Deficit"
-   ]
-  ],
-  "returns": [
-   [
-    "ForKeys",
-    "Completed"
-   ]
-  ]
  },
  "LogFootprint": {
   "entry": [
@@ -571,7 +529,7 @@
  },
  "PlanRoute": {
   "entry": [
-   "SetId",
+   "Call",
    "execute"
   ],
   "inputs": [
@@ -581,38 +539,7 @@
     "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.WorkDock'\")"
    }
   ],
-  "locals": [
-   {
-    "default": "",
-    "name": "Start",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Goal",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Anchor",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Prev",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\")"
-   },
-   {
-    "default": "",
-    "name": "Pts",
-    "type": "(PinCategory=\"struct\",PinSubCategoryObject=\"/Script/CoreUObject.ScriptStruct'/Script/CoreUObject.Vector'\",ContainerType=Array)"
-   },
-   {
-    "default": "",
-    "name": "Id",
-    "type": "(PinCategory=\"int\")"
-   }
-  ],
+  "locals": [],
   "outputs": [],
   "pure": false,
   "returnValues": [],
@@ -771,6 +698,18 @@
   ]
  },
  "ReadPairKey": {
+  "entry": [
+   "Call",
+   "execute"
+  ],
+  "inputs": [],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
+ "RefreshDocks": {
   "entry": [
    "Call",
    "execute"

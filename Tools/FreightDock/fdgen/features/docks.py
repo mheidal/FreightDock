@@ -60,35 +60,11 @@ def dock_id_of():
 
 
 def dock_by_id():
+    """DockById(Id) -> Dock: BPL_FDNet.DockById - the work dock of the building with that ID (the building index)."""
     g = Graph()
-    F = "DockById"
-    g.node("ClearFound", K2 + "K2Node_VariableSet", [local_var(F, "Found")], 0, 0,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
-            ("Found", "in", OBJ(WORKDOCK), None), ("Output_Get", "out", OBJ(WORKDOCK), None)])
-    all_actors(g, "GetAll", ACTOR, 250, 0)
-    g.link(("ClearFound", "then"), ("GetAll", "execute"))
-    for_each(g, "ForActors", OBJ(ACTOR), 550, 0)
-    g.link(("GetAll", "then"), ("ForActors", "Exec"))
-    g.link(("GetAll", "OutActors"), ("ForActors", "Array"))
-    comp = find_component(g, "Comp", ("ForActors", "Array Element"), WORKDOCK, 550, 250)
-    is_valid(g, "CompValid", WORKDOCK, 800, 250)
-    g.link(comp, ("CompValid", "Object"))
-    branch(g, "BrIsDock", 850, 0)
-    g.link(("ForActors", "LoopBody"), ("BrIsDock", "execute"))
-    g.link(("CompValid", "ReturnValue"), ("BrIsDock", "Condition"))
-    idp = dock_id_call(g, "CompId", comp, 1050, 250)
-    get_local(g, "GetId", F, "Id", INT, 1050, 400)
-    g.call("IdMatch", MATHLIB, "EqualEqual_IntInt", 1300, 250,
-           [("A", "in", INT, None), ("B", "in", INT, None), ("ReturnValue", "out", BOOL, None)])
-    g.link(idp, ("IdMatch", "A"))
-    g.link(("GetId", "Id"), ("IdMatch", "B"))
-    branch(g, "BrMatch", 1100, 0)
-    g.link(("BrIsDock", "then"), ("BrMatch", "execute"))
-    g.link(("IdMatch", "ReturnValue"), ("BrMatch", "Condition"))
-    set_local(g, "SetFound", F, "Found", OBJ(WORKDOCK), 1350, 0)
-    g.link(("BrMatch", "then"), ("SetFound", "execute"))
-    g.link(comp, ("SetFound", "Found"))
-    get_local(g, "GetFoundForReturn", F, "Found", OBJ(WORKDOCK), 550, -200)
+    get_local(g, "GetId", "DockById", "Id", INT, 0, 250)
+    loom_call(g, "Call", NET_LIB, "DockById", 250, 0, ins=[("Id", INT)], outs=[("ReturnValue", OBJ(WORKDOCK))])
+    g.link(("GetId", "Id"), ("Call", "Id"))
     return g.render()
 
 
@@ -128,60 +104,18 @@ def find_selected_dock():
 
 
 def refresh_docks():
-    """Rebuild the member Docks array from every actor with a WorkDock."""
+    """RefreshDocks (after a rescan): BPL_FDNet.IndexBuildings - the building index and the Docks list, built again."""
     g = Graph()
-    get_self(g, "GetDocksToClear", "Docks", OBJ(WORKDOCK, "Array"), 0, 200)
-    g.node("ClearDocks", K2 + "K2Node_CallArrayFunction",
-           [f'FunctionReference=(MemberParent="{ARRAYLIB}",MemberName="Array_Clear")'], 0, 0,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
-            ("TargetArray", "in", OBJ(WORKDOCK, "Array"), None)])
-    g.link(("GetDocksToClear", "Docks"), ("ClearDocks", "TargetArray"))
-    all_actors(g, "GetAll", ACTOR, 250, 0)
-    g.link(("ClearDocks", "then"), ("GetAll", "execute"))
-    for_each(g, "ForActors", OBJ(ACTOR), 550, 0)
-    g.link(("GetAll", "then"), ("ForActors", "Exec"))
-    g.link(("GetAll", "OutActors"), ("ForActors", "Array"))
-    comp = find_component(g, "Comp", ("ForActors", "Array Element"), WORKDOCK, 550, 250)
-    is_valid(g, "CompValid", WORKDOCK, 800, 250)
-    g.link(comp, ("CompValid", "Object"))
-    branch(g, "BrDock", 850, 0)
-    g.link(("ForActors", "LoopBody"), ("BrDock", "execute"))
-    g.link(("CompValid", "ReturnValue"), ("BrDock", "Condition"))
-    branch(g, "BrFreight", 1100, 0)
-    g.link(("BrDock", "then"), ("BrFreight", "execute"))
-    g.link(is_freight_call(g, "IsFreight", comp, 1100, 250), ("BrFreight", "Condition"))
-    get_self(g, "GetDocks", "Docks", OBJ(WORKDOCK, "Array"), 1100, 400)
-    g.node("AddDock", K2 + "K2Node_CallArrayFunction",
-           [f'FunctionReference=(MemberParent="{ARRAYLIB}",MemberName="Array_Add")'], 1350, 0,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
-            ("TargetArray", "in", OBJ(WORKDOCK, "Array"), None), ("NewItem", "in", OBJ(WORKDOCK), None),
-            ("ReturnValue", "out", INT, None)])
-    g.link(("BrFreight", "then"), ("AddDock", "execute"))
-    g.link(("GetDocks", "Docks"), ("AddDock", "TargetArray"))
-    g.link(comp, ("AddDock", "NewItem"))
+    loom_call(g, "Call", NET_LIB, "IndexBuildings", 0, 0)
     return g.render()
 
 
 def building_by_id():
+    """BuildingById(Id) -> Building: BPL_FDNet.BuildingById - from the building index."""
     g = Graph()
-    F = "BuildingById"
-    clear_var(g, "ClearFound", [local_var(F, "Found")], "Found", OBJ(GRIDACTOR), 0, 0)
-    all_actors(g, "GetAll", GRIDACTOR, 250, 0)
-    g.link(("ClearFound", "then"), ("GetAll", "execute"))
-    for_each(g, "ForBuildings", OBJ(GRIDACTOR), 550, 0)
-    g.link(("GetAll", "then"), ("ForBuildings", "Exec"))
-    g.link(("GetAll", "OutActors"), ("ForBuildings", "Array"))
-    get_member(g, "BuildingId", GRIDACTOR, "ID", INT, 550, 250)
-    g.link(("ForBuildings", "Array Element"), ("BuildingId", "self"))
-    get_local(g, "GetId", F, "Id", INT, 550, 400)
-    match = int_op(g, "IdMatch", "EqualEqual_IntInt", ("BuildingId", "ID"), ("GetId", "Id"), 800, 250)
-    branch(g, "BrMatch", 850, 0)
-    g.link(("ForBuildings", "LoopBody"), ("BrMatch", "execute"))
-    g.link(match, ("BrMatch", "Condition"))
-    set_local(g, "SetFound", F, "Found", OBJ(GRIDACTOR), 1100, 0)
-    g.link(("BrMatch", "then"), ("SetFound", "execute"))
-    g.link(("ForBuildings", "Array Element"), ("SetFound", "Found"))
-    get_local(g, "GetFoundForReturn", F, "Found", OBJ(GRIDACTOR), 550, -200)
+    get_local(g, "GetId", "BuildingById", "Id", INT, 0, 250)
+    loom_call(g, "Call", NET_LIB, "BuildingById", 250, 0, ins=[("Id", INT)], outs=[("ReturnValue", OBJ(GRIDACTOR))])
+    g.link(("GetId", "Id"), ("Call", "Id"))
     return g.render()
 
 
@@ -236,6 +170,11 @@ def nautical_dock_at():
 
 
 SPECS = {
+    "DockById": fn_spec(("Call", "execute"), inputs=[("Id", INT)], outputs=[("Dock", OBJ(WORKDOCK))],
+                        returns=[("Call", "then")], values=[("Call", "ReturnValue", "Dock")]),
+    "BuildingById": fn_spec(("Call", "execute"), inputs=[("Id", INT)], outputs=[("Building", OBJ(GRIDACTOR))],
+                            returns=[("Call", "then")], values=[("Call", "ReturnValue", "Building")]),
+    "RefreshDocks": fn_spec(("Call", "execute")),
     "ShipAtDock": fn_spec(("Call", "execute"), inputs=[("Dock", OBJ(WORKDOCK))], outputs=[("Ship", OBJ(SHIP))],
                           returns=[("Call", "then")], values=[("Call", "ReturnValue", "Ship")]),
 }

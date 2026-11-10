@@ -7,7 +7,7 @@ blueprint BPL_FDVoyage : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom
 
 // --- route cells: the water map (BP_MapLoad's Blocked footprints and land, Penalty near-shore cells, DockZone dock
 // outlines). A cell key is (floor(x / CellSize) + 2048) * 4096 + (floor(y / CellSize) + 2048), as BP_MapLoad.CellKey.
-// Ported from fdgen: BP_MapLoad's FindPath, ClearLine and RouteStillClear just call these.
+// Ported from fdgen: BP_MapLoad's PlanRoute, ClearLine and RouteStillClear just call these.
 
 pure fn KeyAt(CX: int, CY: int) -> int {
     return (CX + 2048) * 4096 + (CY + 2048)
@@ -375,48 +375,256 @@ fn RouteStillClear(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: 
     return true
 }
 
-// FindPath(Start, Goal): A* over route cells; prepends the path (start .. goal) to PathCells. Steps cost 10 straight,
-// 14 diagonal, plus ShoreCost() per near-shore level of the cell entered. A cell must be Passable (the goal cell
-// always is); a diagonal step also needs both cells beside it passable, so no corner is cut. At most MaxExpand cells
-// are expanded.
-fn FindPath(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Start: Vector, Goal: Vector) -> bool {
-    RefreshZones(MapLoad)
-    let startKey = MapLoad.CellKey(Start).Key
-    let goalKey = MapLoad.CellKey(Goal).Key
-    let gx = goalKey / 4096
-    let gy = goalKey % 4096
-    let open: array<int> = [startKey]
-    let openF: array<int> = [0]
-    let costs: map<int, int> = {}
-    let came: map<int, int> = {}
-    let closed: map<int, bool> = {}
-    costs[startKey] = 0
-    let found = false
-    let loops = 0
-    while loops <= MapLoad.MaxExpand && open.Length() > 0 {
-        loops += 1
-        let pick = KismetMathLibrary.MinOfIntArray(openF)
-        let best = open[pick.IndexOfMinValue]
-        open.Remove(pick.IndexOfMinValue)
-        openF.Remove(pick.IndexOfMinValue)
-        if best == goalKey {
-            found = true
+// --- route planning, a little each frame. RequestRoute queues a dock's route (RouteQueue); RouteStep, every frame,
+// works on the search in progress (SearchId) for up to RouteBudgetMs, then the next queued dock. PlanNow finishes a
+// dock's route at once (a ship about to sail). A route runs between the two docks' stand-off points: straight when
+// that line is clear, else A* over route cells (Expand, SearchPhase 0) with the path then pulled straight
+// (Straighten, SearchPhase 1), both spread over frames. Stored as RoutePts[Id * 1000 + i] and RouteLen[Id].
+
+// Real milliseconds per frame spent on route searches.
+pure fn RouteBudgetMs() -> float {
+    return 1.0
+}
+
+// Real time in milliseconds.
+fn Clock() -> float {
+    let t = GameplayStatics.GetAccurateRealTime()
+    return float(t.Seconds) * 1000.0 + t.PartialSeconds * 1000.0
+}
+
+// Queues the dock's route to its job's requester (no job: nothing). Its old route (to another requester, maybe) is
+// dropped now, so nothing uses it meanwhile; a search already under way for it starts over.
+fn RequestRoute(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) {
+    if Dock == none {
+        return
+    }
+    if BPL_FDNet.TargetOf(MapLoad, Dock) == none {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "PlanRoute: the selected dock has no target", false)
+        return
+    }
+    let id = BPL_FDNet.DockId(Dock)
+    MapLoad.RouteLen.Remove(id)
+    MapLoad.DropRouteCurve(id)
+    if MapLoad.SearchId == id {
+        MapLoad.SearchId = -1
+    }
+    MapLoad.RouteQueue.RemoveItem(id)
+    MapLoad.RouteQueue.Add(id)
+}
+
+// The dock's route, finished now: its search goes on to the end, or starts and runs to the end. A search under way
+// for another dock goes back to the front of the queue.
+fn PlanNow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) {
+    if Dock == none {
+        return
+    }
+    let id = BPL_FDNet.DockId(Dock)
+    if MapLoad.SearchId == id {
+        MapLoad.PlanStart = MapLoad.SearchStart
+        MapLoad.PlanGoal = MapLoad.SearchGoal
+        RefreshZones(MapLoad)
+    } else {
+        MapLoad.RouteQueue.RemoveItem(id)
+        if MapLoad.SearchId >= 0 {
+            MapLoad.RouteQueue.Insert(MapLoad.SearchId, 0)
+            MapLoad.SearchId = -1
+        }
+        if !BeginSearch(MapLoad, id) {
+            return
+        }
+    }
+    let forever = 1000000000000.0
+    if MapLoad.SearchPhase == 0 {
+        if Expand(MapLoad, forever) != 1 {
+            FinishSearch(MapLoad, false)
+            return
+        }
+        BeginStraighten(MapLoad)
+    }
+    Straighten(MapLoad, forever)
+    FinishSearch(MapLoad, true)
+}
+
+// Every frame (BPL_FDPairing.Tick): route searches for up to RouteBudgetMs.
+fn RouteStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    if MapLoad.SearchId < 0 && MapLoad.RouteQueue.Length() == 0 {
+        return
+    }
+    let t = BPL_FDNet.Now()
+    let deadline = Clock() + RouteBudgetMs()
+    let rounds = 0
+    let counted = false
+    while rounds < 64 {
+        rounds += 1
+        if Clock() >= deadline {
             break
         }
-        if closed.Contains(best) {
+        if MapLoad.SearchId < 0 {
+            if MapLoad.RouteQueue.Length() == 0 {
+                break
+            }
+            let next = MapLoad.RouteQueue[0]
+            MapLoad.RouteQueue.Remove(0)
+            BeginSearch(MapLoad, next)
+        } else {
+            if !counted {
+                counted = true
+                MapLoad.SearchFrames = MapLoad.SearchFrames + 1
+            }
+            // other code plans lines too (RouteStillClear, courses): this search's ends again
+            MapLoad.PlanStart = MapLoad.SearchStart
+            MapLoad.PlanGoal = MapLoad.SearchGoal
+            RefreshZones(MapLoad)
+            if MapLoad.SearchPhase == 0 {
+                let result = Expand(MapLoad, deadline)
+                if result == 1 {
+                    BeginStraighten(MapLoad)
+                } else if result == 2 {
+                    FinishSearch(MapLoad, false)
+                }
+            } else {
+                if Straighten(MapLoad, deadline) {
+                    FinishSearch(MapLoad, true)
+                }
+            }
+        }
+    }
+    BPL_FDNet.Took(MapLoad, "route.step", t)
+}
+
+// Whether the dock has no route yet because it is queued or being worked out (and its ship isn't sailing): the
+// selected dock's route isn't drawn then (BPL_FDPairing.DrawArcs), rather than a straight line it won't take.
+fn RoutePending(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> bool {
+    if MapLoad.Voyages.Contains(Id) {
+        return false
+    }
+    return MapLoad.SearchId == Id || MapLoad.RouteQueue.Contains(Id)
+}
+
+// Starts dock Id's route: true when a search is now under way (SearchId). A clear straight line is stored at once;
+// a dock that is gone or has no job any more is skipped.
+fn BeginSearch(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> bool {
+    let dock = BPL_FDNet.DockIn(MapLoad, Id)
+    if dock == none {
+        return false
+    }
+    let target = BPL_FDNet.TargetOf(MapLoad, dock)
+    if target == none {
+        return false
+    }
+    let start = StandOffPoint(MapLoad, dock)
+    let goal = StandOffPoint(MapLoad, target)
+    MapLoad.PlanStart = start
+    MapLoad.PlanGoal = goal
+    RefreshZones(MapLoad)
+    if SegmentClear(MapLoad, start, goal, true) {
+        StoreRoute(MapLoad, Id, [start, goal])
+        return false
+    }
+    let startKey = MapLoad.CellKey(start).Key
+    MapLoad.SearchId = Id
+    MapLoad.SearchStart = start
+    MapLoad.SearchGoal = goal
+    MapLoad.SearchStartKey = startKey
+    MapLoad.SearchGoalKey = MapLoad.CellKey(goal).Key
+    MapLoad.SearchHeapK.Clear()
+    MapLoad.SearchHeapF.Clear()
+    MapLoad.SearchCosts.Clear()
+    MapLoad.SearchCame.Clear()
+    MapLoad.SearchClosed.Clear()
+    MapLoad.SearchLoops = 0
+    MapLoad.SearchFrames = 0
+    MapLoad.SearchPhase = 0
+    MapLoad.SearchCosts[startKey] = 0
+    HeapPush(MapLoad, startKey, 0)
+    return true
+}
+
+// Adds cell Key with priority F to the search's open list, a binary min-heap (SearchHeapK / SearchHeapF).
+fn HeapPush(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Key: int, F: int) {
+    MapLoad.SearchHeapK.Add(Key)
+    MapLoad.SearchHeapF.Add(F)
+    let i = MapLoad.SearchHeapK.Length() - 1
+    while i > 0 {
+        let p = (i - 1) / 2
+        if MapLoad.SearchHeapF[p] <= F {
+            break
+        }
+        MapLoad.SearchHeapK.Swap(i, p)
+        MapLoad.SearchHeapF.Swap(i, p)
+        i = p
+    }
+}
+
+// Takes the open cell of lowest priority off the heap.
+fn HeapPop(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
+    let top = MapLoad.SearchHeapK[0]
+    let last = MapLoad.SearchHeapK.Length() - 1
+    MapLoad.SearchHeapK.Swap(0, last)
+    MapLoad.SearchHeapF.Swap(0, last)
+    MapLoad.SearchHeapK.Remove(last)
+    MapLoad.SearchHeapF.Remove(last)
+    let i = 0
+    while i < last {
+        let l = 2 * i + 1
+        if l >= last {
+            break
+        }
+        let m = l
+        let r = l + 1
+        if r < last {
+            if MapLoad.SearchHeapF[r] < MapLoad.SearchHeapF[l] {
+                m = r
+            }
+        }
+        if MapLoad.SearchHeapF[m] >= MapLoad.SearchHeapF[i] {
+            break
+        }
+        MapLoad.SearchHeapK.Swap(i, m)
+        MapLoad.SearchHeapF.Swap(i, m)
+        i = m
+    }
+    return top
+}
+
+// A* expansions of the search under way until it ends or Deadline (Clock) passes: 0 not done, 1 goal reached, 2 no
+// path (open list empty, or MaxExpand cells expanded). Steps cost 10 straight, 14 diagonal, plus ShoreCost() per
+// near-shore level of the cell entered. A cell must be Passable (the goal cell always is); a diagonal step also needs
+// both cells beside it passable, so no corner is cut.
+fn Expand(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Deadline: float) -> int {
+    let goalKey = MapLoad.SearchGoalKey
+    let gx = goalKey / 4096
+    let gy = goalKey % 4096
+    let n = 0
+    while MapLoad.SearchHeapK.Length() > 0 {
+        if MapLoad.SearchLoops > MapLoad.MaxExpand {
+            return 2
+        }
+        n += 1
+        if n % 32 == 0 {
+            if Clock() >= Deadline {
+                return 0
+            }
+        }
+        MapLoad.SearchLoops = MapLoad.SearchLoops + 1
+        let best = HeapPop(MapLoad)
+        if best == goalKey {
+            return 1
+        }
+        if MapLoad.SearchClosed.Contains(best) {
             continue
         }
-        closed[best] = true
+        MapLoad.SearchClosed[best] = true
         let bx = best / 4096
         let by = best % 4096
-        let gBest = costs.Find(best).Value
+        let gBest = MapLoad.SearchCosts.Find(best).Value
         let ddx = -1
         while ddx <= 1 {
             let ddy = -1
             while ddy <= 1 {
                 let nb = best + ddx * 4096 + ddy
                 let isSelf = ddx == 0 && ddy == 0
-                if !isSelf && !closed.Contains(nb) {
+                if !isSelf && !MapLoad.SearchClosed.Contains(nb) {
                     let ok = nb == goalKey
                     if !ok {
                         ok = Passable(MapLoad, nb)
@@ -434,15 +642,14 @@ fn FindPath(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Start: Vect
                         let pen = MapLoad.Penalty.Find(nb)
                         let stepCost = (if diagonal { 14 } else { 10 }) + (if pen.ReturnValue { pen.Value * ShoreCost() } else { 0 })
                         let tent = gBest + stepCost
-                        let had = costs.Find(nb)
+                        let had = MapLoad.SearchCosts.Find(nb)
                         if !had.ReturnValue || tent < had.Value {
-                            costs[nb] = tent
-                            came[nb] = best
+                            MapLoad.SearchCosts[nb] = tent
+                            MapLoad.SearchCame[nb] = best
                             let hx = KismetMathLibrary.Abs_Int(bx + ddx - gx)
                             let hy = KismetMathLibrary.Abs_Int(by + ddy - gy)
                             let h = KismetMathLibrary.Max(hx, hy) * 10 + KismetMathLibrary.Min(hx, hy) * 4
-                            open.Add(nb)
-                            openF.Add(tent + h)
+                            HeapPush(MapLoad, nb, tent + h)
                         }
                     }
                 }
@@ -451,25 +658,97 @@ fn FindPath(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Start: Vect
             ddx += 1
         }
     }
-    if !found {
-        return false
-    }
-    // walk back from the goal
-    let cur = goalKey
+    return 2
+}
+
+// The goal is reached: the path's cells, start to goal (SearchCells), to be pulled straight (Straighten).
+fn BeginStraighten(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let cells: array<int> = []
+    let cur = MapLoad.SearchGoalKey
     let walk = 0
     while walk <= MapLoad.MaxExpand {
         walk += 1
-        MapLoad.PathCells.Insert(cur, 0)
-        if cur == startKey {
+        cells.Add(cur)
+        if cur == MapLoad.SearchStartKey {
             break
         }
-        let back = came.Find(cur)
+        let back = MapLoad.SearchCame.Find(cur)
         if !back.ReturnValue {
             break
         }
         cur = back.Value
     }
+    cells.Reverse()
+    MapLoad.SearchCells = cells
+    MapLoad.SearchIdx = 0
+    MapLoad.SearchAnchor = MapLoad.SearchStart
+    MapLoad.SearchPrev = MapLoad.SearchStart
+    let firstPts: array<Vector> = [MapLoad.SearchStart]
+    MapLoad.SearchPts = firstPts
+    MapLoad.SearchPhase = 1
+}
+
+// Pulls the path straight until done (true) or Deadline (Clock) passes (false): a cell is kept (SearchPts) only where
+// the line from the last kept point (SearchAnchor) can't reach the next one.
+fn Straighten(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Deadline: float) -> bool {
+    while MapLoad.SearchIdx < MapLoad.SearchCells.Length() {
+        if Clock() >= Deadline {
+            return false
+        }
+        let c = MapLoad.CellPos(MapLoad.SearchCells[MapLoad.SearchIdx]).Pos
+        if !SegmentClear(MapLoad, MapLoad.SearchAnchor, c, true) {
+            MapLoad.SearchPts.Add(MapLoad.SearchPrev)
+            MapLoad.SearchAnchor = MapLoad.SearchPrev
+        }
+        MapLoad.SearchPrev = c
+        MapLoad.SearchIdx = MapLoad.SearchIdx + 1
+    }
     return true
+}
+
+// The search's route: the straightened path and the goal (Found), or a straight line when no path was found. Stored,
+// and the search cleared.
+fn FinishSearch(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Found: bool) {
+    let tFinish = BPL_FDNet.Now()
+    let id = MapLoad.SearchId
+    MapLoad.SearchId = -1
+    let start = MapLoad.SearchStart
+    let goal = MapLoad.SearchGoal
+    MapLoad.PlanStart = start
+    MapLoad.PlanGoal = goal
+    RefreshZones(MapLoad)
+    let pts: array<Vector> = [start]
+    if Found {
+        pts = MapLoad.SearchPts
+        if !SegmentClear(MapLoad, MapLoad.SearchAnchor, goal, true) {
+            pts.Add(MapLoad.SearchPrev)
+        }
+    } else {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "PlanRoute: no water route found within MaxExpand - using a straight line", false)
+    }
+    pts.Add(goal)
+    if BPL_FDNet.Timing() {
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Timing: route " + string(id) + " " + string(MapLoad.SearchLoops) + " cells expanded, " + string(MapLoad.SearchCells.Length()) + " straightened, over " + string(MapLoad.SearchFrames) + " frame(s), " + string(pts.Length()) + " points", false)
+    }
+    StoreRoute(MapLoad, id, pts)
+    MapLoad.SearchHeapK.Clear()
+    MapLoad.SearchHeapF.Clear()
+    MapLoad.SearchCosts.Clear()
+    MapLoad.SearchCame.Clear()
+    MapLoad.SearchClosed.Clear()
+    MapLoad.SearchCells.Clear()
+    MapLoad.SearchPts.Clear()
+    BPL_FDNet.Took(MapLoad, "route.finish", tFinish)
+}
+
+fn StoreRoute(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Pts: array<Vector>) {
+    let i = 0
+    while i < Pts.Length() {
+        MapLoad.RoutePts[Id * 1000 + i] = Pts[i]
+        i += 1
+    }
+    MapLoad.RouteLen[Id] = Pts.Length()
+    MapLoad.DropRouteCurve(Id)
 }
 
 // The circle for a turn leaving Pos along heading H (flat, unit) on side S (+1 left, -1 right) at radius R: its centre
@@ -778,7 +1057,7 @@ fn FillCourse(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, 
     if !RouteStillClear(MapLoad, Id) {
         let dock = BPL_FDNet.DockIn(MapLoad, Id)
         if dock != none {
-            MapLoad.PlanRoute(dock)
+            PlanNow(MapLoad, dock)
         }
     }
     // the berth: the berthed ship's (hidden) model's position, and the ship actor's forward (its bow)
@@ -974,6 +1253,12 @@ fn FillCourse(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, 
 // end until it faces VoyageEndFwd, before it counts as arrived - so its heading never jumps. It bobs like a moored
 // ship (BobPose), sailing or waiting; TurnRate only steers its yaw, so the bob's tilt doesn't build up.
 fn VoyageTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let t = BPL_FDNet.Now()
+    VoyageStep(MapLoad)
+    BPL_FDNet.Took(MapLoad, "voyageTick", t)
+}
+
+fn VoyageStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     // no voyages left: stop the timer
     if MapLoad.Voyages.Length() == 0 {
         KismetSystemLibrary.K2_ClearTimer(MapLoad, "VoyageTick")

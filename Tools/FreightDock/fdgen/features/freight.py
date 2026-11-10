@@ -6,7 +6,7 @@ from fdgen.core.types import (
     BOOL, DOUBLE, EXEC, INT, INT_ARRAY, INT_SET, MAP_INT_ACTOR, MAP_INT_DOUBLE,
     MAP_NAME_INT, MAP_NAME_TO, NAME, NAME_ARRAY, OBJ, SEARCHCASE_PIN, STR, STR_ARRAY, STR_SET, STRUCT)
 from fdgen.core.paths import (
-    CARGO, GRIDACTOR, ITEM, K2, LINKER, LOAD_LIB, MAPLIB, MAPLOAD_C, MATHLIB, MODAPI, RESBUILDING, RESCOLL,
+    CARGO, GRIDACTOR, ITEM, K2, LINKER, LOAD_LIB, MAPLIB, MAPLOAD_C, MATHLIB, MODAPI, NET_LIB, RESBUILDING, RESCOLL,
     SETLIB, SHIP, SHIPCONFIG, SHIPSTATE, SLOT, STOCKPILE, STORAGETAB, STRLIB, SYSLIB, WORKDOCK)
 from fdgen.core.nodes import (
     bnot, branch, break_struct, comp_owner, find_component, for_each, get_local, get_member,
@@ -18,150 +18,11 @@ from fdgen.features.docks import dock_id_call
 
 
 def deficits_for():
-    """Sum of unmet requests over the dock's output warehouses (the game's "Deliver to", StockpileLinker.m_destStockpileIds): the game's
-    logistics deficits, or for a "Keep empty" warehouse (which reports none) KeepEmptyDeficits."""
+    """DeficitsFor(Dock) -> Want: BPL_FDNet.DeficitsFor - the unmet requests of the dock's output warehouses."""
     g = Graph()
-    F = "DeficitsFor"
-    get_local(g, "GetCountsToClear", F, "Counts", MAP_NAME_INT, 0, -200)
-    g.call("ClearCounts", MAPLIB, "Map_Clear", 0, 0,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("TargetMap", "in", MAP_NAME_INT, None)])
-    g.link(("GetCountsToClear", "Counts"), ("ClearCounts", "TargetMap"))
-    get_local(g, "GetDock", F, "Dock", OBJ(WORKDOCK), 0, 300)
-    comp_owner(g, "DockOwner", WORKDOCK, 250, 300)
-    g.link(("GetDock", "Dock"), ("DockOwner", "self"))
-    linker = find_component(g, "FindLinker", ("DockOwner", "ReturnValue"), LINKER, 500, 300)
-    set_local(g, "SetLinker", F, "Linker", OBJ(LINKER), 250, 0)
-    g.link(("ClearCounts", "then"), ("SetLinker", "execute"))
-    g.link(linker, ("SetLinker", "Linker"))
-
-    get_local(g, "GetLinker", F, "Linker", OBJ(LINKER), 500, 450)
-    is_valid(g, "LinkerValid", LINKER, 750, 450)
-    g.link(("GetLinker", "Linker"), ("LinkerValid", "Object"))
-    branch(g, "BrLinker", 500, 0)
-    g.link(("SetLinker", "then"), ("BrLinker", "execute"))
-    g.link(("LinkerValid", "ReturnValue"), ("BrLinker", "Condition"))
-
-    get_member(g, "DstIds", LINKER, "m_destStockpileIds", INT_SET, 750, 600)
-    g.link(("GetLinker", "Linker"), ("DstIds", "self"))
-    g.call("ToArray", SETLIB, "Set_ToArray", 750, 0,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None),
-            ("A", "in", INT_SET, None), ("Result", "out", INT_ARRAY, None)])
-    g.link(("BrLinker", "then"), ("ToArray", "execute"))
-    g.link(("DstIds", "m_destStockpileIds"), ("ToArray", "A"))
-    for_each(g, "ForIds", INT, 1000, 0)
-    g.link(("ToArray", "then"), ("ForIds", "Exec"))
-    g.link(("ToArray", "Result"), ("ForIds", "Array"))
-
-    user_call(g, "FindBuilding", "BuildingById", 1300, 0, ins=[("Id", INT)], outs=[("Building", OBJ(GRIDACTOR))])
-    g.link(("ForIds", "LoopBody"), ("FindBuilding", "execute"))
-    g.link(("ForIds", "Array Element"), ("FindBuilding", "Id"))
-    storage = find_component(g, "FindStorage", ("FindBuilding", "Building"), RESBUILDING, 1300, 300)
-    is_valid(g, "StorageValid", RESBUILDING, 1550, 300)
-    g.link(storage, ("StorageValid", "Object"))
-    branch(g, "BrStorage", 1550, 0)
-    g.link(("FindBuilding", "then"), ("BrStorage", "execute"))
-    g.link(("StorageValid", "ReturnValue"), ("BrStorage", "Condition"))
-
-    # "Keep empty" warehouses report no deficits to the game's logistics: work out their requests ourselves
-    get_member(g, "ForceEmpty", RESBUILDING, "m_forceEmpty", BOOL, 1550, 450)
-    g.link(storage, ("ForceEmpty", "self"))
-    branch(g, "BrForceEmpty", 1800, 0)
-    g.link(("BrStorage", "then"), ("BrForceEmpty", "execute"))
-    g.link(("ForceEmpty", "m_forceEmpty"), ("BrForceEmpty", "Condition"))
-    user_call(g, "KeepEmpty", "KeepEmptyDeficits", 2050, -250, ins=[("Storage", OBJ(RESBUILDING))],
-              outs=[("Deficit", MAP_NAME_INT)])
-    g.link(("BrForceEmpty", "then"), ("KeepEmpty", "execute"))
-    g.link(storage, ("KeepEmpty", "Storage"))
-    set_local(g, "SetKeepEmpty", F, "Deficit", MAP_NAME_INT, 2300, -250)
-    g.link(("KeepEmpty", "then"), ("SetKeepEmpty", "execute"))
-    g.link(("KeepEmpty", "Deficit"), ("SetKeepEmpty", "Deficit"))
-
-    g.call("GetDeficits", f"/Script/CoreUObject.Class'{RESBUILDING}'", "GetLogisticsDeficitsAsCollection", 1800, 300,
-           [("self", "in", OBJ(RESBUILDING), None), ("ReturnValue", "out", STRUCT(RESCOLL), None)])
-    g.link(storage, ("GetDeficits", "self"))
-    break_struct(g, "BreakDeficits", RESCOLL, [("counts", MAP_NAME_INT)], 2050, 300)
-    g.link(("GetDeficits", "ReturnValue"), ("BreakDeficits", "ResourceCollection"))
-    set_local(g, "SetDeficit", F, "Deficit", MAP_NAME_INT, 2050, 0)
-    g.link(("BrForceEmpty", "else"), ("SetDeficit", "execute"))
-    g.link(("BreakDeficits", "counts"), ("SetDeficit", "Deficit"))
-
-    get_local(g, "GetDeficit", F, "Deficit", MAP_NAME_INT, 2300, 450)
-    map_keys(g, "DeficitKeys", ("GetDeficit", "Deficit"), MAP_NAME_INT, 2550, 0)
-    g.link(("SetDeficit", "then"), ("DeficitKeys", "execute"))
-    g.link(("SetKeepEmpty", "then"), ("DeficitKeys", "execute"))
-    for_each(g, "ForKeys", NAME, 2800, 0)
-    g.link(("DeficitKeys", "then"), ("ForKeys", "Exec"))
-    g.link(("DeficitKeys", "Keys"), ("ForKeys", "Array"))
-    get_local(g, "GetCounts", F, "Counts", MAP_NAME_INT, 2800, 450)
-    map_find(g, "HaveFind", ("GetCounts", "Counts"), ("ForKeys", "Array Element"), MAP_NAME_INT, INT, 3050, 300)
-    map_find(g, "NeedFind", ("GetDeficit", "Deficit"), ("ForKeys", "Array Element"), MAP_NAME_INT, INT, 3050, 450)
-    total = int_op(g, "Total", "Add_IntInt", ("HaveFind", "Value"), ("NeedFind", "Value"), 3300, 350)
-    map_add(g, "AddCount", ("GetCounts", "Counts"), ("ForKeys", "Array Element"), total, MAP_NAME_INT, INT, 3300, 0)
-    g.link(("ForKeys", "LoopBody"), ("AddCount", "execute"))
-
-    make_struct(g, "MakeWant", RESCOLL, [("counts", MAP_NAME_INT)], 1000, -250)
-    g.link(("GetCounts", "Counts"), ("MakeWant", "counts"))
-    return g.render()
-
-
-def keep_empty_deficits():
-    """A "Keep empty" warehouse's requests, which GetLogisticsDeficitsAsCollection leaves out: per slot,
-    minHold - count - inbound, where positive."""
-    g = Graph()
-    F = "KeepEmptyDeficits"
-    MAP_SLOTS = MAP_NAME_TO(SLOT)
-    get_local(g, "GetStorage", F, "Storage", OBJ(RESBUILDING), 0, 300)
-    get_local(g, "GetResult", F, "Result", MAP_NAME_INT, 0, 400)
-    get_local(g, "GetInbound", F, "Inbound", MAP_NAME_INT, 0, 500)
-    get_local(g, "GetSlots", F, "Slots", MAP_SLOTS, 0, 600)
-    get_local(g, "GetNeed", F, "Need", INT, 0, 700)
-
-    g.call("ClearResult", MAPLIB, "Map_Clear", 0, 0,
-           [("execute", "in", EXEC, None), ("then", "out", EXEC, None), ("TargetMap", "in", MAP_NAME_INT, None)])
-    g.link(("GetResult", "Result"), ("ClearResult", "TargetMap"))
-
-    g.call("StorageTab", f"/Script/CoreUObject.Class'{RESBUILDING}'", "CalcStorageTab", 250, 250,
-           [("self", "in", OBJ(RESBUILDING), None), ("ReturnValue", "out", STRUCT(STORAGETAB), None)])
-    g.link(("GetStorage", "Storage"), ("StorageTab", "self"))
-    break_struct(g, "BreakTab", STORAGETAB, [("inbound", STRUCT(RESCOLL))], 500, 250)
-    g.link(("StorageTab", "ReturnValue"), ("BreakTab", "ResourceBuilding_StorageTab"))
-    break_struct(g, "BreakInbound", RESCOLL, [("counts", MAP_NAME_INT)], 750, 250)
-    g.link(("BreakTab", "inbound"), ("BreakInbound", "ResourceCollection"))
-    set_local(g, "SetInbound", F, "Inbound", MAP_NAME_INT, 250, 0)
-    g.link(("ClearResult", "then"), ("SetInbound", "execute"))
-    g.link(("BreakInbound", "counts"), ("SetInbound", "Inbound"))
-
-    get_member(g, "PileGet", RESBUILDING, "m_stockpile", STRUCT(STOCKPILE), 500, 400)
-    g.link(("GetStorage", "Storage"), ("PileGet", "self"))
-    break_struct(g, "PileBreak", STOCKPILE, [("Slots", MAP_SLOTS)], 750, 400)
-    g.link(("PileGet", "m_stockpile"), ("PileBreak", "Stockpile"))
-    set_local(g, "SetSlots", F, "Slots", MAP_SLOTS, 500, 0)
-    g.link(("SetInbound", "then"), ("SetSlots", "execute"))
-    g.link(("PileBreak", "Slots"), ("SetSlots", "Slots"))
-
-    map_keys(g, "SlotKeys", ("GetSlots", "Slots"), MAP_SLOTS, 750, 0)
-    g.link(("SetSlots", "then"), ("SlotKeys", "execute"))
-    for_each(g, "ForKeys", NAME, 1000, 0)
-    g.link(("SlotKeys", "then"), ("ForKeys", "Exec"))
-    g.link(("SlotKeys", "Keys"), ("ForKeys", "Array"))
-
-    key = ("ForKeys", "Array Element")
-    map_find(g, "SlotFind", ("GetSlots", "Slots"), key, MAP_SLOTS, STRUCT(SLOT), 1250, 300)
-    break_struct(g, "SlotBreak", SLOT, [("count", INT), ("minHold", INT)], 1500, 300)
-    g.link(("SlotFind", "Value"), ("SlotBreak", "ResourceStockpileSlot"))
-    map_find(g, "InFind", ("GetInbound", "Inbound"), key, MAP_NAME_INT, INT, 1500, 450)
-    held = int_op(g, "MinusCount", "Subtract_IntInt", ("SlotBreak", "minHold"), ("SlotBreak", "count"), 1750, 300)
-    need = int_op(g, "MinusInbound", "Subtract_IntInt", held, ("InFind", "Value"), 2000, 350)
-    set_local(g, "SetNeed", F, "Need", INT, 1250, 0)
-    g.link(("ForKeys", "LoopBody"), ("SetNeed", "execute"))
-    g.link(need, ("SetNeed", "Need"))
-    positive = int_op(g, "NeedPositive", "Greater_IntInt", ("GetNeed", "Need"), None, 1500, 150, b_default="0")
-    branch(g, "BrNeed", 1500, 0)
-    g.link(("SetNeed", "then"), ("BrNeed", "execute"))
-    g.link(positive, ("BrNeed", "Condition"))
-    map_add(g, "AddResult", ("GetResult", "Result"), key, ("GetNeed", "Need"), MAP_NAME_INT, INT, 1750, 0)
-    g.link(("BrNeed", "then"), ("AddResult", "execute"))
-    get_local(g, "GetResultForReturn", F, "Result", MAP_NAME_INT, 1000, -200)
+    get_local(g, "GetDock", "DeficitsFor", "Dock", OBJ(WORKDOCK), 0, 250)
+    loom_call(g, "Call", NET_LIB, "DeficitsFor", 250, 0, ins=[("Dock", OBJ(WORKDOCK))], outs=[("ReturnValue", STRUCT(RESCOLL))])
+    g.link(("GetDock", "Dock"), ("Call", "Dock"))
     return g.render()
 
 
@@ -437,13 +298,13 @@ def update_request():
     return g.render()
 
 
-CARRIER_WAIT = 30.0   # seconds a ready ship waits for goods still being carried to its dock
 
 
 def freight_tick():
     """Rule c: depart when full (hold + in flight) / nothing left to request / max wait; deliver TripSeconds later.
     A ship that is ready while goods are still being carried to its dock waits for them first (DepartingSince; the
-    request then only covers what is in flight), at most CARRIER_WAIT seconds."""
+    request then only covers what is in flight), however long that takes; Deliver now (DepartingSince below 0) sends
+    it at once."""
     g = Graph()
     F = "FreightTick"
     DEPARTED = ("GetDeparted", "DepartedAt")
@@ -465,7 +326,8 @@ def freight_tick():
     DEPARTING = ("GetDeparting", "DepartingSince")
     dock = ("ForDocks", "Array Element")
 
-    user_call(g, "Refresh", "RefreshDocks", 0, 0)
+    # demolished docks out of Docks (the building index, BPL_FDNet)
+    loom_call(g, "Refresh", NET_LIB, "KeepDocks", 0, 0)
     g.call("GameTime", SYSLIB, "GetGameTimeInSeconds", 250, 200, [("ReturnValue", "out", DOUBLE, None)])
     set_local(g, "SetNow", F, "Now", DOUBLE, 250, 0)
     g.link(("Refresh", "then"), ("SetNow", "execute"))
@@ -609,19 +471,15 @@ def freight_tick():
     nothing_carried = int_op(g, "NoneCarried", "EqualEqual_IntInt", ("GetInFlight", "InFlight"), None, 4300, 1100,
                              b_default="0")
 
-    # departure already pending: go once the carriers have arrived, or after CARRIER_WAIT
+    # departure already pending: go once the carriers have arrived, or at once after Deliver now (pending below 0)
     branch(g, "BrPending", 4300, 200)
     g.link(("BrClockRunning", "then"), ("BrPending", "execute"))
     g.link(("StartClock", "then"), ("BrPending", "execute"))
     g.link(pending, ("BrPending", "Condition"))
     map_find(g, "PendingFind", DEPARTING, ("GetId", "Id"), MAP_INT_DOUBLE, DOUBLE, 4300, -100, key_type=INT)
-    g.call("PendingFor", MATHLIB, "Subtract_DoubleDouble", 4550, -100,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, None), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("GetNow", "Now"), ("PendingFor", "A"))
-    g.link(("PendingFind", "Value"), ("PendingFor", "B"))
-    g.call("WaitOver", MATHLIB, "GreaterEqual_DoubleDouble", 4800, -100,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, f'DefaultValue="{CARRIER_WAIT}"'), ("ReturnValue", "out", BOOL, None)])
-    g.link(("PendingFor", "ReturnValue"), ("WaitOver", "A"))
+    g.call("WaitOver", MATHLIB, "Less_DoubleDouble", 4800, -100,
+           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, 'DefaultValue="0.0"'), ("ReturnValue", "out", BOOL, None)])
+    g.link(("PendingFind", "Value"), ("WaitOver", "A"))
     g.call("Ready", MATHLIB, "BooleanOR", 5050, -100,
            [("A", "in", BOOL, None), ("B", "in", BOOL, None), ("ReturnValue", "out", BOOL, None)])
     g.link(nothing_carried, ("Ready", "A"))
@@ -630,7 +488,7 @@ def freight_tick():
     g.link(("BrPending", "then"), ("BrReady", "execute"))
     g.link(("Ready", "ReturnValue"), ("BrReady", "Condition"))
     g.call("WhyPending", MATHLIB, "SelectString", 4800, 100,
-           [("A", "in", STR, 'DefaultValue="carriers arrived"'), ("B", "in", STR, 'DefaultValue="carrier wait timed out"'),
+           [("A", "in", STR, 'DefaultValue="carriers arrived"'), ("B", "in", STR, 'DefaultValue="sent by hand"'),
             ("bPickA", "in", BOOL, None), ("ReturnValue", "out", STR, None)])
     g.link(nothing_carried, ("WhyPending", "bPickA"))
     set_local(g, "SetReasonPending", F, "Reason", STR, 4800, 50)
@@ -871,15 +729,8 @@ def freight_counts():
 
 
 SPECS = {
-    "DeficitsFor": fn_spec(("ClearCounts", "execute"), inputs=[("Dock", OBJ(WORKDOCK))],
-                           outputs=[("Want", STRUCT(RESCOLL))],
-                           locals_=[("Counts", MAP_NAME_INT), ("Linker", OBJ(LINKER)), ("Deficit", MAP_NAME_INT)],
-                           returns=[("ForIds", "Completed")], values=[("MakeWant", "ResourceCollection", "Want")]),
-    "KeepEmptyDeficits": fn_spec(("ClearResult", "execute"), inputs=[("Storage", OBJ(RESBUILDING))],
-                                 outputs=[("Deficit", MAP_NAME_INT)],
-                                 locals_=[("Result", MAP_NAME_INT), ("Inbound", MAP_NAME_INT),
-                                          ("Slots", MAP_NAME_TO(SLOT)), ("Need", INT)],
-                                 returns=[("ForKeys", "Completed")], values=[("GetResultForReturn", "Result", "Deficit")]),
+    "DeficitsFor": fn_spec(("Call", "execute"), inputs=[("Dock", OBJ(WORKDOCK))], outputs=[("Want", STRUCT(RESCOLL))],
+                           returns=[("Call", "then")], values=[("Call", "ReturnValue", "Want")]),
     "RequestFor": fn_spec(("Call", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Want", STRUCT(RESCOLL))]),
     "TransferFrom": fn_spec(("ZeroMoved", "execute"), inputs=[("Dock", OBJ(WORKDOCK)), ("Target", OBJ(WORKDOCK))],
                             outputs=[("Total", INT)],
@@ -907,7 +758,6 @@ SPECS = {
 
 GRAPHS = {
     "DeficitsFor": deficits_for,
-    "KeepEmptyDeficits": keep_empty_deficits,
     "RequestFor": request_for,
     "TransferFrom": transfer_from,
     "HoldCounts": hold_counts,

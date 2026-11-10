@@ -28,7 +28,7 @@ fn SourceStock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
     }
     for id in linker.m_sourceStockpileIds {
         HasSources = true
-        let b = MapLoad.BuildingById(id).Building
+        let b = BuildingById(MapLoad, id)
         if b != none {
             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
             if rb != none {
@@ -41,6 +41,138 @@ fn SourceStock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
                 }
             }
         }
+    }
+}
+
+// Every building by ID (MapLoad.Buildings) and the freight docks (MapLoad.Docks), in one pass over the buildings.
+// From RefreshDocks (after a rescan: buildings were placed), KeepDocks (every 30 s) and BuildingById (an ID not
+// indexed).
+fn IndexBuildings(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let index: map<int, GridActor> = {}
+    let docks: array<WorkDock> = []
+    for a in GameplayStatics.GetAllActorsOfClass(GridActor).OutActors {
+        let b = cast(a, GridActor)
+        if b != none {
+            index[b.ID] = b
+            let wd = cast(b.GetComponentByClass(WorkDock), WorkDock)
+            if wd != none {
+                if MapLoad.IsFreightDock(wd).Result {
+                    docks.Add(wd)
+                }
+            }
+        }
+    }
+    MapLoad.Buildings = index
+    MapLoad.Docks = docks
+    MapLoad.IndexedAt = GameplayStatics.GetRealTimeSeconds()
+}
+
+// The building with this ID, or none, from the index (IndexBuildings). An ID not in it (a building placed since, or
+// gone) indexes again, at most every 5 s: a demolished warehouse still listed on a dock would otherwise do it on
+// every call.
+fn BuildingById(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> GridActor {
+    let found = MapLoad.Buildings.Find(Id)
+    if found.ReturnValue {
+        if KismetSystemLibrary.IsValid(found.Value) {
+            if found.Value.ID == Id {
+                return found.Value
+            }
+        }
+    }
+    let age = GameplayStatics.GetRealTimeSeconds() - MapLoad.IndexedAt
+    if age < 5.0 {
+        return none
+    }
+    IndexBuildings(MapLoad)
+    let again = MapLoad.Buildings.Find(Id)
+    if again.ReturnValue {
+        if KismetSystemLibrary.IsValid(again.Value) {
+            return again.Value
+        }
+    }
+    return none
+}
+
+// A "Keep empty" warehouse's requests, which GetLogisticsDeficitsAsCollection leaves out: per slot, minHold - count -
+// inbound, where positive.
+fn KeepEmptyDeficits(Storage: ResourceBuilding) -> map<name, int> {
+    let out: map<name, int> = {}
+    let inbound = Storage.CalcStorageTab().inbound.counts
+    for res, slot in Storage.m_stockpile.Slots {
+        let i = inbound.Find(res)
+        let need = slot.minHold - slot.count - (if i.ReturnValue { i.Value } else { 0 })
+        if need > 0 {
+            out[res] = need
+        }
+    }
+    return out
+}
+
+// The unmet requests of the dock's output warehouses (the game's "Deliver to", StockpileLinker.m_destStockpileIds),
+// summed per good: the game's logistics deficits, or for a "Keep empty" warehouse (which reports none)
+// KeepEmptyDeficits. During a dispatch pass (MapLoad.InPass) each dock's is worked out once (MapLoad.PassDeficits).
+fn DeficitsFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> ResourceCollection {
+    let id = DockId(Dock)
+    if MapLoad.InPass {
+        let kept = MapLoad.PassDeficits.Find(id)
+        if kept.ReturnValue {
+            return kept.Value
+        }
+    }
+    let counts: map<name, int> = {}
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker != none {
+        for bid in linker.m_destStockpileIds {
+            let b = BuildingById(MapLoad, bid)
+            if b != none {
+                let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+                if rb != none {
+                    let d: map<name, int> = {}
+                    if rb.m_forceEmpty {
+                        d = KeepEmptyDeficits(rb)
+                    } else {
+                        d = rb.GetLogisticsDeficitsAsCollection().counts
+                    }
+                    for res, n in d {
+                        let had = counts.Find(res)
+                        counts[res] = (if had.ReturnValue { had.Value } else { 0 }) + n
+                    }
+                }
+            }
+        }
+    }
+    let result = ResourceCollection(counts: counts)
+    if MapLoad.InPass {
+        MapLoad.PassDeficits[id] = result
+    }
+    return result
+}
+
+// The work dock (freight or not) of the building with this ID, or none.
+fn DockById(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> WorkDock {
+    let b = BuildingById(MapLoad, Id)
+    if b == none {
+        return none
+    }
+    return cast(b.GetComponentByClass(WorkDock), WorkDock)
+}
+
+// From FreightTick: demolished docks leave MapLoad.Docks; every 30 s, or with the index never built, everything is
+// indexed again (a safety net: placed docks come in through the rescan's RefreshDocks).
+fn KeepDocks(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let age = GameplayStatics.GetRealTimeSeconds() - MapLoad.IndexedAt
+    if age >= 30.0 {
+        IndexBuildings(MapLoad)
+        return
+    }
+    let kept: array<WorkDock> = []
+    for d in MapLoad.Docks {
+        if KismetSystemLibrary.IsValid(d) {
+            kept.Add(d)
+        }
+    }
+    if kept.Length() != MapLoad.Docks.Length() {
+        MapLoad.Docks = kept
     }
 }
 
@@ -69,6 +201,36 @@ fn ShipAtDock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
 // per-dock probe add WBP_FDPanel.ProbeIdle(Owner) to its Step too (see WBP_FDPanel's ProbeAt).
 pure fn Probing() -> bool {
     return false
+}
+
+// Development only: true turns on the timing probe (WBP_FDProf, WBP_FDPanel.ProfStep: every 30 s, the time spent in each hooked
+// section and what single lookups cost, logged as "Timing:" lines). Keep false in a release.
+pure fn Timing() -> bool {
+    return false
+}
+
+// Real time in ms, for the timing probe; 0 while Timing() is off.
+fn Now() -> float {
+    if !Timing() {
+        return 0.0
+    }
+    let t = GameplayStatics.GetAccurateRealTime()
+    return float(t.Seconds) * 1000.0 + t.PartialSeconds * 1000.0
+}
+
+// Timing probe: adds the time since T0 (a Now()) to Key's total.
+fn Took(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Key: string, T0: float) {
+    if !Timing() {
+        return
+    }
+    let took = Now() - T0
+    let found = WidgetBlueprintLibrary.GetAllWidgetsOfClass(WBP_FDProf, true).FoundWidgets
+    if found.Length() > 0 {
+        let prof = cast(found[0], WBP_FDProf)
+        if prof != none {
+            prof.Add(Key, took)
+        }
+    }
 }
 
 pure fn Slots() -> int {
@@ -427,8 +589,7 @@ fn Migrate(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
     return made
 }
 
-// The freight dock with this ID among the known docks (MapLoad.Docks), or none. Cheaper than MapLoad.DockById,
-// which looks through every actor.
+// The freight dock with this ID among the known docks (MapLoad.Docks), or none.
 fn DockIn(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) -> WorkDock {
     for d in MapLoad.Docks {
         if d != none {
@@ -501,7 +662,7 @@ fn OnDuty(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDoc
 // Network names, as set in the network GUI (BPL_FDStore, "n<id>"): ID -> name.
 fn NetNames(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> map<int, string> {
     let out: map<int, string> = {}
-    for key, label in BPL_FDStore.Entries() {
+    for key, label in BPL_FDStore.Entries(MapLoad) {
         if KismetStringLibrary.StartsWith(key, "n", ESearchCase.CaseSensitive) {
             let id = KismetStringLibrary.Conv_StringToInt(KismetStringLibrary.RightChop(key, 1))
             if id >= 1 && id <= MaxNet() && label != "" {
@@ -513,21 +674,21 @@ fn NetNames(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> map<int,
 }
 
 // Names network Net ("" or blanks: unnamed again).
-fn SetNetName(Net: int, Name: string) {
+fn SetNetName(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, Name: string) {
     if Net >= 1 && Net <= MaxNet() {
-        BPL_FDStore.Set("n" + string(Net), KismetStringLibrary.TrimTrailing(KismetStringLibrary.Trim(Name)))
+        BPL_FDStore.Set(MapLoad, "n" + string(Net), KismetStringLibrary.TrimTrailing(KismetStringLibrary.Trim(Name)))
     }
 }
 
 // Names the dock ("" or blanks, or its default name: unnamed again).
-fn SetDockName(Dock: WorkDock, Name: string) {
+fn SetDockName(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Name: string) {
     if Dock == none {
         return
     }
     let id = DockId(Dock)
     let given = KismetStringLibrary.TrimTrailing(KismetStringLibrary.Trim(Name))
     let unnamed = KismetStringLibrary.EqualEqual_StrStr(given, BPL_FDText.T1("freightdock.dock.unnamed", "id", string(id)))
-    BPL_FDStore.Set("d" + string(id), if unnamed { "" } else { given })
+    BPL_FDStore.Set(MapLoad, "d" + string(id), if unnamed { "" } else { given })
 }
 
 // "3 Food" for a named network, "3" otherwise.
@@ -545,7 +706,7 @@ fn NetRequests(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int
         let linker = cast(r.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
         if linker != none {
             for id in linker.m_destStockpileIds {
-                let b = MapLoad.BuildingById(id).Building
+                let b = BuildingById(MapLoad, id)
                 if b != none {
                     let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
                     if rb != none {
@@ -567,16 +728,16 @@ fn NetRequests(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int
 // The dock's name, as set in the dock GUI (BPL_FDStore, "d<id>"); else "Freight Dock <id>".
 fn DockName(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> string {
     let id = DockId(Dock)
-    let given = if Dock == none { "" } else { BPL_FDStore.Get("d" + string(id)) }
+    let given = if Dock == none { "" } else { BPL_FDStore.Get(MapLoad, "d" + string(id)) }
     return if given == "" { BPL_FDText.T1("freightdock.dock.unnamed", "id", string(id)) } else { given }
 }
 
 // Whether the dock has a name of its own.
-fn IsNamed(Dock: WorkDock) -> bool {
+fn IsNamed(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> bool {
     if Dock == none {
         return false
     }
-    return BPL_FDStore.Get("d" + string(DockId(Dock))) != ""
+    return BPL_FDStore.Get(MapLoad, "d" + string(DockId(Dock))) != ""
 }
 
 // The goods the network's providers can supply: what their input warehouses whitelist. All is true when any of
@@ -589,7 +750,7 @@ fn ProvidedGoods(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: i
         let linker = cast(p.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
         if linker != none {
             for id in linker.m_sourceStockpileIds {
-                let b = MapLoad.BuildingById(id).Building
+                let b = BuildingById(MapLoad, id)
                 if b != none {
                     let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
                     if rb != none {
@@ -647,6 +808,8 @@ fn DropJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
     MapLoad.JobTo.Remove(Id)
     MapLoad.JobSailed.Remove(Id)
     MapLoad.JobDropped.Remove(Id)
+    MapLoad.JobShort.Remove(Id)
+    MapLoad.ManualDepart.Remove(Id)
 }
 
 // Moves up to Units of Res from the hold of the dock's ship to its delivered-goods store. Returns the units moved.
@@ -784,7 +947,7 @@ fn SuppliesGood(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: W
         return false
     }
     for id in linker.m_sourceStockpileIds {
-        let b = MapLoad.BuildingById(id).Building
+        let b = BuildingById(MapLoad, id)
         if b != none {
             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
             if rb != none {
@@ -804,7 +967,7 @@ fn AsksForGood(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
         return false
     }
     for id in linker.m_destStockpileIds {
-        let b = MapLoad.BuildingById(id).Building
+        let b = BuildingById(MapLoad, id)
         if b != none {
             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
             if rb != none {

@@ -25,7 +25,6 @@ pure fn Strings() -> map<name, string> {
         // why Deliver now can't act (its tooltip while disabled)
         "freightdock.deliver.underWay": "Already under way",
         "freightdock.deliver.nothingLoaded": "Nothing loaded yet",
-        "freightdock.deliver.leaving": "Leaving once haulers arrive",
         "freightdock.deliver.departing": "Departing",
 
         // dock GUI (WBP_FDPanel)
@@ -79,12 +78,15 @@ pure fn Strings() -> map<name, string> {
         "freightdock.ship.leaving": "Waiting for final cargo",
         "freightdock.ship.departing": "Departing",
         "freightdock.ship.loading": "Loading {time}",
-        "freightdock.ship.loadingOf": "Loading {time} of {limit}",
+        "freightdock.ship.leavingIn": "Waiting for cargo - leaving automatically in {time}",
         "freightdock.ship.waiting": "Waiting for cargo",
         "freightdock.ship.offDuty": "Crew off duty",
         "freightdock.ship.hold": "Hold {n} / {max}",
         "freightdock.ship.trip": "One-way trip about {time}",
         "freightdock.ship.dropped": "Dropped: {goods} (no hauler)",
+        "freightdock.ship.leftShort": "Left at time limit: {goods}",
+        "freightdock.ship.sentEarly": "Sent early: {goods}",
+        "freightdock.ship.shortGood": "{got} of {of} {good}",
 
         // dock GUI, incoming section (WBP_FDIncomingRow), for a dock that requests
         "freightdock.panel.incoming": "INCOMING",

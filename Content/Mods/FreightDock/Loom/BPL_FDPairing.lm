@@ -11,15 +11,21 @@ fn Queue(PC: PlayerController_Play, A: Vector, B: Vector, Tint: Color, Width: fl
 // where it's heading) while the stand-in is hovered or its dock or target is selected; while hovered, also one to
 // its home dock and its course as the route line. Then the selected pair's arc (PairArcs).
 fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let tArcs = BPL_FDNet.Now()
     let pc = GameplayStatics.GetPlayerController(0)
     let play = cast(pc, PlayerController_Play)
+    let tPart = BPL_FDNet.Now()
     let sel = MapLoad.FindDockUnderCursor().Dock
+    BPL_FDNet.Took(MapLoad, "arcs.findSelected", tPart)
+    tPart = BPL_FDNet.Now()
 
     // the cursor on the sea plane (z = 0)
     let ray = pc.DeprojectMousePositionToWorld()
     let rayEnd = KismetMathLibrary.Add_VectorVector(ray.WorldLocation, KismetMathLibrary.Multiply_VectorFloat(ray.WorldDirection, 10000000.0))
     let sea = KismetMathLibrary.LinePlaneIntersection_OriginNormal(ray.WorldLocation, rayEnd, Vector(X: 0.0, Y: 0.0, Z: 0.0), Vector(X: 0.0, Y: 0.0, Z: 1.0))
     let cursor = sea.Intersection
+    BPL_FDNet.Took(MapLoad, "arcs.cursorRay", tPart)
+    tPart = BPL_FDNet.Now()
 
     // the selected dock and its target (-999 with nothing selected, -1 with no target)
     let selId = -999
@@ -42,8 +48,13 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         }
     }
     if MapLoad.RouteValid {
-        MapLoad.DrawRoute(MapLoad.RouteSelId, play)
+        // nothing while its route is being worked out, rather than a straight line it won't take
+        if !BPL_FDVoyage.RoutePending(MapLoad, MapLoad.RouteSelId) {
+            MapLoad.DrawRoute(MapLoad.RouteSelId, play)
+        }
     }
+    BPL_FDNet.Took(MapLoad, "arcs.route", tPart)
+    tPart = BPL_FDNet.Now()
 
     // voyage arcs
     for id, proxy in MapLoad.Voyages {
@@ -64,11 +75,17 @@ fn DrawArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
             }
         }
     }
+    BPL_FDNet.Took(MapLoad, "arcs.voyages", tPart)
     // a hovered network configuration replaces the selected dock's own links, so each arc shows once
     if MapLoad.HiFrom.Length() == 0 && MapLoad.HiPts.Length() == 0 {
+        let tNet = BPL_FDNet.Now()
         NetworkArcs(MapLoad, play, sel)
+        BPL_FDNet.Took(MapLoad, "frame.networkArcs", tNet)
     }
+    tPart = BPL_FDNet.Now()
     Highlights(MapLoad, play)
+    BPL_FDNet.Took(MapLoad, "arcs.highlights", tPart)
+    BPL_FDNet.Took(MapLoad, "frame.drawArcs", tArcs)
 }
 
 // Sideways shift for the Slot-th of a dock's networks, so a pair linked on several networks gets one arc each.
@@ -84,12 +101,43 @@ fn Where(Dock: WorkDock) -> Vector {
     return Dock.GetOwner().K2_GetActorLocation()
 }
 
+// Changes whenever a known dock's network value (memberships, roles, pause) or the known docks change.
+fn NetKey(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
+    let key = MapLoad.Docks.Length()
+    for d in MapLoad.Docks {
+        if d != none {
+            key = key * 31 + d.activeTradePartnerId
+        }
+    }
+    return key
+}
+
 // The selected freight dock's links: an arc to each dock it provides to and from each dock that provides to it, in
-// the network's colour, offset per network.
+// the network's colour, offset per network. Worked out (ArcLinks) only when the selection or a membership changes
+// (NetKey, checked every frame); otherwise the kept arcs are drawn.
 fn NetworkArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Play: PlayerController_Play, Sel: WorkDock) {
     if Sel == none {
         return
     }
+    let selId = BPL_FDNet.DockId(Sel)
+    let key = NetKey(MapLoad)
+    if selId != MapLoad.ArcSel || key != MapLoad.ArcKey {
+        MapLoad.ArcSel = selId
+        MapLoad.ArcKey = key
+        ArcLinks(MapLoad, Sel)
+    }
+    let i = 0
+    while i < MapLoad.ArcFrom.Length() {
+        Queue(Play, MapLoad.ArcFrom[i], MapLoad.ArcTo[i], MapLoad.ArcTint[i], MapLoad.ArcWidth, MapLoad.ArcHeight)
+        i += 1
+    }
+}
+
+// The selected dock's arcs, into MapLoad.ArcFrom / ArcTo / ArcTint.
+fn ArcLinks(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Sel: WorkDock) {
+    MapLoad.ArcFrom.Clear()
+    MapLoad.ArcTo.Clear()
+    MapLoad.ArcTint.Clear()
     let u = BPL_FDNet.Unpack(Sel.activeTradePartnerId)
     if !u.IsNew {
         return
@@ -106,7 +154,9 @@ fn NetworkArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Play: Pl
                     if r != Sel {
                         let there = Where(r)
                         let off = Shift(here, there, i)
-                        Queue(Play, KismetMathLibrary.Add_VectorVector(here, off), KismetMathLibrary.Add_VectorVector(there, off), tint, MapLoad.ArcWidth, MapLoad.ArcHeight)
+                        MapLoad.ArcFrom.Add(KismetMathLibrary.Add_VectorVector(here, off))
+                        MapLoad.ArcTo.Add(KismetMathLibrary.Add_VectorVector(there, off))
+                        MapLoad.ArcTint.Add(tint)
                     }
                 }
             }
@@ -115,7 +165,9 @@ fn NetworkArcs(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Play: Pl
                     if p != Sel {
                         let from = Where(p)
                         let off2 = Shift(from, here, i)
-                        Queue(Play, KismetMathLibrary.Add_VectorVector(from, off2), KismetMathLibrary.Add_VectorVector(here, off2), tint, MapLoad.ArcWidth, MapLoad.ArcHeight)
+                        MapLoad.ArcFrom.Add(KismetMathLibrary.Add_VectorVector(from, off2))
+                        MapLoad.ArcTo.Add(KismetMathLibrary.Add_VectorVector(here, off2))
+                        MapLoad.ArcTint.Add(tint)
                     }
                 }
             }
@@ -190,9 +242,17 @@ fn Highlight(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, 
 }
 
 // Every frame (BP_MapLoad.PairKeyTick, from Event Tick, also while paused; the name is kept from the pairing key,
-// which the panel's network picker replaced): the dispatcher (BPL_FDDispatch), stand-in clicks, then the panel.
+// which the panel's network picker replaced): the dispatcher (BPL_FDDispatch), route searches (BPL_FDVoyage.RouteStep),
+// stand-in clicks, then the panel.
 fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let t = BPL_FDNet.Now()
     BPL_FDDispatch.Tick(MapLoad)
+    BPL_FDNet.Took(MapLoad, "frame.dispatchTick", t)
+    BPL_FDVoyage.RouteStep(MapLoad)
+    t = BPL_FDNet.Now()
     MapLoad.StandInClick()
+    BPL_FDNet.Took(MapLoad, "frame.standInClick", t)
+    t = BPL_FDNet.Now()
     MapLoad.PanelTick()
+    BPL_FDNet.Took(MapLoad, "frame.panel", t)
 }

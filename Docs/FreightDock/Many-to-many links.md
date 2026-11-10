@@ -190,7 +190,7 @@ The score is goods delivered per unit of time, weighted by how long the demand h
 
 - **Loading** loads the manifest (the request is still a total to have aboard).
 - **Growing manifests:** while loading, the manifest grows when R's demand grows, the hold has room, and P's supply can cover the growth; the growth is claimed at once.
-- **Stalls:** a good no hauler picks up for 20 s is cut from the manifest; its demand returns to the pool. That provider isn't offered the good again until its input warehouses' free stock of it changes (`CutStock`), so a cut good isn't added straight back. Growing a job restarts the good's 20 s clock.
+- **Stalls:** once nothing of the job has moved for 20 s (no good gained, none being carried: haulers fetch one good after another), a good whose manifest isn't met is cut from the manifest; its demand returns to the pool. That provider isn't offered the good again until its input warehouses' free stock of it changes (`CutStock`), so a cut good isn't added straight back. Growing a job restarts the good's 20 s clock.
 - **Departure:** when the manifest is aboard, the hold is full, the "Depart after" timer runs out (from first freight aboard), or Deliver now.
 
 ### Leftovers
@@ -327,7 +327,10 @@ Everything is shown per dock, in its dock GUI; there is no colony-wide display. 
 - **Storage:** 3 memberships of 9 bits and a paused flag (see Bit layout).
 - **INCOMING** (dock GUI, for a dock that requests): per good its output warehouses want, how much is still wanted (less what is unloaded there), how much is on its way, and from where (loading at the provider, or sailing with the arrival time), or why nothing comes. The dispatcher records the reason per "<target>|<good>" left open after each pass (`BPL_FDDispatch.Explain`, `MapLoad.WhyNot`): no provider on its networks, no provider stock, providers off duty, providers missing ships (the only providers with the good have no ship: none at home and none on a job), below minimum load (n of m), or providers busy.
 - **Pause** (beside the SHIP heading): the ship finishes its job and takes no new one ("Idle: paused").
-- **Deliver now** sits beside it, disabled with the reason as its tooltip when it can't act; it no longer toasts.
+- **Deliver now** sits beside it, disabled with the reason as its tooltip when it can't act (ship away, nothing aboard, already pressed); it no longer toasts. It is enabled as soon as anything is aboard, also while the ship waits for final cargo, and the ship leaves in the same frame (`FreightTick` runs at once).
+- **Waiting for final cargo** (everything picked up, haulers still on the way) has no time limit; Deliver now ends it. The depart-after countdown ("Waiting for cargo - leaving automatically in x:xx") shows in the last third of the depart-after time.
+- **Short departures:** a ship that leaves with less than its manifest has the manifest cut to what is aboard (`BPL_FDDispatch.Trim`), so the rest is open demand for other providers; the dock GUI notes "Left at time limit: 39 of 50 Flax" or, after Deliver now, "Sent early: ..." until the job ends (`MapLoad.JobShort`).
+- **Routes** are planned a little each frame (`BPL_FDVoyage.RouteStep`, 1 ms a frame: A* with a binary heap, then the path pulled straight); the selected dock shows no route line until its route is ready. A ship about to sail finishes its route at once (`PlanNow`). A ship that departs before a rescan has caught up with a new building sails its planned course.
 - **Dropped goods:** a good cut from the job as stalled is listed under the ship's state ("Dropped: 3 Flax (no hauler)") until the job ends (`MapLoad.JobDropped`). A good cut to nothing leaves the job; a loading job left with nothing is cancelled, freeing the dock.
 - **Names:** a click on the dock GUI's title renames the dock, and a click on a network's ID in the network GUI renames the network ("3 Food" in both GUIs), in a popup centred over what was clicked (`WBP_FDRename`). Its text box is the game's own (`DebugRow_TextEntry`, as the ship rename uses), so typing doesn't fire the game's hotkeys; Enter or a click elsewhere keeps the text, Escape cancels, an empty name restores the default. Kept in the colony's event flags (`Loom/BPL_FDStore.lm`: `fd.d<dockId>=…`, `fd.n<id>=…`, capitals escaped; see Extra storage), so they travel with the save. Names are cut at 60 characters. Entries of demolished docks stay (dock IDs aren't reused).
 - **Version:** on each load the colony records the FreightDock version that last ran on it (`fd.ver`, `BPL_FDStore.Version()`, kept equal to the `.uplugin`'s `Version`); colonies from before 2026-11 have none. The load line in the modlog says which version the colony's data came from.
@@ -339,10 +342,24 @@ Everything is shown per dock, in its dock GUI; there is no colony-wide display. 
 
 1. Regression pass: migration of a 1.x save, memberships, copy/paste/undo, names, building over a route, mass-build rescan, Deliver now, the depart timeout, the stand-in hover route, save/load.
 2. The network minimap (see Minimap).
-3. Jobs surviving a reload.
-   - The event flags (`fd.*`) are kept free of stale data, for everything stored there, not only jobs: when what an entry describes ends (a job finishes, a dock or network is gone), the entry is deleted, or archived where history is kept (job history is a candidate). Existing entries such as names of docks that no longer exist are cleaned up the same way.
+3. Performance (architecture review, 2026-11-09), done: a building index (`BPL_FDNet.IndexBuildings`, `BuildingById`, `DockById`), the dock list kept from it (`KeepDocks`), `DeficitsFor` in Loom and kept per dispatch pass, the assignment step's pairs and requests worked out once per pass, the selected dock's network arcs kept until the selection or a membership changes, dock and network names cached per load (`BPL_FDStore`, `StoreCache`), input rows' stock icons set only when stock changes, routes planned over frames. Timing probe: `BPL_FDNet.Timing()` (dev only, off).
+4. Jobs surviving a reload.
+   - Loading jobs are saved as well as sailed ones.
+   - One clock: every FreightDock clock moves to the colony clock, with the fdgen graphs that keep clocks (`FreightTick`, arrivals) ported to Loom. Deliver now stops using a negative clock value (e.g. its waiting-since time set to 0).
+   - Delivery after a reload is read from the hold, not from elapsed time; time only places the stand-in.
+   - The dispatcher and `FreightTick` wait until restore has run.
+   - The event flags (`fd.*`) are kept free of stale data, for everything stored there, not only jobs: when what an entry describes ends (a job finishes, a dock or network is gone), the entry is deleted, or archived where history is kept (job history is a candidate). Existing entries such as names of docks that no longer exist are cleaned up the same way. Unknown keys (a newer version's) are left alone.
    - Other data the flags could carry: job history, ship positions across saves.
-4. Release: version bump, Technical description, README.
+5. Legibility and UX (architecture review, 2026-11-09):
+   - "Idle: no requests for its inputs" covers five cases (inputs empty, requests covered by other jobs, a good barred after a stall, its own outputs want the good, no hold space); say which.
+   - INCOMING: "Providers busy" also covers paused providers; no "no route" reason.
+   - Manifest column labels don't match their numbers ("Reserved, no hauler yet" is still to fetch).
+   - "Loading 1:20 of 2:00" reads as progress but is the depart-after timer.
+   - The building description still says "paired".
+   - A requester with no request levels set shows no hint; a request-only dock without a ship gets no warning that it can't unload.
+   - The map has no legend.
+6. Faster rescans: update the blocked-cell map incrementally when a building is placed (its footprint added at once) instead of rebuilding the whole map over ~20 s; a ship that departs meanwhile sails a course planned before the building.
+7. Release: version bump, Technical description, README.
 
 ## Revisiting - ideation
 Supposing we go with 3-of-5b provide/request network IDs.

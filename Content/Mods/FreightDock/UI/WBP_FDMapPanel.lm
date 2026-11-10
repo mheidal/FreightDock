@@ -346,7 +346,9 @@ fn Update(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDoc
         Focus = Net
         NextMarks = 0.0
     }
+    let t = BPL_FDNet.Now()
     BuildRows()
+    BPL_FDNet.Took(MapLoad, "map.buildRows", t)
     if FitPending {
         if Setup() {
             FitPending = false
@@ -356,14 +358,20 @@ fn Update(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InDock: WorkDoc
     let now = GameplayStatics.GetRealTimeSeconds()
     if now >= NextMarks {
         NextMarks = now + 0.5
+        t = BPL_FDNet.Now()
         DrawMarks()
+        BPL_FDNet.Took(MapLoad, "map.drawMarks", t)
     }
     let gameNow = GameplayStatics.GetTimeSeconds()
     if Row < 0 && BuiltAt >= 0.0 && gameNow - BuiltAt > RebuildSeconds() {
         Row = 0
     }
+    t = BPL_FDNet.Now()
     NameStep()
+    BPL_FDNet.Took(MapLoad, "map.nameStep", t)
+    t = BPL_FDNet.Now()
     BuildStep()
+    BPL_FDNet.Took(MapLoad, "map.buildStep", t)
 }
 
 // Sets up the render targets from the terrain's extent (once).

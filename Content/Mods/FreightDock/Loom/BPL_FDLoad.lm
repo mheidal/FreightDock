@@ -12,8 +12,9 @@ blueprint BPL_FDLoad : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/B
 // - Remaining (for departure, "all wanted aboard"): the manifest not yet aboard, waiting or carried.
 // - Parked leftovers the job takes (BPL_FDNet.ParkKey) are moved from the dock's delivered-goods store straight into
 //   the hold (unreserved units only).
-// - Stalled: a good whose manifest isn't met and that no hauler has picked up for Stall() seconds is cut from the
-//   manifest down to what is got; the rest goes back to the dispatcher's pool. MapLoad.PickupSeen holds each
+// - Stalled: a good whose manifest isn't met is cut from the manifest down to what is got once nothing of the job
+//   has moved for Stall() seconds: no good gained and none being carried (haulers fetch one good after another, so
+//   a good waiting its turn isn't stalled). The rest goes back to the dispatcher's pool. MapLoad.PickupSeen holds each
 //   "<dock>|<good>"'s got at the last plan, MapLoad.PickupSince when it last grew. MapLoad.CutStock records the
 //   input warehouses' free stock of the good then; the dispatcher doesn't offer it from this dock until that changes.
 // - Anything aboard beyond the manifest is parked (BPL_FDNet.ParkStray), except provisions (canned food), which stay
@@ -88,6 +89,25 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
     let hold = held.Counts
     let onDuty = BPL_FDNet.OnDuty(MapLoad, Dock)
 
+    // the job is moving while any of its goods gained since the last plan or is being carried: then no good's stall
+    // clock runs
+    let moving = false
+    for mres, munits in BPL_FDNet.Manifest(MapLoad, id) {
+        let mh = hold.Find(mres)
+        let mf = Dock.m_inputStockpile.Slots.Find(mres)
+        let mcarried = if mf.ReturnValue { mf.Value.reservedSpaceForDropoff } else { 0 }
+        let mgot = (if mh.ReturnValue { mh.Value } else { 0 }) + mcarried
+        if mcarried > 0 {
+            moving = true
+        }
+        let mseen = MapLoad.PickupSeen.Find(Key(id, mres))
+        if mseen.ReturnValue {
+            if mgot > mseen.Value {
+                moving = true
+            }
+        }
+    }
+
     for res, units in BPL_FDNet.Manifest(MapLoad, id) {
         let h = hold.Find(res)
         let inHold = if h.ReturnValue { h.Value } else { 0 }
@@ -97,7 +117,7 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
         let got = inHold + carried
         InFlight += carried
 
-        // stall: no pickup (got growing) for Stall() seconds while the manifest isn't met: cut it to got
+        // stall: nothing of the job moved (moving) for Stall() seconds while the manifest isn't met: cut it to got
         let key = Key(id, res)
         // copied into variables before PickupSeen is written: a map Find is re-read wherever it is used
         let before = -1
@@ -107,8 +127,8 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
         }
         let since = MapLoad.PickupSince.Find(key)
         let sinceT = if since.ReturnValue { since.Value } else { now }
-        // the stall clock doesn't run while the crew is off duty (nobody hauls at night)
-        if before < 0 || got > before || got >= units || !onDuty {
+        // the stall clock doesn't run while the job is moving, or while the crew is off duty (nobody hauls at night)
+        if before < 0 || got > before || got >= units || !onDuty || moving {
             sinceT = now
         }
         MapLoad.PickupSeen[key] = got
@@ -196,9 +216,10 @@ fn RequestFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
 }
 
 // The panel's Deliver now button (BP_MapLoad.DeliverSelected, ported from fdgen): the selected freight dock's ship sails
-// on FreightTick's next pass with what it has, not waiting for goods still being carried to it: its departure is marked
-// pending (DepartingSince) since long ago, so the carrier wait is over. Ship away or nothing loaded yet: nothing (the
-// button is disabled then).
+// now with what it has, not waiting for goods still being carried to it: its departure is marked pending
+// (DepartingSince) since long ago, so the carrier wait is over, and FreightTick's departure check runs at once.
+// ManualDepart marks it as sent by hand (BPL_FDDispatch.Trim notes it as sent early).
+// No job, ship away or nothing aboard: nothing (the button is disabled then).
 fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let dock = MapLoad.FindDockUnderCursor().Dock
     if dock == none {
@@ -206,8 +227,20 @@ fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     }
     let id = BPL_FDNet.DockId(dock)
     // the dock GUI disables the button then, with the reason as its tooltip
-    if MapLoad.Voyages.Contains(id) || !MapLoad.LoadingSince.Contains(id) {
+    if MapLoad.Voyages.Contains(id) {
+        return
+    }
+    if BPL_FDNet.TargetOf(MapLoad, dock) == none {
+        return
+    }
+    let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
+    if ship == none {
+        return
+    }
+    if MapLoad.HoldCounts(ship).Total <= 0 {
         return
     }
     MapLoad.DepartingSince[id] = -1000000000000000.0
+    MapLoad.ManualDepart[id] = true
+    MapLoad.FreightTick()
 }

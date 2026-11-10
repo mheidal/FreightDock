@@ -19,6 +19,8 @@ var TargetRows: array<WBP_FDLinkRow>
 var DestRows: array<WBP_FDLinkRow>
 var SrcRows: array<WBP_FDLinkRow>
 var SrcIds: array<int>
+// per input row, its warehouse's stock as last shown (Refresh sets the icons again only when it changes)
+var SrcSigs: array<string>
 var ManifestRows: array<WBP_FDWantRow>
 var Window: Details_WorkDock_Generic
 var Kept: array<Widget>
@@ -85,6 +87,11 @@ var MapTip: WBP_FDTip
 // and the value it replaced (UndoDock -1: nothing to undo); the keys, looked up once
 var HasCopy: bool = false
 var Copied: int = -1
+// timing probe (development only, BPL_FDNet.Timing): per section, ms and calls since the last report
+var Prof: WBP_FDProf
+var ProfNext: float = 0.0
+var ProfLast: float = 0.0
+var ProfSince: float = 0.0
 var UndoDock: int = -1
 var UndoValue: int = -1
 var KeyC: Key
@@ -338,7 +345,7 @@ fn TitleClicked() {
     if ShownDock == none {
         return
     }
-    let initial = if BPL_FDNet.IsNamed(ShownDock) { BPL_FDNet.DockName(MapLoad, ShownDock) } else { "" }
+    let initial = if BPL_FDNet.IsNamed(MapLoad, ShownDock) { BPL_FDNet.DockName(MapLoad, ShownDock) } else { "" }
     let g = TitleBtn.GetCachedGeometry()
     let middle = KismetMathLibrary.Multiply_Vector2DFloat(SlateBlueprintLibrary.GetLocalSize(g), 0.5)
     OpenRename(0, ShownDock, BPL_FDText.T("freightdock.rename.dock"), initial, BPL_FDText.T1("freightdock.dock.unnamed", "id", string(DockId(ShownDock))), SlateBlueprintLibrary.LocalToViewport(g, middle).PixelPosition)
@@ -368,7 +375,7 @@ fn RenameDone(Name: string) {
             NetPanel.NetRenamed(RenameNet, Name)
         }
     } else if Renaming != none {
-        BPL_FDNet.SetDockName(Renaming, Name)
+        BPL_FDNet.SetDockName(MapLoad, Renaming, Name)
     }
     RenameNet = 0
     Renaming = none
@@ -512,7 +519,7 @@ pure fn SlotText(Pile: Stockpile) -> string {
 // A warehouse's slots for Goods (Kind: "in" or "out").
 fn WarehouseText(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Kind: string, Bid: int, Goods: array<name>) -> string {
     let head = " | " + Kind + " " + string(Bid)
-    let b = Owner.BuildingById(Bid).Building
+    let b = BPL_FDNet.BuildingById(Owner, Bid)
     if b == none {
         return head + " gone"
     }
@@ -613,7 +620,7 @@ fn ProbeDock(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, D: WorkDock)
     // without a job, every good its input warehouses hold (what the dispatcher could offer)
     if !job.ReturnValue && linker != none {
         for bid in linker.m_sourceStockpileIds {
-            let b = Owner.BuildingById(bid).Building
+            let b = BPL_FDNet.BuildingById(Owner, bid)
             if b != none {
                 let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
                 if rb != none {
@@ -678,7 +685,7 @@ fn ProbeDock(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, D: WorkDock)
     if job.ReturnValue {
         let r = BPL_FDNet.DockIn(Owner, job.Value)
         if r != none {
-            let want = Owner.DeficitsFor(r).Want.counts
+            let want = BPL_FDNet.DeficitsFor(Owner, r).counts
             for res in goods {
                 let w = want.Find(res)
                 let at = r.m_stockpile_goodsFromSea.Slots.Find(res)
@@ -703,18 +710,23 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         // version as the last to run on it (BPL_FDStore, "ver"; none before 2026-11)
         Migrated = true
         let made = BPL_FDNet.Migrate(Owner)
-        let was = BPL_FDStore.Get("ver")
-        BPL_FDStore.Set("ver", BPL_FDStore.Version())
+        let was = BPL_FDStore.Get(Owner, "ver")
+        BPL_FDStore.Set(Owner, "ver", BPL_FDStore.Version())
         ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted; colony data from version " + (if was == "" { "none" } else { was }), false)
     }
+    ProfStep()
+    let tPart = BPL_FDNet.Now()
     let found = Owner.FindDockUnderCursor()
     let dock = found.Dock
     let show = false
     if dock != none {
         show = Owner.IsFreightDock(dock).Result
     }
+    BPL_FDNet.Took(Owner, "panel.findSelected", tPart)
     ShownDock = if show { dock } else { none }
+    tPart = BPL_FDNet.Now()
     CopyKeys(show)
+    BPL_FDNet.Took(Owner, "panel.copyKeys", tPart)
     if !show {
         if ShownId != -1 {
             Leave()
@@ -735,21 +747,31 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         // Laid out but not drawn until it has been placed, so it doesn't jump into place.
         SetVisibility(ESlateVisibility.Hidden)
     }
+    tPart = BPL_FDNet.Now()
     KeepHidden()
+    BPL_FDNet.Took(Owner, "panel.keepHidden", tPart)
     let wasFound = Window != none
+    tPart = BPL_FDNet.Now()
     FindWindow()
     if SweepSoon > 0 && Window != none {
         SweepSoon -= 1
         Sweep()
     }
+    BPL_FDNet.Took(Owner, "panel.findWindow", tPart)
     if now >= NextRefresh {
         NextRefresh = now + 0.5
+        tPart = BPL_FDNet.Now()
         Refresh(dock)
+        BPL_FDNet.Took(Owner, "panel.refresh", tPart)
+        tPart = BPL_FDNet.Now()
         if wasFound {
             Sweep()
         }
+        BPL_FDNet.Took(Owner, "panel.refreshSweep", tPart)
     }
+    tPart = BPL_FDNet.Now()
     Place()
+    BPL_FDNet.Took(Owner, "panel.place", tPart)
     if Window != none {
         Placed += 1
     }
@@ -759,13 +781,19 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         }
     }
     ShowNetPanel()
+    tPart = BPL_FDNet.Now()
     HoverStep()
+    BPL_FDNet.Took(Owner, "panel.hoverStep", tPart)
     ShowMapPanel()
     if Mapping && MapPanel != none {
         // the hovered network (HoverStep), else all of the dock's
+        tPart = BPL_FDNet.Now()
         MapPanel.Update(MapLoad, ShownDock, HiNet)
+        BPL_FDNet.Took(Owner, "panel.map", tPart)
     }
+    tPart = BPL_FDNet.Now()
     HoldZoom()
+    BPL_FDNet.Took(Owner, "panel.holdZoom", tPart)
 }
 
 // The game zooms on the mouse wheel through its own input, which only its own UI can stop: while the cursor is
@@ -1218,12 +1246,15 @@ fn BuildingName(Building: Actor) -> string {
 }
 
 fn Refresh(Dock: WorkDock) {
+    let tR = BPL_FDNet.Now()
     let id = DockId(Dock)
     let target = MapLoad.TargetOf(Dock).Target
     let pid = if target == none { -1 } else { DockId(target) }
     Labels()
     let dockName = BPL_FDNet.DockName(MapLoad, Dock)
     Title.SetText(text(KismetStringLibrary.ToUpper(dockName)))
+    BPL_FDNet.Took(MapLoad, "refresh.head", tR)
+    tR = BPL_FDNet.Now()
 
     let destIds: array<int> = []
     if target != none {
@@ -1256,6 +1287,8 @@ fn Refresh(Dock: WorkDock) {
         RowsKey = key
         BuildRows(target, caption, destIds, srcIds)
     }
+    BPL_FDNet.Took(MapLoad, "refresh.rows", tR)
+    tR = BPL_FDNet.Now()
 
     let line = ShipLine(Dock, id, target != none)
     if target == none {
@@ -1266,22 +1299,41 @@ fn Refresh(Dock: WorkDock) {
     }
     ShipText.SetText(text(line))
     Dropped(id)
+    BPL_FDNet.Took(MapLoad, "refresh.ship", tR)
+    tR = BPL_FDNet.Now()
     // Pause for a dock whose ship has work (or is paused); Deliver now only works while loading
     let paused = BPL_FDNet.IsPaused(Dock.activeTradePartnerId)
     PauseBtn.SetVisibility(if provides || paused { ESlateVisibility.Visible } else { ESlateVisibility.Collapsed })
     let away = MapLoad.Voyages.Contains(id)
-    let loading = MapLoad.LoadingSince.Contains(id)
+    let aboard = 0
+    let berthed = MapLoad.ShipAtDock(Dock).Ship
+    if berthed != none {
+        aboard = MapLoad.HoldCounts(berthed).Total
+    }
     let pending = MapLoad.DepartingSince.Find(id)
-    let leaving = pending.ReturnValue
-    let canDeliver = !away && loading && !leaving
+    // pending since before 0: Deliver now was pressed (ShipLine); a departure waiting for haulers can still be sped up
+    let pressed = false
+    if pending.ReturnValue {
+        pressed = pending.Value < 0.0
+    }
+    let canDeliver = !away && aboard > 0 && !pressed
     Deliver.SetIsEnabled(canDeliver)
-    // pending since before 0: Deliver now was pressed (ShipLine)
-    DeliverTip.Setup(BPL_FDText.T(if away { "freightdock.deliver.underWay" } else if leaving { (if pending.Value < 0.0 { "freightdock.deliver.departing" } else { "freightdock.deliver.leaving" }) } else { "freightdock.deliver.nothingLoaded" }), SmallFont)
+    DeliverTip.Setup(BPL_FDText.T(if away { "freightdock.deliver.underWay" } else if pressed { "freightdock.deliver.departing" } else { "freightdock.deliver.nothingLoaded" }), SmallFont)
     Deliver.SetToolTip(if canDeliver { none } else { DeliverTip })
+    BPL_FDNet.Took(MapLoad, "refresh.buttons", tR)
+    tR = BPL_FDNet.Now()
     FillNetworks(Dock)
+    BPL_FDNet.Took(MapLoad, "refresh.networks", tR)
+    tR = BPL_FDNet.Now()
     FillUnload(Dock)
+    BPL_FDNet.Took(MapLoad, "refresh.unload", tR)
+    tR = BPL_FDNet.Now()
     FillManifest(Dock, id, target != none)
+    BPL_FDNet.Took(MapLoad, "refresh.manifest", tR)
+    tR = BPL_FDNet.Now()
     FillIncoming(Dock, id)
+    BPL_FDNet.Took(MapLoad, "refresh.incoming", tR)
+    tR = BPL_FDNet.Now()
     // the target's sections only while it has one
     let hasTarget = if target == none { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible }
     let targetParts: array<Widget> = [DestHead, DestBox, Deliver]
@@ -1290,15 +1342,27 @@ fn Refresh(Dock: WorkDock) {
     }
     let i = 0
     for row in SrcRows {
-        let b = MapLoad.BuildingById(SrcIds[i]).Building
+        let b = BPL_FDNet.BuildingById(MapLoad, SrcIds[i])
         if b != none {
             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
             if rb != none {
-                row.SetPile(rb.m_stockpile)
+                let sig = ""
+                for res, slot in rb.m_stockpile.Slots {
+                    sig += string(res) + ":" + string(slot.count) + "/" + string(slot.minHold) + "/" + string(slot.reservedForPickup) + ","
+                }
+                let same = false
+                if i < SrcSigs.Length() {
+                    same = SrcSigs[i] == sig
+                }
+                if !same {
+                    row.SetPile(rb.m_stockpile)
+                    SrcSigs.Set(i, sig, true)
+                }
             }
         }
         i += 1
     }
+    BPL_FDNet.Took(MapLoad, "refresh.tail", tR)
 }
 
 fn Row(Box: VerticalBox, Caption: string, Where: Vector, CanPan: bool) -> WBP_FDLinkRow {
@@ -1316,6 +1380,7 @@ fn BuildRows(Target: WorkDock, Caption: string, DestIds: array<int>, Src: array<
     TargetRows = []
     DestRows = []
     SrcRows = []
+    SrcSigs = []
     SrcIds = Src
     let nowhere = Vector(X: 0.0, Y: 0.0, Z: 0.0)
     if Target == none {
@@ -1325,7 +1390,7 @@ fn BuildRows(Target: WorkDock, Caption: string, DestIds: array<int>, Src: array<
         TargetBox.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     }
     for d in DestIds {
-        let b = MapLoad.BuildingById(d).Building
+        let b = BPL_FDNet.BuildingById(MapLoad, d)
         if b == none {
             DestRows.Add(Row(DestBox, BPL_FDText.T1("freightdock.panel.buildingGone", "id", string(d)), nowhere, false))
         } else {
@@ -1338,7 +1403,7 @@ fn BuildRows(Target: WorkDock, Caption: string, DestIds: array<int>, Src: array<
         DestRows.Add(Row(DestBox, BPL_FDText.T("freightdock.panel.none"), nowhere, false))
     }
     for s in Src {
-        let b = MapLoad.BuildingById(s).Building
+        let b = BPL_FDNet.BuildingById(MapLoad, s)
         if b == none {
             SrcRows.Add(Row(SrcBox, BPL_FDText.T1("freightdock.panel.buildingGone", "id", string(s)), nowhere, false))
         } else {
@@ -1367,14 +1432,23 @@ fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
             if HasJob {
                 let pending = MapLoad.DepartingSince.Find(Id)
                 if pending.ReturnValue {
-                    // Deliver now marks it pending since long ago (below 0): it sails on the next pass
+                    // Deliver now marks it pending since long ago (below 0): it sails at once
+                    // waiting for the haulers still on their way (no time limit), or sent with Deliver now
                     s = BPL_FDText.T(if pending.Value < 0.0 { "freightdock.ship.departing" } else { "freightdock.ship.leaving" }) + "\n"
                 } else if !BPL_FDNet.OnDuty(MapLoad, Dock) {
                     s = BPL_FDText.T("freightdock.ship.offDuty") + "\n"
                 } else if MapLoad.LoadingSince.Contains(Id) {
-                    let waited = Clock(int(GameplayStatics.GetTimeSeconds() - MapLoad.LoadingSince[Id]))
+                    let waitedFor = GameplayStatics.GetTimeSeconds() - MapLoad.LoadingSince[Id]
                     let limit = MapLoad.MaxWaitSeconds
-                    s = (if limit > 100000.0 { BPL_FDText.T1("freightdock.ship.loading", "time", waited) } else { BPL_FDText.T2("freightdock.ship.loadingOf", "time", waited, "limit", Clock(int(limit))) }) + "\n"
+                    let left = KismetMathLibrary.FMax(limit - waitedFor, 0.0)
+                    if limit > 100000.0 {
+                        s = BPL_FDText.T1("freightdock.ship.loading", "time", Clock(int(waitedFor))) + "\n"
+                    } else if waitedFor >= limit * 2.0 / 3.0 {
+                        // the last third of the depart-after time: when it leaves
+                        s = BPL_FDText.T1("freightdock.ship.leavingIn", "time", Clock(int(left))) + "\n"
+                    } else {
+                        s = BPL_FDText.T("freightdock.ship.waiting") + "\n"
+                    }
                 } else {
                     s = BPL_FDText.T("freightdock.ship.waiting") + "\n"
                 }
@@ -1530,8 +1604,33 @@ fn Dropped(Id: int) {
             parts.Add(kv.RightS + " " + (if word == "" { kv.LeftS } else { word }))
         }
     }
-    DroppedText.SetText(text(BPL_FDText.T1("freightdock.ship.dropped", "goods", KismetStringLibrary.JoinStringArray(parts, ", "))))
-    DroppedText.SetVisibility(if parts.Length() > 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
+    // left with less than the manifest (BPL_FDDispatch.Trim): "S:" sent early or "T:" at the time limit, then
+    // "good=aboard/manifest,..."
+    let shortParts: array<string> = []
+    let sh = MapLoad.JobShort.Find(Id)
+    let shortKey: name = "freightdock.ship.leftShort"
+    if sh.ReturnValue {
+        if KismetStringLibrary.StartsWith(sh.Value, "S:", ESearchCase.CaseSensitive) {
+            shortKey = "freightdock.ship.sentEarly"
+        }
+        for sEntry in KismetStringLibrary.ParseIntoArray(KismetStringLibrary.RightChop(sh.Value, 2), ",", true) {
+            let skv = KismetStringLibrary.Split(sEntry, "=", ESearchCase.CaseSensitive, ESearchDir.FromStart)
+            let counts = KismetStringLibrary.Split(skv.RightS, "/", ESearchCase.CaseSensitive, ESearchDir.FromStart)
+            let sdef = ArcoGameInstance.GetResourceDefCopy(self, name(skv.LeftS))
+            let sword = LocManager.GetWordFromKey(sdef.stringKey)
+            let good = BPL_FDText.T2("freightdock.ship.shortGood", "got", counts.LeftS, "of", counts.RightS)
+            shortParts.Add(BPL_FDText.Fill(good, "good", if sword == "" { skv.LeftS } else { sword }))
+        }
+    }
+    let lines: array<string> = []
+    if parts.Length() > 0 {
+        lines.Add(BPL_FDText.T1("freightdock.ship.dropped", "goods", KismetStringLibrary.JoinStringArray(parts, ", ")))
+    }
+    if shortParts.Length() > 0 {
+        lines.Add(BPL_FDText.T1(shortKey, "goods", KismetStringLibrary.JoinStringArray(shortParts, ", ")))
+    }
+    DroppedText.SetText(text(KismetStringLibrary.JoinStringArray(lines, "\n")))
+    DroppedText.SetVisibility(if lines.Length() > 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
 }
 
 // For a dock that requests: a row per good its output warehouses still want or that is on its way (WBP_FDIncomingRow):
@@ -1549,7 +1648,7 @@ fn FillIncoming(Dock: WorkDock, Id: int) {
     let coming: map<name, int> = {}
     let notes: map<name, string> = {}
     if requests {
-        for res, deficit in MapLoad.DeficitsFor(Dock).Want.counts {
+        for res, deficit in BPL_FDNet.DeficitsFor(MapLoad, Dock).counts {
             let atDock = Dock.m_stockpile_goodsFromSea.Slots.Find(res)
             let open = deficit - (if atDock.ReturnValue { atDock.Value.count } else { 0 })
             if open > 0 {
@@ -1656,4 +1755,153 @@ fn FillManifest(Dock: WorkDock, Id: int, HasJob: bool) {
     let shown = if n > 0 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed }
     ManifestHead.SetVisibility(shown)
     ManifestBox.SetVisibility(shown)
+}
+
+pure fn Us(Ms: float) -> string {
+    return string(KismetMathLibrary.Round(Ms * 1000.0)) + "us"
+}
+
+fn ProfLog(Msg: string) {
+    ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Timing: " + Msg, false)
+}
+
+// Timing probe, every frame: the frame time, and every 30 s of real time the report (ProfReport).
+fn ProfStep() {
+    if !BPL_FDNet.Timing() {
+        return
+    }
+    if Prof == none {
+        Prof = create_widget(WBP_FDProf)
+        Prof.SetVisibility(ESlateVisibility.Collapsed)
+        Prof.AddToViewport(0)
+        if Prof == none {
+            return
+        }
+    }
+    let now = BPL_FDNet.Now()
+    if ProfLast > 0.0 {
+        Prof.Add("frame", now - ProfLast)
+    }
+    ProfLast = now
+    if ProfNext == 0.0 {
+        ProfNext = now + 30000.0
+        ProfSince = now
+        return
+    }
+    if now < ProfNext {
+        return
+    }
+    let tReport = BPL_FDNet.Now()
+    ProfReport(now - ProfSince)
+    ProfLog("report took " + Us(BPL_FDNet.Now() - tReport) + " (inside frame.panel)")
+    Prof.Reset()
+    ProfLast = BPL_FDNet.Now()
+    ProfSince = ProfLast
+    ProfNext = ProfLast + 30000.0
+}
+
+// Per section: calls, total, mean, longest, and share of the period's real time; then the world's size and what
+// single lookups cost.
+fn ProfReport(Period: float) {
+    ProfLog("period " + string(KismetMathLibrary.Round(Period)) + "ms")
+    for key, ms in Prof.Ms {
+        let calls = Prof.Calls.Find(key).Value
+        let share = if Period > 0.0 { ms * 100.0 / Period } else { 0.0 }
+        ProfLog(key + " calls=" + string(calls) + " total=" + Us(ms) + " mean=" + Us(ms / float(KismetMathLibrary.Max(calls, 1))) + " max=" + Us(Prof.Longest.Find(key).Value) + " share=" + string(KismetMathLibrary.Round(share * 100.0)) + "/10000")
+    }
+    let actors = GameplayStatics.GetAllActorsOfClass(Actor).OutActors.Length()
+    let grids = GameplayStatics.GetAllActorsOfClass(GridActor).OutActors.Length()
+    let berths = GameplayStatics.GetAllActorsOfClass(NauticalDock).OutActors.Length()
+    let shipCount = GameplayStatics.GetAllActorsOfClass(NauticalShip).OutActors.Length()
+    ProfLog("world actors=" + string(actors) + " buildings=" + string(grids) + " berths=" + string(berths) + " ships=" + string(shipCount) + " docks=" + string(MapLoad.Docks.Length()) + " jobs=" + string(MapLoad.JobTo.Length()) + " voyages=" + string(MapLoad.Voyages.Length()))
+    let docks = BPL_FDNet.FreightDocks(MapLoad)
+    if docks.Length() == 0 {
+        return
+    }
+    let d = docks[0]
+    let id = BPL_FDNet.DockId(d)
+    let reps = 10
+    let t = BPL_FDNet.Now()
+    BPL_FDNet.IndexBuildings(MapLoad)
+    ProfLog("cost IndexBuildings " + Us(BPL_FDNet.Now() - t))
+    t = BPL_FDNet.Now()
+    BPL_FDNet.KeepDocks(MapLoad)
+    ProfLog("cost KeepDocks " + Us(BPL_FDNet.Now() - t))
+    t = BPL_FDNet.Now()
+    let i = 0
+    while i < reps {
+        BPL_FDNet.BuildingById(MapLoad, id)
+        i += 1
+    }
+    ProfLog("cost BuildingById(found) " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.BuildingById(MapLoad, -5)
+        i += 1
+    }
+    ProfLog("cost BuildingById(missing) " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.DockById(MapLoad, id)
+        i += 1
+    }
+    ProfLog("cost DockById " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.DockIn(MapLoad, id)
+        i += 1
+    }
+    ProfLog("cost DockIn " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        MapLoad.NauticalDockAt(d)
+        i += 1
+    }
+    ProfLog("cost NauticalDockAt " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.ShipAtDock(MapLoad, d)
+        i += 1
+    }
+    ProfLog("cost ShipAtDock " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.DeficitsFor(MapLoad, d)
+        i += 1
+    }
+    ProfLog("cost DeficitsFor " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.SourceStock(MapLoad, d)
+        i += 1
+    }
+    ProfLog("cost SourceStock " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.FreightDocks(MapLoad)
+        i += 1
+    }
+    ProfLog("cost FreightDocks " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.Members(MapLoad, 1)
+        i += 1
+    }
+    ProfLog("cost Members " + Us((BPL_FDNet.Now() - t) / float(reps)))
+    t = BPL_FDNet.Now()
+    i = 0
+    while i < reps {
+        BPL_FDNet.RequestersOf(MapLoad, d)
+        i += 1
+    }
+    ProfLog("cost RequestersOf " + Us((BPL_FDNet.Now() - t) / float(reps)))
 }

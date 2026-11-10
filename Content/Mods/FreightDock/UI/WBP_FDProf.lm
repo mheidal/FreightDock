@@ -1,0 +1,30 @@
+blueprint WBP_FDProf : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDProf
+
+// DEVELOPMENT ONLY: the timing probe's totals (BPL_FDNet.Timing). WBP_FDPanel.ProfStep makes one (in the viewport,
+// collapsed, so BPL_FDNet.Took finds it there) and reports and clears it every 30 s; Took adds to it. Its own
+// Blueprint, using nothing else of FreightDock's, so the libraries reach it without a cycle (BPL_FDNet ->
+// WBP_FDPanel would be one). A widget only because Loom can't spawn an actor.
+
+widget Root: SizeBox()
+
+// per section: ms, calls and the longest call since the last report
+var Ms: map<string, float>
+var Longest: map<string, float>
+var Calls: map<string, int>
+
+fn Add(Key: string, Took: float) {
+    let had = Ms.Find(Key)
+    Ms[Key] = (if had.ReturnValue { had.Value } else { 0.0 }) + Took
+    let n = Calls.Find(Key)
+    Calls[Key] = (if n.ReturnValue { n.Value } else { 0 }) + 1
+    let top = Longest.Find(Key)
+    if !top.ReturnValue || Took > top.Value {
+        Longest[Key] = Took
+    }
+}
+
+fn Reset() {
+    Ms.Clear()
+    Longest.Clear()
+    Calls.Clear()
+}
