@@ -392,6 +392,126 @@ fn Clock() -> float {
     return float(t.Seconds) * 1000.0 + t.PartialSeconds * 1000.0
 }
 
+// --- buildings placed between rescans. A rescan takes about 20 s and comes every 20 s; a building placed meanwhile
+// goes into the live map at once, so a ship that sets out next doesn't sail through it. Demolitions wait for the
+// rescan (the game announces none).
+
+// How long a spawned building is left before it is read: it is placed, and its footprint set, after it spawns.
+fn SettleSeconds() -> float {
+    return 0.25
+}
+
+// How long an added building is put back into each new map (ReaddBuildings): longer than any rescan takes.
+fn ReaddSeconds() -> float {
+    return 120.0
+}
+
+// From WBP_FDPanel, bound to the game's onBuildingSpawned: the building waits (MapLoad.SpawnQueue, SpawnQueueAt) for
+// BuildingsStep.
+fn BuildingSpawned(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Building: Actor) {
+    let g = cast(Building, GridActor)
+    if g == none {
+        return
+    }
+    MapLoad.SpawnQueue.Add(g)
+    MapLoad.SpawnQueueAt.Add(GameplayStatics.GetRealTimeSeconds())
+}
+
+// Every frame (BPL_FDPairing.Tick): spawned buildings that have settled and are placed go into the live map
+// (BP_MapLoad.AddBuilding), at most 10 a frame; one never placed is given up after 10 s. PlannedBlocked moves with
+// the cells added, so the next rescan doesn't take them for a reason to plan every route again. Half a second
+// after the last one, the buildings are indexed again and the routes checked (RecheckRoutes).
+fn BuildingsStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let n = MapLoad.SpawnQueue.Length()
+    let now = GameplayStatics.GetRealTimeSeconds()
+    if n > 0 {
+        if MapLoad.Blocked.Length() == 0 {
+            // no map yet: the load's scan reads every building
+            MapLoad.SpawnQueue.Clear()
+            MapLoad.SpawnQueueAt.Clear()
+        } else {
+            let keep: array<GridActor> = []
+            let keepAt: array<float> = []
+            let before = MapLoad.Blocked.Length()
+            let added = 0
+            let settle = SettleSeconds()
+            let i = 0
+            while i < n {
+                let b = MapLoad.SpawnQueue[i]
+                let at = MapLoad.SpawnQueueAt[i]
+                i += 1
+                if KismetSystemLibrary.IsValid(b) {
+                    let age = now - at
+                    // unplaced and pooled actors sit at the world origin
+                    let placed = KismetMathLibrary.VSize(b.K2_GetActorLocation()) > 1.0
+                    if placed && age >= settle && added < 10 {
+                        MapLoad.AddBuilding(b)
+                        MapLoad.AddedBuildings.Add(b)
+                        MapLoad.AddedAt.Add(now)
+                        added += 1
+                    } else {
+                        if placed || age < 10.0 {
+                            keep.Add(b)
+                            keepAt.Add(at)
+                        }
+                    }
+                }
+            }
+            MapLoad.SpawnQueue = keep
+            MapLoad.SpawnQueueAt = keepAt
+            if added > 0 {
+                MapLoad.PlannedBlocked = MapLoad.PlannedBlocked + MapLoad.Blocked.Length() - before
+                MapLoad.RouteCheckAt = now + 0.5
+            }
+        }
+    }
+    if MapLoad.RouteCheckAt > 0.0 && now >= MapLoad.RouteCheckAt && MapLoad.SpawnQueue.Length() == 0 {
+        MapLoad.RouteCheckAt = 0.0
+        BPL_FDNet.IndexBuildings(MapLoad)
+        let replans = RecheckRoutes(MapLoad)
+        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Buildings added to the map: " + string(MapLoad.Blocked.Length()) + " blocked cells, " + string(replans) + " route(s) planned again", false)
+    }
+}
+
+// From ScanBuildingStep, when a rescan's new map has just been swapped in: the buildings added since ReaddSeconds
+// go into it again (the rescan may have listed its buildings before they were placed); older ones are forgotten.
+fn ReaddBuildings(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let now = GameplayStatics.GetRealTimeSeconds()
+    let keep: array<GridActor> = []
+    let keepAt: array<float> = []
+    let i = 0
+    let n = MapLoad.AddedBuildings.Length()
+    while i < n {
+        let b = MapLoad.AddedBuildings[i]
+        let at = MapLoad.AddedAt[i]
+        i += 1
+        if now - at < ReaddSeconds() {
+            if KismetSystemLibrary.IsValid(b) {
+                MapLoad.AddBuilding(b)
+                keep.Add(b)
+                keepAt.Add(at)
+            }
+        }
+    }
+    MapLoad.AddedBuildings = keep
+    MapLoad.AddedAt = keepAt
+}
+
+// After buildings were added to the map: each dock's route that now crosses something (or is missing) is queued to
+// be planned again. Returns how many. An added building can't shorten a route, so the others are kept.
+fn RecheckRoutes(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> int {
+    let count = 0
+    for dock in MapLoad.Docks {
+        if BPL_FDNet.TargetOf(MapLoad, dock) != none {
+            if !RouteStillClear(MapLoad, BPL_FDNet.DockId(dock)) {
+                RequestRoute(MapLoad, dock)
+                count += 1
+            }
+        }
+    }
+    return count
+}
+
 // Queues the dock's route to its job's requester (no job: nothing). Its old route (to another requester, maybe) is
 // dropped now, so nothing uses it meanwhile; a search already under way for it starts over.
 fn RequestRoute(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) {

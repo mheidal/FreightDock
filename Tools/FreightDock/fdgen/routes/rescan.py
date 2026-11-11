@@ -1,6 +1,7 @@
-"""Rescan: after buildings change, blocked cells are rebuilt in slices across frames (terrain, coast / penalty,
+"""Rescan: every RescanSeconds, blocked cells are rebuilt in slices across frames (terrain, coast / penalty,
 buildings via their footprints) and every route that now crosses something is replanned. ScanNow does the same in
 one go (at load and on F10). ScanPhase: 0 idle, 1 terrain, 2 coast / penalty, 3 buildings, 4 routes.
+A building placed in between goes into the live map at once (AddBuilding, from BPL_FDVoyage.BuildingsStep).
 """
 from fdgen.core.graph import Graph, local_var
 from fdgen.core.types import (
@@ -397,13 +398,35 @@ def scan_building_step():
     g.link(("BrDone", "then"), ("SwapBlocked", "execute"))
     set_self(g, "SwapPenalty", "Penalty", MAP_INT_INT, 500, -300)
     g.link(("GetPenaltyNext", "PenaltyNext"), ("SwapPenalty", "Penalty"))
+    # buildings placed while this scan ran may not be in the new map
+    loom_call(g, "Readd", VOYAGE_LIB, "ReaddBuildings", 625, -500)
     user_call(g, "Refresh", "RefreshDocks", 750, -300)
     set_self(g, "ZeroIdx", "ScanIdx", INT, 1000, -300, literal="0")
     set_self(g, "ZeroReplans", "ScanReplans", INT, 1250, -300, literal="0")
     set_phase(g, "Phase4", 4, 1500, -300)
-    chain(g, "SwapBlocked", "SwapPenalty", "Refresh", "ZeroIdx", "ZeroReplans", "Phase4")
+    chain(g, "SwapBlocked", "SwapPenalty", "Readd", "Refresh", "ZeroIdx", "ZeroReplans", "Phase4")
 
     b = arr_item(g, "Building", ("GetBuildings", "ScanBuildings"), ("GetIdx", "ScanIdx"), OBJ(GRIDACTOR), 250, 1200)
+    block_building(g, b, ("GetBlockedNext", "BlockedNext"), ("GetPenaltyNext", "PenaltyNext"), ("BrDone", "else"), True)
+    return g.render()
+
+
+def add_building():
+    """AddBuilding(Building): the building goes into the live map (Blocked, Penalty) as ScanBuildingStep would put it
+    into the next one. From BPL_FDVoyage (BuildingsStep, ReaddBuildings)."""
+    g = Graph()
+    get_local(g, "GetBuilding", "AddBuilding", "Building", OBJ(GRIDACTOR), 0, 600)
+    get_self(g, "GetBlocked", "Blocked", INT_SET, 0, 800)
+    get_self(g, "GetPenalty", "Penalty", MAP_INT_INT, 0, 900)
+    get_self(g, "GetClear", "ClearanceCells", INT, 0, 1000)
+    block_building(g, ("GetBuilding", "Building"), ("GetBlocked", "Blocked"), ("GetPenalty", "Penalty"), None, False)
+    return g.render()
+
+
+def block_building(g, b, blocked, penalty, entry, step):
+    """Blocks building b's cells in the set `blocked` and penalises around them in the map `penalty` (see
+    ScanBuildingStep). The graph has a node GetClear (ClearanceCells). `entry` is the exec pin that leads here (None:
+    the function's entry goes to BrExists); with `step`, ScanIdx is counted up afterwards (node NextIdx)."""
     is_valid(g, "Exists", GRIDACTOR, 500, 1200)
     g.link(b, ("Exists", "Object"))
     g.call("Bounds", f"/Script/CoreUObject.Class'{ACTOR}'", "GetActorBounds", 500, 1350,
@@ -461,15 +484,17 @@ def scan_building_step():
     use = bop(g, "Use0", "BooleanOR", use, has, 1600, 1500)
     use = bop(g, "Use", "BooleanAND", use, ("Placed", "ReturnValue"), 1750, 1350)
     branch(g, "BrExists", 125, 0)
-    g.link(("BrDone", "else"), ("BrExists", "execute"))
+    if entry:
+        g.link(entry, ("BrExists", "execute"))
     g.link(("Exists", "ReturnValue"), ("BrExists", "Condition"))
     g.link(("BrExists", "then"), ("ReadFoot", "execute"))
     branch(g, "BrUse", 250, 0)
     g.link(("ReadFoot", "then"), ("BrUse", "execute"))
     g.link(use, ("BrUse", "Condition"))
-    inc_self(g, "NextIdx", "ScanIdx", 500, 300)
-    g.link(("BrUse", "else"), ("NextIdx", "execute"))
-    g.link(("BrExists", "else"), ("NextIdx", "execute"))
+    if step:
+        inc_self(g, "NextIdx", "ScanIdx", 500, 300)
+        g.link(("BrUse", "else"), ("NextIdx", "execute"))
+        g.link(("BrExists", "else"), ("NextIdx", "execute"))
 
     g.call("Lo", MATHLIB, "Subtract_VectorVector", 750, 1700,
            [("A", "in", STRUCT(VECTOR), None), ("B", "in", STRUCT(VECTOR), None), ("ReturnValue", "out", STRUCT(VECTOR), None)])
@@ -502,7 +527,8 @@ def scan_building_step():
     for_loop(g, "ForY", 750, 0)
     g.link(("BrUse", "then"), ("ForX", "Exec"))
     g.link(("ForX", "LoopBody"), ("ForY", "Exec"))
-    g.link(("ForX", "Completed"), ("NextIdx", "execute"))
+    if step:
+        g.link(("ForX", "Completed"), ("NextIdx", "execute"))
     for lp, axis in (("ForX", "X"), ("ForY", "Y")):
         g.link(rng[axis][0], (lp, "FirstIndex"))
         g.link(rng[axis][1], (lp, "LastIndex"))
@@ -524,12 +550,11 @@ def scan_building_step():
     branch(g, "BrInside", 1000, 0)
     g.link(("ForY", "LoopBody"), ("BrInside", "execute"))
     g.link(inside, ("BrInside", "Condition"))
-    set_add(g, "AddBlocked", ("GetBlockedNext", "BlockedNext"), key, 1250, -100)
+    set_add(g, "AddBlocked", blocked, key, 1250, -100)
     g.link(("BrInside", "then"), ("AddBlocked", "execute"))
     reach = ii(g, "Reach", "Add_IntInt", ("GetClear", "ClearanceCells"), None, 2250, 2850, b_default="1")
     pen = ii(g, "Pen", "Subtract_IntInt", reach, dist, 2500, 2800)
-    add_penalty(g, "P", ("GetPenaltyNext", "PenaltyNext"), key, pen, ("BrInside", "else"), 1250, 100)
-    return g.render()
+    add_penalty(g, "P", penalty, key, pen, ("BrInside", "else"), 1250, 100)
 
 
 def route_still_clear():
@@ -704,19 +729,11 @@ def scan_now():
 
 
 def on_building_changed():
-    """OnBuildingChanged: a building appeared - rescan in about a second (or right after the current rescan)."""
+    """OnBuildingChanged (the event graph's onBuildingSpawned): nothing more than clearing PendingRescan, which it
+    used to set. A placed building no longer brings a rescan: WBP_FDPanel hears of it with the actor
+    (BPL_FDVoyage.BuildingSpawned) and it goes into the live map (AddBuilding)."""
     g = Graph()
-    branch(g, "BrIdle", 0, 0)
-    g.link(phase_is(g, "IsIdle", 0, 250, 300), ("BrIdle", "Condition"))
-    g.call("Now", STATICS, "GetRealTimeSeconds", 250, 450, [("ReturnValue", "out", DOUBLE, None)])
-    g.call("Soon", MATHLIB, "Add_DoubleDouble", 500, 450,
-           [("A", "in", DOUBLE, None), ("B", "in", DOUBLE, 'DefaultValue="1.0"'), ("ReturnValue", "out", DOUBLE, None)])
-    g.link(("Now", "ReturnValue"), ("Soon", "A"))
-    set_self(g, "SetDue", "NextRescanAt", DOUBLE, 250, -150)
-    g.link(("BrIdle", "then"), ("SetDue", "execute"))
-    g.link(("Soon", "ReturnValue"), ("SetDue", "NextRescanAt"))
-    set_self(g, "SetPending", "PendingRescan", BOOL, 250, 150, literal="true")
-    g.link(("BrIdle", "else"), ("SetPending", "execute"))
+    set_self(g, "ClearPending", "PendingRescan", BOOL, 0, 0, literal="false")
     return g.render()
 
 
@@ -733,7 +750,8 @@ SPECS = {
     "RescanTick": fn_spec(("BrIdle", "execute")),
     "ScanTick": fn_spec(("BrIdle", "execute")),
     "ScanNow": fn_spec(("Begin", "execute")),
-    "OnBuildingChanged": fn_spec(("BrIdle", "execute")),
+    "OnBuildingChanged": fn_spec(("ClearPending", "execute")),
+    "AddBuilding": fn_spec(("BrExists", "execute"), inputs=[("Building", OBJ(GRIDACTOR))]),
     "LogFootprint": fn_spec(("SetHead", "execute"), inputs=[("Building", OBJ(GRIDACTOR))], locals_=[("Text", STR)]),
     "ReadFootprint": fn_spec(("ClearFoot", "execute"), inputs=[("Building", OBJ(GRIDACTOR))],
                              outputs=[("Has", BOOL), ("LoX", INT), ("HiX", INT), ("LoY", INT), ("HiY", INT)],
@@ -759,4 +777,5 @@ GRAPHS = {
     "ScanTick": scan_tick,
     "ScanNow": scan_now,
     "OnBuildingChanged": on_building_changed,
+    "AddBuilding": add_building,
 }

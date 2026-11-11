@@ -273,13 +273,14 @@ fn Highlight(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Net: int, 
 
 // Every frame (BP_MapLoad.PairKeyTick, from Event Tick, also while paused; the name is kept from the pairing key,
 // which the panel's network picker replaced): the dispatcher (BPL_FDDispatch), route searches (BPL_FDVoyage.RouteStep),
-// stand-in clicks, then the panel.
+// buildings just placed (BPL_FDVoyage.BuildingsStep), stand-in clicks, then the panel.
 fn Tick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     // once per load: the jobs kept in the colony come back before anything runs on them
     BPL_FDLoad.RestoreJobs(MapLoad)
     let t = BPL_FDNet.Now()
     BPL_FDDispatch.Tick(MapLoad)
     BPL_FDNet.Took(MapLoad, "frame.dispatchTick", t)
+    BPL_FDVoyage.BuildingsStep(MapLoad)
     BPL_FDVoyage.RouteStep(MapLoad)
     t = BPL_FDNet.Now()
     MapLoad.StandInClick()

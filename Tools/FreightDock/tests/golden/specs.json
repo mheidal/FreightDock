@@ -1,4 +1,22 @@
 {
+ "AddBuilding": {
+  "entry": [
+   "BrExists",
+   "execute"
+  ],
+  "inputs": [
+   {
+    "default": "",
+    "name": "Building",
+    "type": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/ProjectArco.GridActor'\")"
+   }
+  ],
+  "locals": [],
+  "outputs": [],
+  "pure": false,
+  "returnValues": [],
+  "returns": []
+ },
  "BuildRouteLine": {
   "entry": [
    "BrMID",
@@ -400,7 +418,7 @@
  },
  "OnBuildingChanged": {
   "entry": [
-   "BrIdle",
+   "ClearPending",
    "execute"
   ],
   "inputs": [],

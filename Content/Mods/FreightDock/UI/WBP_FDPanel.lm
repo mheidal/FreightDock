@@ -189,7 +189,17 @@ widget Width: SizeBox(WidthOverride: 500.0) {
     }
 }
 
+// Bound to the game's onBuildingSpawned (Construct): the building goes to BPL_FDVoyage, which puts it into the
+// route map. It is bound here, not in BP_MapLoad, because this widget lives as long as the map and is written in
+// Loom, while BP_MapLoad's event graph is wired by hand and passes no actor on.
+fn BuildingSpawned(Actor: Actor) {
+    if MapLoad != none {
+        BPL_FDVoyage.BuildingSpawned(MapLoad, Actor)
+    }
+}
+
 on Construct {
+    ModAPI.GetModAPI().onBuildingSpawned.bind(BuildingSpawned)
     // The content goes into the game's rounded frame (its named slot); Inner is declared in Stack only because
     // a widget tree has a single root.
     Frame.NamedSlot_93.SetContent(Inner)
@@ -718,6 +728,7 @@ fn ProbeDock(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, D: WorkDock)
 // Every frame, from BP_MapLoad.PanelTick.
 fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     MapLoad = Owner
+    // BPL_FDCheat.Tick(Owner) TOGGLE THIS FOR DEBUG KEY
     if !TickLate {
         // BP_MapLoad ticks after the game's input and the rest of the world, so a dock window the game shows this
         // frame is found (and moved, LowerWindow) before it is drawn
