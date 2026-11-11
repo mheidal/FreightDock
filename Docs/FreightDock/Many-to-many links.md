@@ -367,25 +367,25 @@ Everything is shown per dock, in its dock GUI; there is no colony-wide display. 
    - Manifest column labels don't match their numbers ("Reserved, no hauler yet" is still to fetch).
    - "Loading 1:20 of 2:00" reads as progress but is the depart-after timer.
    - The building description still says "paired".
-   - A requester with no request levels set shows no hint; a request-only dock without a ship gets no warning that it can't unload.
+   - A requester with no request levels set shows no hint; a dock that requests and has no ship says "No ship: can't unload" in its ship section.
    - The map has no legend.
    - The dock GUI needs a scrollbar: a long manifest, many input warehouses, or a target with many output warehouses make it taller than the screen.
-6. State edge cases (code review, 2026-11-09):
+6. State edge cases (code review, 2026-11-09): 1 to 12 built 2026-11-10 (6, 7 and 12 not yet tested in game); the Lower list is open.
    1. A loading job whose ship is gone (recalled, reassigned, destroyed, or a voyage aborted before the pass saw it sail) is never cancelled: its manifest stays bound and the requester starves. Cancel it after a pass of grace.
    2. Requester gone mid-voyage: the provider's dock GUI shows "Idle" over "On the way" (read "has a job" from `JobTo`); a timed trip (no stand-in) to a gone target may never end (`FreightTick` skips a dock without a target). Check, then end it.
    3. A provider with no workers assigned (player-only) counts as off duty all day: its job never stalls or times out. New status "no workers assigned", apart from off duty, as an idle and INCOMING reason.
    4. Deliver now with only provisions (or other non-freight) aboard: "Departing" but never leaves, then the goods stall and drop. Enable and act on freight aboard only; clear a pending departure with none.
    5. A stall bar lasts until the input warehouse's free stock changes, possibly never; the requester then reads "No provider stock". Expire the bar after a time; INCOMING reasons for "held back" and "kept for own outputs".
-   6. Two requesters sharing an output warehouse each count its whole deficit: twice the demand, over-delivery. Split a shared warehouse's deficit across the docks listing it.
-   7. Docks sharing an input warehouse: a job given in a later pass (or `Grow`) can be promised units an earlier job's haulers haven't reserved yet; one job then stalls. Subtract loading jobs' unfetched goods from the shared stock.
+   6. Two requesters sharing an output warehouse each count its whole deficit: twice the demand, over-delivery. Built: a shared warehouse's request is one demand, counted once (as shared input stock is): `BPL_FDNet.DeficitsFor` gives each sharing dock its whole deficit less what is already the other docks' for it (`DrawOn`: their delivered-goods store and jobs to them, filling their output warehouses in the order listed), and when a job is given or grown `BPL_FDDispatch.Redraw` works the other sharers' open demand out again. An equal split per dock was tried first and dropped: it decided ahead of the dispatcher and made halving trips.
+   7. Docks sharing an input warehouse: a job given in a later pass (or `Grow`) can be promised units an earlier job's haulers haven't reserved yet; one job then stalls. Built: `BPL_FDDispatch.Reserve` takes loading jobs' unfetched goods out of the pool, in `Assign` and `Grow`.
    8. Minimum load counts everything the requester wants (also goods this provider can't supply), and waives on the requester's oldest demand of any good. Count only suppliable goods; age from the goods in the candidate job (the "n of min" text too).
    9. `Grow` grows a departing job (never fetched; a false "Left at time limit"). Skip departing and paused docks.
    10. Demand age restarts whenever a job covers it; a requester whose providers keep stalling never gains weight. Keep the age until the demand is met.
    11. "Kept for own outputs" applies to provide-only docks too. Only with the request role.
-   12. One warehouse as both a dock's input and output can bounce goods between two "both" docks. Leave its request level when shipping from it, or warn.
-   - Lower: a restored voyage delivers only goods still in the target's deficits (re-add `Requested`); a stall from an unlinked input warehouse says "(no hauler)"; leftovers under WAITING TO UNLOAD with nothing coming for them; "below minimum load (n for dock)" names an arbitrary requester.
+   12. One warehouse as both a dock's input and output can bounce goods between two "both" docks. Built: such a warehouse of a requesting dock keeps its request level (`BPL_FDNet.KeepsLevel`, in `SourceStock` and `Pool`).
+   - Lower, built 2026-11-10: a restored job's goods go back into `Requested` (a voyage restored mid-way delivers them whatever the target's deficits now say); a good dropped as stalled when the inputs held none of it says "(no stock)", not "(no hauler)" (`JobDropped` units followed by "n"); the minimum-load idle reason names the requester the provider had the most for ("no dock requesting minimum load (most: n for dock)"); idle reason "inputs reserved" when what is asked for is in the inputs but reserved for pickup or promised to another dock's job. Leftovers nothing comes for stay where they are: the section is now "AT DOCK" (a hint that an output warehouse taking the good would clear them).
 7. Faster rescans: update the blocked-cell map incrementally when a building is placed (its footprint added at once) instead of rebuilding the whole map over ~20 s; a ship that departs meanwhile sails a course planned before the building.
-8. Release: version bump, Technical description, README.
+8. Release: version bump, Technical description, README (to add there: with specific input warehouses set, provisions stay off a ship as long as no input warehouse whitelists canned food).
 
 ## Revisiting - ideation
 Supposing we go with 3-of-5b provide/request network IDs.

@@ -28,8 +28,8 @@ pure fn GoodValue(Units: int, Age: float) -> float {
     return float(Units) * (1.0 + Age / Tau())
 }
 
-// Whether a job of Units is big enough: at least Share of the smaller of the hold and all the requester wants, or
-// the requester's oldest demand has waited MaxWait.
+// Whether a job of Units is big enough: at least Share of the smaller of the hold and what the requester wants of the
+// goods this provider has (WantTotal), or the oldest demand it would meet has waited MaxWait.
 pure fn MeetsMinimum(Units: int, Share: float, Hold: int, WantTotal: int, OldestAge: float, MaxWait: float) -> bool {
     if Units <= 0 {
         return false
@@ -139,23 +139,23 @@ fn Pass(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     Shrink(MapLoad)
     BPL_FDNet.Took(MapLoad, "dispatch.shrink", t)
     let demand: map<string, int> = {}
-    let oldest: map<int, float> = {}
     t = BPL_FDNet.Now()
-    Demand(MapLoad, demand, oldest)
+    Demand(MapLoad, demand)
     BPL_FDNet.Took(MapLoad, "dispatch.demand", t)
     t = BPL_FDNet.Now()
     Grow(MapLoad, demand)
     BPL_FDNet.Took(MapLoad, "dispatch.grow", t)
     t = BPL_FDNet.Now()
-    Assign(MapLoad, demand, oldest)
+    Assign(MapLoad, demand)
     BPL_FDNet.Took(MapLoad, "dispatch.assign", t)
     MapLoad.InPass = false
     MapLoad.PassDeficits.Clear()
     BPL_FDNet.SaveJobs(MapLoad)
 }
 
-// Jobs back home complete; jobs whose provider and requester no longer share a network (or are gone) are cancelled.
-// A job under way is left to finish its voyage.
+// Jobs back home complete; jobs whose provider and requester no longer share a network (or are gone) are cancelled,
+// and so is a job at its dock whose ship has been gone for two passes (MapLoad.ShipGone). A job under way is left to
+// finish its voyage.
 fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     // colony time since the last upkeep (none on the first after a load), for off-duty loading below
     let colony = BPL_FDNet.ColonyTime()
@@ -174,8 +174,11 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         if dock != none {
             let since = MapLoad.LoadingSince.Find(id)
             if since.ReturnValue {
+                // not for a dock without workers: that crew never comes, so its depart-after time runs
                 if !BPL_FDNet.OnDuty(MapLoad, dock) {
-                    MapLoad.LoadingSince[id] = since.Value + passed
+                    if !BPL_FDNet.NoWorkers(dock) {
+                        MapLoad.LoadingSince[id] = since.Value + passed
+                    }
                 }
             }
         }
@@ -195,6 +198,18 @@ fn Upkeep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         }
         if !valid {
             Cancel(MapLoad, dock, id, "no longer share a network, or a dock is gone")
+            continue
+        }
+        // its ship gone (recalled, reassigned, destroyed) for the second pass running: the job ends, and what it was
+        // to bring is open demand for other providers again
+        if BPL_FDNet.ShipAtDock(MapLoad, dock) == none {
+            if MapLoad.ShipGone.Contains(id) {
+                Cancel(MapLoad, dock, id, "its ship is gone")
+            } else {
+                MapLoad.ShipGone[id] = true
+            }
+        } else {
+            MapLoad.ShipGone.Remove(id)
         }
     }
 }
@@ -211,6 +226,8 @@ fn Complete(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkD
     MapLoad.LoadingSince.Remove(Id)
     Park(MapLoad, Dock, Id)
     BPL_FDNet.DropJob(MapLoad, Id)
+    // the selected dock's route is worked out again: no job, no route
+    MapLoad.RouteSelId = -999
 }
 
 // Moves the job's manifest goods still in the hold of the dock's ship, and any other freight aboard, to its
@@ -359,8 +376,8 @@ fn Shrink(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
 }
 
 // Per requester and good ("<requester>|<good>"): its output warehouses' unmet requests, less what is unloaded at it,
-// less what every job not yet delivered brings it. Ages it (DemandSince); Oldest[requester] is its oldest demand.
-fn Demand(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>, Oldest: ref map<int, float>) {
+// less what every job not yet delivered brings it. What is unmet ages (DemandSince), a job on its way with it or not.
+fn Demand(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>) {
     let now = BPL_FDNet.ColonyTime()
     let bound: map<string, int> = {}
     for pid, rid in MapLoad.JobTo {
@@ -388,21 +405,23 @@ fn Demand(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                 let key = BPL_FDNet.JobKey(rid, res)
                 let atR = r.m_stockpile_goodsFromSea.Slots.Find(res)
                 let b = bound.Find(key)
-                let open = deficit - (if atR.ReturnValue { atR.Value.count } else { 0 }) - (if b.ReturnValue { b.Value } else { 0 })
+                let unmet = deficit - (if atR.ReturnValue { atR.Value.count } else { 0 })
+                let open = unmet - (if b.ReturnValue { b.Value } else { 0 })
+                // unmet demand ages from when it arose, also while a job is on its way with it: one that stalls or is
+                // cancelled leaves the demand its age
+                if unmet > 0 {
+                    seen.Add(key)
+                    if !MapLoad.DemandSince.Contains(key) {
+                        MapLoad.DemandSince[key] = now
+                    }
+                }
                 if open > 0 {
                     Want[key] = open
-                    seen.Add(key)
-                    let since = MapLoad.DemandSince.Find(key)
-                    let start = if since.ReturnValue { since.Value } else { now }
-                    MapLoad.DemandSince[key] = start
-                    let had = Oldest.Find(rid)
-                    let age = now - start
-                    Oldest[rid] = if had.ReturnValue { KismetMathLibrary.FMax(had.Value, age) } else { age }
                 }
             }
         }
     }
-    // demand that is met (or covered by a job) stops ageing
+    // demand that is met stops ageing
     let stale: array<string> = []
     for dk, t0 in MapLoad.DemandSince {
         if !seen.Contains(dk) {
@@ -414,16 +433,62 @@ fn Demand(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
     }
 }
 
+// After a job to R was given or grown: the docks sharing an output warehouse with R (BPL_FDNet.Sharers) have their
+// open demand worked out again, now less R's job, and lowered to it - a shared warehouse's request is filled once.
+fn Redraw(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, R: WorkDock, Want: ref map<string, int>) {
+    if R == none {
+        return
+    }
+    for j in BPL_FDNet.Sharers(MapLoad, R) {
+        let jid = BPL_FDNet.DockId(j)
+        MapLoad.PassDeficits.Remove(jid)
+        let deficits = BPL_FDNet.DeficitsFor(MapLoad, j).counts
+        let theirs = BPL_FDNet.Committed(MapLoad, j)
+        let keys: array<string> = []
+        for key, open in Want {
+            if open > 0 && KismetStringLibrary.StartsWith(key, Prefix(jid), ESearchCase.CaseSensitive) {
+                keys.Add(key)
+            }
+        }
+        for sk in keys {
+            let good = GoodOf(sk)
+            let d = deficits.Find(good)
+            let c = theirs.Find(good)
+            let now = KismetMathLibrary.Max((if d.ReturnValue { d.Value } else { 0 }) - (if c.ReturnValue { c.Value } else { 0 }), 0)
+            if now < Want[sk] {
+                Probe(MapLoad, "Probe: shared demand " + sk + " " + string(Want[sk]) + " -> " + string(now))
+                Want[sk] = now
+            }
+        }
+    }
+}
+
+// What the dock's own output warehouses still ask for, which it doesn't ship away. Only a dock that requests: the
+// output requests of a provide-only dock hold nothing back (nothing is delivered for them).
+fn OwnWants(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> map<name, int> {
+    if !BPL_FDNet.HasRole(Dock.activeTradePartnerId, BPL_FDNet.Request()) {
+        let nothing: map<name, int> = {}
+        return nothing
+    }
+    return BPL_FDNet.DeficitsFor(MapLoad, Dock).counts
+}
+
+// How long a good cut from a job as stalled stays barred from its dock when its input stock doesn't change (Barred),
+// colony seconds: then it is offered again, and stalls again if nothing has changed.
+pure fn BarFor() -> float {
+    return 600.0
+}
+
 // What a provider holds for jobs: free stock in its input warehouses (Free), what its ship already has aboard
 // (Aboard: needs no fetching or hold space), and leftovers in its delivered-goods store its own output warehouses
 // don't want (Parked: unreserved units only).
 fn Supply(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Ship: NauticalShip, out Free: map<name, int>, out Aboard: map<name, int>, out Parked: map<name, int>) {
     Free = Fetchable(MapLoad, Dock)
     Aboard = MapLoad.HoldCounts(Ship).Counts
-    let own = BPL_FDNet.DeficitsFor(MapLoad, Dock)
+    let own = OwnWants(MapLoad, Dock)
     for res, slot in Dock.m_stockpile_goodsFromSea.Slots {
         let spare = slot.count - slot.reservedForPickup
-        let w = own.counts.Find(res)
+        let w = own.Find(res)
         let wanted = w.ReturnValue && w.Value > 0
         if spare > 0 && !wanted {
             Parked[res] = spare
@@ -431,52 +496,74 @@ fn Supply(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDoc
     }
 }
 
-// Whether a good cut from Id's last job as stalled (MapLoad.CutStock: the input warehouses' free stock then) is
-// still barred: its free stock hasn't changed since. A change lifts the bar.
+// Whether a good cut from Id's last job as stalled (MapLoad.CutStock: the input warehouses' free stock then; CutAt:
+// when) is still barred: its free stock hasn't changed since, and BarFor() hasn't passed. Either lifts the bar.
 fn Barred(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, Good: name, FreeNow: int) -> bool {
     let key = BPL_FDNet.JobKey(Id, Good)
     let c = MapLoad.CutStock.Find(key)
     if !c.ReturnValue {
         return false
     }
-    if c.Value == FreeNow {
+    let at = MapLoad.CutAt.Find(key)
+    let expired = false
+    if at.ReturnValue {
+        expired = BPL_FDNet.ColonyTime() - at.Value >= BarFor()
+    }
+    if c.Value == FreeNow && !expired {
         return true
     }
     MapLoad.CutStock.Remove(key)
+    MapLoad.CutAt.Remove(key)
     return false
 }
 
-// The dock's input warehouses' free stock, less goods barred after a stall (Barred) and goods its own output
-// warehouses still ask for (so two docks that both provide and request a good don't pass it back and forth).
+// The dock's input warehouses' free stock, less goods barred after a stall (Barred) and what its own output
+// warehouses still ask for: that much of a good stays (so two docks that both provide and request a good don't pass it
+// back and forth), the rest is offered.
 fn Fetchable(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> map<name, int> {
     let id = BPL_FDNet.DockId(Dock)
-    let own = BPL_FDNet.DeficitsFor(MapLoad, Dock)
+    let own = OwnWants(MapLoad, Dock)
     let out: map<name, int> = {}
     for res, n in BPL_FDNet.SourceStock(MapLoad, Dock).Stock {
-        let w = own.counts.Find(res)
-        let wanted = w.ReturnValue && w.Value > 0
-        if !wanted {
+        let w = own.Find(res)
+        let spare = n - (if w.ReturnValue { KismetMathLibrary.Max(w.Value, 0) } else { 0 })
+        if spare > 0 {
             if !Barred(MapLoad, id, res, n) {
-                out[res] = n
+                out[res] = spare
             }
         }
     }
     return out
 }
 
-// Jobs still loading take more when their requester's demand has grown, their hold has room and their input
+// Jobs still loading (not paused, no departure pending) take more when their requester's demand has grown, their hold has room and their input
 // warehouses hold the extra (free stock beyond what the manifest still has to fetch).
 fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>) {
     let ids: array<int> = []
     for pid, rid in MapLoad.JobTo {
         ids.Add(pid)
     }
+    // the loading docks' input stock, each warehouse once, less what every loading job has yet to fetch: docks
+    // sharing a warehouse draw on the same units
+    let loaders: array<WorkDock> = []
+    for lid in ids {
+        let ld = BPL_FDNet.DockIn(MapLoad, lid)
+        if ld != none {
+            loaders.Add(ld)
+        }
+    }
+    let pool = Pool(MapLoad, loaders)
+    Reserve(MapLoad, pool)
     for id in ids {
-        if Sailing(MapLoad, id) {
+        // not one whose departure is pending (nothing more is fetched for it), away or back
+        if BPL_FDNet.StateOf(MapLoad, id) != BPL_FDNet.StateLoading() {
             continue
         }
         let dock = BPL_FDNet.DockIn(MapLoad, id)
         if dock == none {
+            continue
+        }
+        if BPL_FDNet.IsPaused(dock.activeTradePartnerId) {
             continue
         }
         let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
@@ -512,6 +599,7 @@ fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<s
                 keys.Add(key)
             }
         }
+        let grown = false
         for gk in keys {
             let good = GoodOf(gk)
             let need = Want[gk]
@@ -519,7 +607,8 @@ fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<s
             let m = manifest.Find(good)
             let inHold = hold.Find(good)
             let still = KismetMathLibrary.Max((if m.ReturnValue { m.Value } else { 0 }) - (if inHold.ReturnValue { inHold.Value } else { 0 }), 0)
-            let spare = (if f.ReturnValue { f.Value } else { 0 }) - still
+            // the pool is already less this job's own unfetched goods
+            let spare = KismetMathLibrary.Min((if f.ReturnValue { f.Value } else { 0 }) - still, PoolFree(MapLoad, dock, pool, good))
             let add = KismetMathLibrary.Min(KismetMathLibrary.Min(need, spare), room)
             if add > 0 {
                 let jk = BPL_FDNet.JobKey(id, good)
@@ -530,14 +619,19 @@ fn Grow(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<s
                 MapLoad.PickupSince.Remove(jk)
                 Want[gk] = need - add
                 room -= add
+                TakePool(MapLoad, dock, pool, good, add)
+                grown = true
             }
+        }
+        if grown {
+            Redraw(MapLoad, BPL_FDNet.DockIn(MapLoad, rid), Want)
         }
     }
 }
 
 // New jobs for idle providers (a ship at home, no job, not sailing): the best-scoring (provider, requester) pair
 // first, until none scores above zero. Records why a provider stays idle (IdleWhy).
-fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>, Oldest: ref map<int, float>) {
+fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map<string, int>) {
     let now = BPL_FDNet.ColonyTime()
     let tA = BPL_FDNet.Now()
     // idle providers and their supply ("<provider>|<good>")
@@ -565,6 +659,7 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                 ships.Add(home)
                 let sup = Supply(MapLoad, d, home)
                 let onDuty = BPL_FDNet.OnDuty(MapLoad, d)
+                let unstaffed = BPL_FDNet.NoWorkers(d)
                 if onDuty {
                     for res, n in sup.Free {
                         AddTo(freeS, BPL_FDNet.JobKey(did, res), n)
@@ -577,7 +672,7 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                     AddTo(parkS, BPL_FDNet.JobKey(did, res), n)
                 }
                 let src = BPL_FDNet.SourceStock(MapLoad, d)
-                MapLoad.IdleWhy[did] = BPL_FDText.T(if !onDuty { "freightdock.idle.offDuty" } else if src.HasSources { "freightdock.idle.noRequests" } else { "freightdock.idle.noInputs" })
+                MapLoad.IdleWhy[did] = BPL_FDText.T(if unstaffed { "freightdock.idle.noWorkers" } else if !onDuty { "freightdock.idle.offDuty" } else if src.HasSources { "freightdock.idle.noRequests" } else { "freightdock.idle.noInputs" })
             }
         }
     }
@@ -585,6 +680,7 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
     tA = BPL_FDNet.Now()
     // input warehouse stock, once per warehouse: docks sharing one draw on the same units
     let pool = Pool(MapLoad, idle)
+    Reserve(MapLoad, pool)
     BPL_FDNet.Took(MapLoad, "assign.pool", tA)
     tA = BPL_FDNet.Now()
     // once per pass (none of it changes as jobs are given): each idle provider's ID and free hold space; each
@@ -638,12 +734,14 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
     // round starts them over, so after the last only failures against what is still open remain.
     let minFail: map<string, string> = {}
     let minIdle: map<int, string> = {}
+    let minMost: map<int, int> = {}
     let done: array<int> = []
     let rounds = 0
     while rounds < 64 {
         rounds += 1
         minFail.Clear()
         minIdle.Clear()
+        minMost.Clear()
         let bestScore = 0.0
         let bestP = -1
         let bestR: WorkDock = none
@@ -661,13 +759,14 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                 let total = 0
                 let left = space[i]
                 let contrib: array<string> = []
+                // the oldest demand this job would meet
+                let oldestAge = 0.0
                 let first = wStart.Find(rid).Value
                 let j = first
                 while j < first + wCount.Find(rid).Value {
                     let key = wKey[j]
                     let open = Want[key]
                     if open > 0 {
-                        total += open
                         let good = wGood[j]
                         let pk = BPL_FDNet.JobKey(pid, good)
                         let a = aboardS.Find(pk)
@@ -676,26 +775,35 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                         let fromAboard = KismetMathLibrary.Min(open, if a.ReturnValue { a.Value } else { 0 })
                         let fromPool = 0
                         if fr.ReturnValue {
-                            fromPool = PoolFree(MapLoad, p, pool, good)
+                            fromPool = KismetMathLibrary.Min(PoolFree(MapLoad, p, pool, good), fr.Value)
                         }
                         let fetchable = fromPool + (if pa.ReturnValue { pa.Value } else { 0 })
                         let fetched = KismetMathLibrary.Min(KismetMathLibrary.Min(open - fromAboard, fetchable), left)
                         left -= fetched
+                        // the minimum load is measured against the goods this provider has at all
+                        if fromAboard + fetchable > 0 {
+                            total += open
+                        }
                         let since = MapLoad.DemandSince.Find(key)
                         let age = if since.ReturnValue { now - since.Value } else { 0.0 }
                         units += fromAboard + fetched
                         value += GoodValue(fromAboard + fetched, age)
                         if fromAboard + fetched > 0 {
                             contrib.Add(key)
+                            oldestAge = KismetMathLibrary.FMax(oldestAge, age)
                         }
                     }
                     j += 1
                 }
-                let o = Oldest.Find(rid)
-                let oldestAge = if o.ReturnValue { o.Value } else { 0.0 }
                 let fits = MeetsMinimum(units, MapLoad.MinLoad, pship.config.cargoLimit, total, oldestAge, WaiveAfter(MapLoad))
                 if units > 0 && !fits {
-                    minIdle[pid] = BPL_FDText.T2("freightdock.idle.belowMinimum", "n", string(units), "dock", BPL_FDNet.DockName(MapLoad, r))
+                    // the requester it had the most for
+                    let most = minMost.Find(pid)
+                    let mostUnits = if most.ReturnValue { most.Value } else { 0 }
+                    if units > mostUnits {
+                        minMost[pid] = units
+                        minIdle[pid] = BPL_FDText.T2("freightdock.idle.belowMinimum", "n", string(units), "dock", BPL_FDNet.DockName(MapLoad, r))
+                    }
                     let least = KismetMathLibrary.FCeil(MapLoad.MinLoad * float(KismetMathLibrary.Min(pship.config.cargoLimit, total)))
                     let failText = BPL_FDText.T2("freightdock.why.belowMinimum", "n", string(units), "min", string(least))
                     for ck in contrib {
@@ -776,6 +884,28 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
         return BPL_FDText.T(if raw { "freightdock.idle.covered" } else { "freightdock.idle.noOpen" })
     }
     let stock = BPL_FDNet.SourceStock(MapLoad, P).Stock
+    // what is asked for is in the inputs, but every unit is reserved for pickup (another dock's job, or the colony's
+    // haulers)
+    let held = BPL_FDNet.SourceStock(MapLoad, P, true).Stock
+    let anyFree = false
+    let anyHeld = false
+    for good0 in open {
+        let s0 = stock.Find(good0)
+        if s0.ReturnValue {
+            if s0.Value > 0 {
+                anyFree = true
+            }
+        }
+        let h0 = held.Find(good0)
+        if h0.ReturnValue {
+            if h0.Value > 0 {
+                anyHeld = true
+            }
+        }
+    }
+    if anyHeld && !anyFree {
+        return BPL_FDText.T("freightdock.idle.inputsTaken")
+    }
     let total = 0
     for res, n in stock {
         total += n
@@ -783,7 +913,7 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
     if total <= 0 {
         return BPL_FDText.T("freightdock.idle.inputsEmpty")
     }
-    let own = BPL_FDNet.DeficitsFor(MapLoad, P).counts
+    let own = OwnWants(MapLoad, P)
     let stocked = false
     for good in open {
         let s = stock.Find(good)
@@ -801,7 +931,7 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
         if s2.ReturnValue {
             if s2.Value > 0 {
                 let w = own.Find(good2)
-                if w.ReturnValue && w.Value > 0 {
+                if w.ReturnValue && w.Value >= s2.Value {
                     return BPL_FDText.T1("freightdock.idle.keptForOwn", "good", BPL_FDNet.GoodWord(MapLoad, good2))
                 }
             }
@@ -821,8 +951,9 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
         let s4 = stock.Find(good4)
         if s4.ReturnValue {
             if s4.Value > 0 {
+                // its stock is promised to jobs of docks sharing the input warehouse, not yet reserved
                 if PoolFree(MapLoad, P, InPool, good4) <= 0 {
-                    return BPL_FDText.T("freightdock.idle.covered")
+                    return BPL_FDText.T("freightdock.idle.inputsTaken")
                 }
             }
         }
@@ -838,7 +969,8 @@ fn WaiveAfter(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> float 
 
 // Why each request left open after this pass gets nothing (MapLoad.WhyNot, "<target>|<good>" -> the reason, for
 // the target's dock GUI): no provider on its networks, none with the good, the providers with it off duty or without
-// a ship, the minimum load, or every provider with it busy (on a job, sailing or paused).
+// a ship, the good held back after a stall or kept for a provider's own outputs, the minimum load, or every provider
+// with it busy (on a job, sailing or paused).
 fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<string, int>, MinFail: map<string, string>) {
     MapLoad.WhyNot.Clear()
     // "<provider>|<good>" -> what the provider could ship (as Supply counts it: free input stock, delivered goods its
@@ -857,6 +989,10 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
                 let has = false
                 let hasOff = false
                 let hasShipless = false
+                let hasUnstaffed = false
+                // in a provider's input warehouses, but held back after a stall, or kept for its own outputs
+                let hasBarred = false
+                let hasKept = false
                 // a provider whose input warehouses accept the good; of those able to ship it now, paused or not
                 let takes = false
                 let hasPaused = false
@@ -872,10 +1008,10 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
                         for res, n in Fetchable(MapLoad, p) {
                             AddTo(stock, BPL_FDNet.JobKey(pid, res), n)
                         }
-                        let own = BPL_FDNet.DeficitsFor(MapLoad, p)
+                        let own = OwnWants(MapLoad, p)
                         for res, slot in p.m_stockpile_goodsFromSea.Slots {
                             let spare = slot.count - slot.reservedForPickup
-                            let ow = own.counts.Find(res)
+                            let ow = own.Find(res)
                             let wanted = ow.ReturnValue && ow.Value > 0
                             if spare > 0 && !wanted {
                                 AddTo(stock, BPL_FDNet.JobKey(pid, res), spare)
@@ -907,8 +1043,20 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
                             } else {
                                 hasActive = true
                             }
+                        } else if BPL_FDNet.NoWorkers(p) {
+                            hasUnstaffed = true
                         } else {
                             hasOff = true
+                        }
+                    } else {
+                        let inStock = BPL_FDNet.SourceStock(MapLoad, p).Stock.Find(good)
+                        if inStock.ReturnValue && inStock.Value > 0 {
+                            let kept = OwnWants(MapLoad, p).Find(good)
+                            if kept.ReturnValue && kept.Value >= inStock.Value {
+                                hasKept = true
+                            } else if MapLoad.CutStock.Contains(BPL_FDNet.JobKey(pid, good)) {
+                                hasBarred = true
+                            }
                         }
                     }
                 }
@@ -919,8 +1067,14 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
                     reason = BPL_FDText.T("freightdock.why.noTakes")
                 } else if !has && hasOff {
                     reason = BPL_FDText.T("freightdock.why.offDuty")
+                } else if !has && hasUnstaffed {
+                    reason = BPL_FDText.T("freightdock.why.noWorkers")
                 } else if !has && hasShipless {
                     reason = BPL_FDText.T("freightdock.why.noShips")
+                } else if !has && hasBarred {
+                    reason = BPL_FDText.T("freightdock.why.heldBack")
+                } else if !has && hasKept {
+                    reason = BPL_FDText.T("freightdock.why.keptForOwn")
                 } else if !has {
                     reason = BPL_FDText.T("freightdock.why.noStock")
                 } else if mf.ReturnValue {
@@ -936,7 +1090,8 @@ fn Explain(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: map<st
     }
 }
 
-// Free stock ("<warehouse>|<good>") of the input warehouses of Docks, each warehouse once.
+// Free stock ("<warehouse>|<good>") of the input warehouses of Docks, each warehouse once; above its request level
+// where the first dock listing it keeps that (BPL_FDNet.KeepsLevel).
 fn Pool(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Docks: array<WorkDock>) -> map<string, int> {
     let out: map<string, int> = {}
     let seen: array<int> = []
@@ -950,8 +1105,12 @@ fn Pool(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Docks: array<Wo
                     if b != none {
                         let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
                         if rb != none {
+                            let keeps = BPL_FDNet.KeepsLevel(d, bid)
                             for res, slot in rb.m_stockpile.Slots {
                                 let free = slot.count - slot.reservedForPickup
+                                if keeps {
+                                    free -= KismetMathLibrary.Max(slot.minHold, 0)
+                                }
                                 if free > 0 {
                                     out[string(bid) + "|" + string(res)] = free
                                 }
@@ -963,6 +1122,33 @@ fn Pool(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Docks: array<Wo
         }
     }
     return out
+}
+
+// Takes out of the Pool what jobs still loading have yet to fetch: their manifests less what is aboard, being
+// carried (already reserved in the warehouse) or taken from parked leftovers. Haulers reserve stock only as they set
+// out, so until then a dock sharing the input warehouse would be promised the same units.
+fn Reserve(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, InPool: ref map<string, int>) {
+    for pid, rid in MapLoad.JobTo {
+        if BPL_FDNet.StateOf(MapLoad, pid) == BPL_FDNet.StateLoading() {
+            let dock = BPL_FDNet.DockIn(MapLoad, pid)
+            if dock != none {
+                let hold: map<name, int> = {}
+                let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
+                if ship != none {
+                    hold = MapLoad.HoldCounts(ship).Counts
+                }
+                for res, units in BPL_FDNet.Manifest(MapLoad, pid) {
+                    let h = hold.Find(res)
+                    let f = dock.m_inputStockpile.Slots.Find(res)
+                    let parked = MapLoad.JobGoods.Find(BPL_FDNet.ParkKey(pid, res))
+                    let left = units - (if h.ReturnValue { h.Value } else { 0 }) - (if f.ReturnValue { f.Value.reservedSpaceForDropoff } else { 0 }) - (if parked.ReturnValue { parked.Value } else { 0 })
+                    if left > 0 {
+                        TakePool(MapLoad, dock, InPool, res, left)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // What of Good the Pool still has in Dock's input warehouses.
@@ -1019,11 +1205,11 @@ fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Sh
         let fr = FreeS.Find(pk)
         let pa = ParkS.Find(pk)
         let aboard = if a.ReturnValue { a.Value } else { 0 }
-        // free stock as the pool has it (a dock sharing an input warehouse may have taken some); a good barred
-        // after a stall isn't in FreeS
+        // free stock as the pool has it (a dock sharing an input warehouse may have taken some), no more than the
+        // dock offers (FreeS: less what its own outputs ask for); a good barred after a stall isn't in FreeS
         let free = 0
         if fr.ReturnValue {
-            free = PoolFree(MapLoad, P, InPool, good)
+            free = KismetMathLibrary.Min(PoolFree(MapLoad, P, InPool, good), fr.Value)
         }
         let park = if pa.ReturnValue { pa.Value } else { 0 }
         let fromAboard = KismetMathLibrary.Min(need, aboard)
@@ -1050,6 +1236,7 @@ fn Give(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDock, Sh
     }
     MapLoad.JobTo[pid] = rid
     BPL_FDNet.SetState(MapLoad, pid, BPL_FDNet.StateLoading())
+    Redraw(MapLoad, R, Want)
     Probe(MapLoad, "Probe: job " + string(pid) + " -> " + string(rid) + " given; manifest" + Goods(BPL_FDNet.Manifest(MapLoad, pid)))
     MapLoad.IdleWhy.Remove(pid)
     let tPlan = BPL_FDNet.Now()

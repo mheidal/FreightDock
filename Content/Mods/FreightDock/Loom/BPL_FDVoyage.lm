@@ -1080,6 +1080,16 @@ fn FillCourse(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, 
     let awayRaw = if hasRoute { routeEnd.Value } else { target.Value }
     let away = Vector(X: awayRaw.X, Y: awayRaw.Y, Z: z)
     let wait = MapLoad.WaitHeading(Id, homeFwd).Fwd
+    // homeward with the requester gone, WaitHeading has no berth to go by: the heading the stand-in arrived in (the
+    // outbound course's end)
+    if ToHome {
+        if BPL_FDNet.TargetOf(MapLoad, BPL_FDNet.DockIn(MapLoad, Id)) == none {
+            let arrived = MapLoad.VoyageEndFwd.Find(Id)
+            if arrived.ReturnValue {
+                wait = arrived.Value
+            }
+        }
+    }
     let startPos = if ToHome { away } else { home }
     let startFwd = if ToHome { wait } else { homeFwd }
     let endPos = if ToHome { home } else { away }
@@ -1248,6 +1258,20 @@ fn FillCourse(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int, 
     Course.UpdateSpline()
 }
 
+// Voyage Id turns for home, on a new course from where it lies.
+fn TurnHome(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
+    BPL_FDNet.SetState(MapLoad, Id, BPL_FDNet.StateHomeward())
+    BPL_FDNet.SaveJobs(MapLoad)
+    let old = MapLoad.VoyageSpline.Find(Id)
+    if old.ReturnValue {
+        if KismetSystemLibrary.IsValid(old.Value) {
+            old.Value.K2_DestroyComponent()
+        }
+    }
+    MapLoad.VoyageSpline[Id] = MapLoad.MakeCourse(Id, MapLoad.VoyageShip.Find(Id).Value, true).Course
+    MapLoad.VoyageDist[Id] = 0.0
+}
+
 // Dock's ship sets out for Target (ported from fdgen): a stand-in is spawned from Ship's zoomed-in model
 // (BP_MapLoad.SpawnStandIn: Loom can't spawn actors), the real ship is hidden at its berth, and the stand-in is put on
 // the outbound course to Target's stand-off point (BP_MapLoad.MakeCourse), with the voyage timer running. Without a
@@ -1327,6 +1351,11 @@ fn VoyageArrive(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int
                 fling.Launch(target)
             }
             MapLoad.ClearRequested(Id)
+        }
+        // its requester is gone: nothing to unload or wait for
+        if target == none {
+            TurnHome(MapLoad, Id)
+            return
         }
         MapLoad.VoyageWait[Id] = BPL_FDNet.ColonyTime() + MapLoad.DwellSeconds
         BPL_FDNet.SetState(MapLoad, Id, BPL_FDNet.StateDwell())
@@ -1439,13 +1468,7 @@ fn VoyageStep(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         if jobState == BPL_FDNet.StateDwell() {
             let wf = MapLoad.VoyageWait.Find(id)
             if BPL_FDNet.ColonyTime() >= wf.Value {
-                BPL_FDNet.SetState(MapLoad, id, BPL_FDNet.StateHomeward())
-                BPL_FDNet.SaveJobs(MapLoad)
-                if KismetSystemLibrary.IsValid(spline) {
-                    spline.K2_DestroyComponent()
-                }
-                MapLoad.VoyageSpline[id] = MapLoad.MakeCourse(id, ship, true).Course
-                MapLoad.VoyageDist[id] = 0.0
+                TurnHome(MapLoad, id)
             } else if ok {
                 // waiting: bob in place at the course's end
                 let waitPos = spline.GetLocationAtDistanceAlongSpline(spline.GetSplineLength(), ESplineCoordinateSpace.World)

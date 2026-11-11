@@ -19,8 +19,32 @@ pure fn DockId(Dock: WorkDock) -> int {
     return if grid == none { -1 } else { grid.ID }
 }
 
+// Whether the warehouse is one of the dock's output warehouses.
+fn Delivers(Dock: WorkDock, Warehouse: int) -> bool {
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return false
+    }
+    for wid in linker.m_destStockpileIds {
+        if wid == Warehouse {
+            return true
+        }
+    }
+    return false
+}
+
+// Whether the dock's input warehouse is to keep its request levels (minHold): one that is also an output warehouse of
+// the dock, when the dock requests. What is shipped from it below that level would be asked for again.
+fn KeepsLevel(Dock: WorkDock, Warehouse: int) -> bool {
+    if !HasRole(Dock.activeTradePartnerId, Request()) {
+        return false
+    }
+    return Delivers(Dock, Warehouse)
+}
+
 // Per resource, what the dock's input warehouses hold free (with WithReserved, also what haulers have
-// reserved for pickup); HasSources false when none is set.
+// reserved for pickup), above the request level of a warehouse that keeps it (KeepsLevel); HasSources false when
+// none is set.
 fn SourceStock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, WithReserved: bool = false, out Stock: map<name, int>, out HasSources: bool) {
     let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
     if linker == none {
@@ -32,8 +56,12 @@ fn SourceStock(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
         if b != none {
             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
             if rb != none {
+                let keeps = KeepsLevel(Dock, id)
                 for res, slot in rb.m_stockpile.Slots {
                     let free = if WithReserved { slot.count } else { slot.count - slot.reservedForPickup }
+                    if keeps {
+                        free -= KismetMathLibrary.Max(slot.minHold, 0)
+                    }
                     if free > 0 {
                         let had = Stock.Find(res)
                         Stock[res] = (if had.ReturnValue { had.Value } else { 0 }) + free
@@ -108,9 +136,109 @@ fn KeepEmptyDeficits(Storage: ResourceBuilding) -> map<name, int> {
     return out
 }
 
+// What is already the dock's of each good: in its delivered-goods store, and on jobs to it not yet delivered.
+fn Committed(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> map<name, int> {
+    let out: map<name, int> = {}
+    for sres, slot in Dock.m_stockpile_goodsFromSea.Slots {
+        if slot.count > 0 {
+            out[sres] = slot.count
+        }
+    }
+    let id = DockId(Dock)
+    for pid, rid in MapLoad.JobTo {
+        if rid == id {
+            if StateOf(MapLoad, pid) < StateDwell() {
+                for jres, units in Manifest(MapLoad, pid) {
+                    let had = out.Find(jres)
+                    out[jres] = (if had.ReturnValue { had.Value } else { 0 }) + units
+                }
+            }
+        }
+    }
+    return out
+}
+
+// A warehouse's unmet requests per good: the game's logistics deficits, or for a "Keep empty" warehouse (which
+// reports none) KeepEmptyDeficits.
+fn WarehouseDeficits(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Warehouse: int) -> map<name, int> {
+    let none_: map<name, int> = {}
+    let b = BuildingById(MapLoad, Warehouse)
+    if b == none {
+        return none_
+    }
+    let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+    if rb == none {
+        return none_
+    }
+    if rb.m_forceEmpty {
+        return KeepEmptyDeficits(rb)
+    }
+    return rb.GetLogisticsDeficitsAsCollection().counts
+}
+
+// How much of what is already the dock's (Committed) goes to this one of its output warehouses: its goods fill its
+// output warehouses' deficits in the order listed.
+fn DrawOn(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, Warehouse: int) -> map<name, int> {
+    let out: map<name, int> = {}
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return out
+    }
+    let left = Committed(MapLoad, Dock)
+    let goods: array<name> = []
+    for g, gn in left {
+        goods.Add(g)
+    }
+    for wid in linker.m_destStockpileIds {
+        let wants = WarehouseDeficits(MapLoad, wid)
+        for good in goods {
+            let have = left[good]
+            let w = wants.Find(good)
+            let take = KismetMathLibrary.Min(have, if w.ReturnValue { KismetMathLibrary.Max(w.Value, 0) } else { 0 })
+            if take > 0 {
+                left[good] = have - take
+                if wid == Warehouse {
+                    out[good] = take
+                }
+            }
+        }
+        if wid == Warehouse {
+            return out
+        }
+    }
+    return out
+}
+
+// The other requesting docks that deliver to one of the dock's output warehouses.
+fn Sharers(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> array<WorkDock> {
+    let out: array<WorkDock> = []
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return out
+    }
+    for o in FreightDocks(MapLoad) {
+        if o != Dock {
+            if HasRole(o.activeTradePartnerId, Request()) {
+                let shares = false
+                for wid in linker.m_destStockpileIds {
+                    if Delivers(o, wid) {
+                        shares = true
+                    }
+                }
+                if shares {
+                    out.Add(o)
+                }
+            }
+        }
+    }
+    return out
+}
+
 // The unmet requests of the dock's output warehouses (the game's "Deliver to", StockpileLinker.m_destStockpileIds),
-// summed per good: the game's logistics deficits, or for a "Keep empty" warehouse (which reports none)
-// KeepEmptyDeficits. During a dispatch pass (MapLoad.InPass) each dock's is worked out once (MapLoad.PassDeficits).
+// summed per good (WarehouseDeficits). A warehouse other requesting docks also deliver to is one demand, counted
+// once: each of them sees its deficit less what is already the others' (DrawOn), and the dispatcher lowers the
+// others' open demand when it gives one of them a job (BPL_FDDispatch.Redraw). During a dispatch pass
+// (MapLoad.InPass) each dock's is worked out once (MapLoad.PassDeficits).
 fn DeficitsFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> ResourceCollection {
     let id = DockId(Dock)
     if MapLoad.InPass {
@@ -122,20 +250,35 @@ fn DeficitsFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wo
     let counts: map<name, int> = {}
     let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
     if linker != none {
+        let rivals = Sharers(MapLoad, Dock)
         for bid in linker.m_destStockpileIds {
             let b = BuildingById(MapLoad, bid)
             if b != none {
                 let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
                 if rb != none {
-                    let d: map<name, int> = {}
-                    if rb.m_forceEmpty {
-                        d = KeepEmptyDeficits(rb)
-                    } else {
-                        d = rb.GetLogisticsDeficitsAsCollection().counts
+                    let d = WarehouseDeficits(MapLoad, bid)
+                    // a shared warehouse: what is already the other docks' for it
+                    let shared = false
+                    let theirs: map<name, int> = {}
+                    for rival in rivals {
+                        if Delivers(rival, bid) {
+                            shared = true
+                            for cres, cn in DrawOn(MapLoad, rival, bid) {
+                                let t = theirs.Find(cres)
+                                theirs[cres] = (if t.ReturnValue { t.Value } else { 0 }) + cn
+                            }
+                        }
                     }
                     for res, n in d {
-                        let had = counts.Find(res)
-                        counts[res] = (if had.ReturnValue { had.Value } else { 0 }) + n
+                        let part = n
+                        if shared {
+                            let taken = theirs.Find(res)
+                            part = KismetMathLibrary.Max(n - (if taken.ReturnValue { taken.Value } else { 0 }), 0)
+                        }
+                        if part != 0 {
+                            let had = counts.Find(res)
+                            counts[res] = (if had.ReturnValue { had.Value } else { 0 }) + part
+                        }
                     }
                 }
             }
@@ -701,6 +844,20 @@ fn OnDuty(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDoc
     return false
 }
 
+// No worker is assigned to the dock (assigning them is the player's): nobody will come to haul its cargo, by day or
+// night.
+fn NoWorkers(Dock: WorkDock) -> bool {
+    if Dock == none {
+        return false
+    }
+    for slot in Dock.m_workers.m_workerSlots {
+        if slot.Agent != none {
+            return false
+        }
+    }
+    return true
+}
+
 // Network names, as set in the network GUI (BPL_FDStore, "n<id>"): ID -> name.
 fn NetNames(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) -> map<int, string> {
     let out: map<int, string> = {}
@@ -895,8 +1052,9 @@ pure fn StateName(State: int) -> string {
 }
 
 // The moves a job makes: idle -> loading (given); loading -> depart pending, outbound, idle (cancelled); depart
-// pending -> outbound, idle; outbound -> dwell, returned (a timed trip, or its ship left its berth); dwell ->
-// homeward, returned; homeward -> returned; returned -> idle (complete).
+// pending -> outbound, idle, loading (no freight to send after all); outbound -> dwell, homeward (no requester left
+// to unload at), returned (a timed trip, or its ship left its berth); dwell -> homeward, returned; homeward ->
+// returned; returned -> idle (complete).
 pure fn StateMove(From: int, To: int) -> bool {
     if From == 0 {
         return To == 1
@@ -905,10 +1063,10 @@ pure fn StateMove(From: int, To: int) -> bool {
         return To == 2 || To == 3 || To == 0
     }
     if From == 2 {
-        return To == 3 || To == 0
+        return To == 3 || To == 0 || To == 1
     }
     if From == 3 {
-        return To == 4 || To == 6
+        return To == 4 || To == 5 || To == 6
     }
     if From == 4 {
         return To == 5 || To == 6
@@ -968,6 +1126,7 @@ fn DropJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Id: int) {
     MapLoad.JobDropped.Remove(Id)
     MapLoad.JobShort.Remove(Id)
     MapLoad.ManualDepart.Remove(Id)
+    MapLoad.ShipGone.Remove(Id)
     SetState(MapLoad, Id, StateIdle())
     BPL_FDStore.Set(MapLoad, "j" + string(Id), "")
 }

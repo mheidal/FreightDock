@@ -151,6 +151,9 @@ fn RestoreJob(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Pid: int,
         if gp.Length() >= 3 {
             let res = name(gp[0])
             MapLoad.JobGoods[BPL_FDNet.JobKey(Pid, res)] = KismetStringLibrary.Conv_StringToInt(gp[1])
+            // asked to load, as before the reload (MapLoad.Requested isn't saved): a voyage delivers these whatever
+            // the requester's deficits now say
+            MapLoad.Requested.Add(BPL_FDNet.JobKey(Pid, res))
             let parked = KismetStringLibrary.Conv_StringToInt(gp[2])
             if parked > 0 {
                 MapLoad.JobGoods[BPL_FDNet.ParkKey(Pid, res)] = parked
@@ -296,7 +299,12 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
     BPL_FDNet.ParkStray(MapLoad, Dock, BPL_FDNet.Manifest(MapLoad, id))
     let held = MapLoad.HoldCounts(Ship)
     let hold = held.Counts
+    // off duty nothing is expected to move; a dock without workers counts as at work (nobody is coming: what it
+    // waits for stalls)
     let onDuty = BPL_FDNet.OnDuty(MapLoad, Dock)
+    if BPL_FDNet.NoWorkers(Dock) {
+        onDuty = true
+    }
 
     // the job is moving while any of its goods gained since the last plan or is being carried: then no good's stall
     // clock runs
@@ -357,12 +365,17 @@ fn Plan(MapLoad:/Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, 
             MapLoad.PickupSince[key] = now
             // for the dock GUI ("good=units,..." until the job ends)
             let was = MapLoad.JobDropped.Find(id)
-            let note = string(res) + "=" + string(units - got)
+            // "n" after the units: the inputs hold none of it any more (else no hauler came for it)
+            let inputs = BPL_FDNet.SourceStock(MapLoad, Dock, true).Stock.Find(res)
+            let inStock = if inputs.ReturnValue { inputs.Value } else { 0 }
+            let note = string(res) + "=" + string(units - got) + (if inStock > 0 { "" } else { "n" })
             MapLoad.JobDropped[id] = if was.ReturnValue { was.Value + "," + note } else { note }
-            // the dispatcher leaves the good with this dock until its input warehouses' free stock changes
+            // the dispatcher leaves the good with this dock until its input warehouses' free stock changes, or
+            // BPL_FDDispatch.BarFor() has passed
             BPL_FDDispatch.Probe(MapLoad, "Probe: job " + string(id) + " " + string(res) + " stalled, " + string(units) + " -> " + string(got) + " (at dock " + string(atDock) + ")")
             let left = BPL_FDNet.SourceStock(MapLoad, Dock).Stock.Find(res)
             MapLoad.CutStock[BPL_FDNet.JobKey(id, res)] = if left.ReturnValue { left.Value } else { 0 }
+            MapLoad.CutAt[BPL_FDNet.JobKey(id, res)] = now
         }
 
         // the manifest, or what is aboard when more (left as it is); what waits in the input slot or is carried
@@ -428,7 +441,7 @@ fn RequestFor(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Wor
 // now with what it has, not waiting for goods still being carried to it: its departure is marked pending
 // (state depart pending) and sent by hand (ManualDepart), so it doesn't wait for carriers, and FreightTick runs at once.
 // ManualDepart also makes BPL_FDDispatch.Trim note a short departure as sent early.
-// No job, ship away or nothing aboard: nothing (the button is disabled then).
+// No job, ship away or no freight aboard (provisions don't count): nothing (the button is disabled then).
 fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     let dock = MapLoad.FindDockUnderCursor().Dock
     if dock == none {
@@ -443,14 +456,15 @@ fn DeliverSelected(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
     if BPL_FDNet.StateOf(MapLoad, id) == BPL_FDNet.StateReturned() {
         return
     }
-    if BPL_FDNet.TargetOf(MapLoad, dock) == none {
+    let target = BPL_FDNet.TargetOf(MapLoad, dock)
+    if target == none {
         return
     }
     let ship = BPL_FDNet.ShipAtDock(MapLoad, dock)
     if ship == none {
         return
     }
-    if MapLoad.HoldCounts(ship).Total <= 0 {
+    if MapLoad.FreightCounts(ship, dock, target).Freight <= 0 {
         return
     }
     MapLoad.ManualDepart[id] = true
@@ -475,6 +489,9 @@ fn FreightTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         let target = BPL_FDNet.TargetOf(MapLoad, dock)
         if target != none {
             DockTick(MapLoad, dock, target, now)
+        } else if BPL_FDNet.IsSailing(MapLoad, BPL_FDNet.DockId(dock)) {
+            // its requester is gone: a timed trip still ends (DockTick does nothing else while away)
+            DockTick(MapLoad, dock, target, now)
         }
     }
     BPL_FDNet.SaveJobs(MapLoad)
@@ -488,7 +505,9 @@ fn DockTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkD
         if !MapLoad.Voyages.Contains(id) {
             let departed = MapLoad.DepartedAt.Find(id)
             if Now - departed.Value >= MapLoad.TripSeconds {
-                MapLoad.TransferFrom(Dock, Target)
+                if Target != none {
+                    MapLoad.TransferFrom(Dock, Target)
+                }
                 MapLoad.DepartedAt.Remove(id)
                 MapLoad.LoadingSince.Remove(id)
                 MapLoad.ClearRequested(id)
@@ -513,6 +532,11 @@ fn DockTick(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkD
     let loaded = MapLoad.HoldCounts(ship).Total
     let freight = MapLoad.FreightCounts(ship, Dock, Target).Freight
     if freight <= 0 {
+        // a departure pending with no freight aboard and none on its way (its goods were cut): back to loading
+        if pending && inFlight == 0 {
+            MapLoad.ManualDepart.Remove(id)
+            BPL_FDNet.SetState(MapLoad, id, BPL_FDNet.StateLoading())
+        }
         return
     }
     // the depart-after clock runs from the first freight aboard

@@ -168,7 +168,7 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 widget IncomingBox: VerticalBox {
                     widget IncomingHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                     widget IncomingRowsBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
-                    // why there are no rows (no output warehouses, no requests, all met), and that unloading needs a ship
+                    // why there are no rows (no output warehouses, no requests, all met)
                     widget IncomingNote: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#9c917cff") slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 0))
                     widget DivIncoming: HR_HorizontalBallDivider slot(Padding: Margin(Left: 0, Top: 6, Right: 0, Bottom: 6))
                 }
@@ -1373,12 +1373,21 @@ fn Refresh(Dock: WorkDock) {
     BPL_FDNet.Took(MapLoad, "refresh.rows", tR)
     tR = BPL_FDNet.Now()
 
-    let line = ShipLine(Dock, id, target != none)
-    if target == none {
+    let hasJob = BPL_FDNet.StateOf(MapLoad, id) != BPL_FDNet.StateIdle()
+    let line = ShipLine(Dock, id, hasJob)
+    if !hasJob {
         // no job: why the ship is idle (ShipLine then has only the hold, or nothing without a ship)
         let why = MapLoad.IdleWhy.Find(id)
         let idle = if !provides { BPL_FDText.T1("freightdock.ship.idleWhy", "why", BPL_FDText.T("freightdock.idle.notProviding")) } else if why.ReturnValue { BPL_FDText.T1("freightdock.ship.idleWhy", "why", why.Value) } else { BPL_FDText.T("freightdock.ship.idle") }
         line = if line == "" { idle } else { idle + "\n" + line }
+    }
+    // a requesting dock without its own ship (and not away with it): nothing is unloaded here
+    if BPL_FDNet.HasRole(Dock.activeTradePartnerId, BPL_FDNet.Request()) {
+        if !BPL_FDNet.IsSailing(MapLoad, id) {
+            if BPL_FDNet.ShipAtDock(MapLoad, Dock) == none {
+                line = line + "\n" + BPL_FDText.T("freightdock.ship.cantUnload")
+            }
+        }
     }
     ShipText.SetText(text(line))
     // how long it has been loading: from its first freight aboard until it sails
@@ -1401,8 +1410,8 @@ fn Refresh(Dock: WorkDock) {
     let tripOver = BPL_FDNet.StateOf(MapLoad, id) == BPL_FDNet.StateReturned()
     let aboard = 0
     let berthed = MapLoad.ShipAtDock(Dock).Ship
-    if berthed != none {
-        aboard = MapLoad.HoldCounts(berthed).Total
+    if berthed != none && target != none {
+        aboard = MapLoad.FreightCounts(berthed, Dock, target).Freight
     }
     // Deliver now was pressed (ManualDepart, departure pending); a departure waiting for haulers can still be sped up
     let pressed = false
@@ -1421,7 +1430,7 @@ fn Refresh(Dock: WorkDock) {
     FillUnload(Dock)
     BPL_FDNet.Took(MapLoad, "refresh.unload", tR)
     tR = BPL_FDNet.Now()
-    FillManifest(Dock, id, target != none && !tripOver)
+    FillManifest(Dock, id, hasJob && !tripOver)
     BPL_FDNet.Took(MapLoad, "refresh.manifest", tR)
     tR = BPL_FDNet.Now()
     FillIncoming(Dock, id)
@@ -1553,6 +1562,8 @@ fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
                 } else if jobState == BPL_FDNet.StateDepartPending() {
                     // waiting for the haulers still on their way (no time limit), or sent with Deliver now
                     s = BPL_FDText.T(if MapLoad.ManualDepart.Contains(Id) { "freightdock.ship.departing" } else { "freightdock.ship.leaving" }) + "\n"
+                } else if BPL_FDNet.NoWorkers(Dock) {
+                    s = BPL_FDText.T("freightdock.ship.noWorkers") + "\n"
                 } else if !BPL_FDNet.OnDuty(MapLoad, Dock) {
                     s = BPL_FDText.T("freightdock.ship.offDuty") + "\n"
                 } else if MapLoad.LoadingSince.Contains(Id) {
@@ -1712,16 +1723,25 @@ fn FillUnload(Dock: WorkDock) {
     }
 }
 
-// The goods dropped from the job (MapLoad.JobDropped, "good=units,..."), by their names in the player's language.
+// The goods dropped from the job (MapLoad.JobDropped, "good=units,...", units followed by "n" when the inputs held
+// none of it any more), by their names in the player's language.
 fn Dropped(Id: int) {
     let d = MapLoad.JobDropped.Find(Id)
     let parts: array<string> = []
+    let gone: array<string> = []
     if d.ReturnValue {
         for entry in KismetStringLibrary.ParseIntoArray(d.Value, ",", true) {
             let kv = KismetStringLibrary.Split(entry, "=", ESearchCase.CaseSensitive, ESearchDir.FromStart)
             let def = ArcoGameInstance.GetResourceDefCopy(self, name(kv.LeftS))
             let word = LocManager.GetWordFromKey(def.stringKey)
-            parts.Add(kv.RightS + " " + (if word == "" { kv.LeftS } else { word }))
+            let noStock = KismetStringLibrary.EndsWith(kv.RightS, "n", ESearchCase.IgnoreCase)
+            let count = if noStock { KismetStringLibrary.LeftChop(kv.RightS, 1) } else { kv.RightS }
+            let part = count + " " + (if word == "" { kv.LeftS } else { word })
+            if noStock {
+                gone.Add(part)
+            } else {
+                parts.Add(part)
+            }
         }
     }
     // left with less than the manifest (BPL_FDDispatch.Trim): "S:" sent early or "T:" at the time limit, then
@@ -1745,6 +1765,9 @@ fn Dropped(Id: int) {
     let lines: array<string> = []
     if parts.Length() > 0 {
         lines.Add(BPL_FDText.T1("freightdock.ship.dropped", "goods", KismetStringLibrary.JoinStringArray(parts, ", ")))
+    }
+    if gone.Length() > 0 {
+        lines.Add(BPL_FDText.T1("freightdock.ship.droppedNoStock", "goods", KismetStringLibrary.JoinStringArray(gone, ", ")))
     }
     if shortParts.Length() > 0 {
         lines.Add(BPL_FDText.T1(shortKey, "goods", KismetStringLibrary.JoinStringArray(shortParts, ", ")))
@@ -1832,14 +1855,9 @@ fn FillIncoming(Dock: WorkDock, Id: int) {
         IncomingRows[i].SetVisibility(ESlateVisibility.Collapsed)
         i += 1
     }
-    // a requesting dock: without its own ship nothing is unloaded; without rows, why
+    // a requesting dock without rows: why
     let lines: array<string> = []
     if requests {
-        let ownShip = BPL_FDNet.ShipAtDock(MapLoad, Dock)
-        let ownAway = BPL_FDNet.IsSailing(MapLoad, Id)
-        if ownShip == none && !ownAway {
-            lines.Add(BPL_FDText.T("freightdock.incoming.noShip"))
-        }
         if k == 0 {
             lines.Add(OutputsHint(Dock))
         }
@@ -1866,11 +1884,19 @@ fn OutputsHint(Dock: WorkDock) -> string {
             anyLeft = true
             let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
             if rb != none {
+                let inbound = rb.CalcStorageTab().inbound.counts
                 for res, slot in rb.m_stockpile.Slots {
                     if slot.minHold > 0 {
                         anySet = true
+                        // short, with haulers bringing it; short without (another dock sharing the warehouse has
+                        // the goods, or a job with them) counts as satisfied: nothing more is wanted here
                         if slot.count < slot.minHold {
-                            short = true
+                            let coming = inbound.Find(res)
+                            if coming.ReturnValue {
+                                if coming.Value > 0 {
+                                    short = true
+                                }
+                            }
                         }
                     }
                 }

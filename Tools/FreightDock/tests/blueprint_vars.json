@@ -150,7 +150,9 @@
   "ManualDepart": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"bool\"),ContainerType=Map)",
   "JobsRestored": "(PinCategory=\"bool\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
   "UpkeepAt": "(PinCategory=\"real\",PinSubCategory=\"double\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())",
-  "JobState": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)"
+  "JobState": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"int\"),ContainerType=Map)",
+  "ShipGone": "(PinCategory=\"int\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"bool\"),ContainerType=Map)",
+  "CutAt": "(PinCategory=\"string\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=(TerminalCategory=\"real\",TerminalSubCategory=\"double\"),ContainerType=Map)"
  },
  "BP_Startup": {
   "ModAPI": "(PinCategory=\"object\",PinSubCategoryObject=\"/Script/CoreUObject.Class'/Script/SystemCore.ModAPI'\",PinSubCategoryMemberReference=(MemberGuid=00000000000000000000000000000000),PinValueType=())"
