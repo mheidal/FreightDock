@@ -152,6 +152,12 @@ For FreightDock (decided 2026-11-09; built in WBP_FDMapPanel):
 - **Names:** only the hovered dock's: a label beside the marker nearest the cursor (within 16 units). A widget, not canvas text: text drawn into the render target didn't show.
 - **Mapping:** world position / 50 (a cell's side; buildings stand at cell centres, 25 past a multiple of 50) less the terrain's origin. `GridMath.GetScale` gives 1 and `ToGridPosition`/`ToInt` give world units. Confirmed 2026-11-09 by water and land around each dock at 50, axes as drawn.
 - **Later idea (user 2026-11-09):** a stylised, subway-map view: islands as simple shapes, lines between the docks of each network (which islands they connect, not the routes taken).
+  - Decided 2026-11-11, for a release after this one:
+    - a line is a network: one line through all of its docks, joined by the shortest total length (membership, not provider-requester pairs or sailed routes);
+    - every network in the colony is shown, each one switchable on and off;
+    - docks stay at their true positions (snapped to a coarse grid), links drawn with 45-degree bends; no free rearranging.
+  - Open: a toggle on the existing map, or a new panel over a large part of the screen.
+  - Stages as analysed: 1 - flat terrain, station markers (interchange capsule), lines with parallel bands where networks share a link, all station names as widgets (text drawn into the render target doesn't show); 2 - ships as dots on their line, active jobs bolder, a legend; 3 - islands as clean outlines, shared trunks between islands.
 
 ## Dispatch: global jobs (decided 2026-11-05)
 

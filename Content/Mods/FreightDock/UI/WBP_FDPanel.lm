@@ -910,7 +910,7 @@ fn Leave() {
                 now = KismetSystemLibrary.GetDisplayName(tool.m_currentlySelectedGridActor)
             }
         }
-        ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Network GUI closed: dock " + string(ShownId) + " no longer selected; selected now: " + now, false)
+        //ModAPI.GetModAPI().LogMessage(MapLoad.Stamp().Result + "Network GUI closed: dock " + string(ShownId) + " no longer selected; selected now: " + now, false)
     }
     ShownId = -1
     UndoDock = -1
