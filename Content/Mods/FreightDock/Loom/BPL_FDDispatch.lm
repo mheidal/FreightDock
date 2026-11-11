@@ -906,6 +906,18 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
     if anyHeld && !anyFree {
         return BPL_FDText.T("freightdock.idle.inputsTaken")
     }
+    // none of what is asked for is a good its input warehouses take
+    if !anyFree {
+        let supplies = false
+        for goodS in open {
+            if BPL_FDNet.SuppliesGood(MapLoad, P, goodS) {
+                supplies = true
+            }
+        }
+        if !supplies {
+            return BPL_FDText.T("freightdock.idle.noTakes")
+        }
+    }
     let total = 0
     for res, n in stock {
         total += n

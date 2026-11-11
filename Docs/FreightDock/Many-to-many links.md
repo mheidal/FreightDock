@@ -370,7 +370,7 @@ Everything is shown per dock, in its dock GUI; there is no colony-wide display. 
    - A requester with no request levels set shows no hint; a dock that requests and has no ship says "No ship: can't unload" in its ship section.
    - The map has no legend.
    - The dock GUI needs a scrollbar: a long manifest, many input warehouses, or a target with many output warehouses make it taller than the screen.
-6. State edge cases (code review, 2026-11-09): 1 to 12 built 2026-11-10 (6, 7 and 12 not yet tested in game); the Lower list is open.
+6. State edge cases (code review, 2026-11-09): 1 to 12 and the Lower list built 2026-11-10 and confirmed in game.
    1. A loading job whose ship is gone (recalled, reassigned, destroyed, or a voyage aborted before the pass saw it sail) is never cancelled: its manifest stays bound and the requester starves. Cancel it after a pass of grace.
    2. Requester gone mid-voyage: the provider's dock GUI shows "Idle" over "On the way" (read "has a job" from `JobTo`); a timed trip (no stand-in) to a gone target may never end (`FreightTick` skips a dock without a target). Check, then end it.
    3. A provider with no workers assigned (player-only) counts as off duty all day: its job never stalls or times out. New status "no workers assigned", apart from off duty, as an idle and INCOMING reason.
@@ -384,6 +384,7 @@ Everything is shown per dock, in its dock GUI; there is no colony-wide display. 
    11. "Kept for own outputs" applies to provide-only docks too. Only with the request role.
    12. One warehouse as both a dock's input and output can bounce goods between two "both" docks. Built: such a warehouse of a requesting dock keeps its request level (`BPL_FDNet.KeepsLevel`, in `SourceStock` and `Pool`).
    - Lower, built 2026-11-10: a restored job's goods go back into `Requested` (a voyage restored mid-way delivers them whatever the target's deficits now say); a good dropped as stalled when the inputs held none of it says "(no stock)", not "(no hauler)" (`JobDropped` units followed by "n"); the minimum-load idle reason names the requester the provider had the most for ("no dock requesting minimum load (most: n for dock)"); idle reason "inputs reserved" when what is asked for is in the inputs but reserved for pickup or promised to another dock's job. Leftovers nothing comes for stay where they are: the section is now "AT DOCK" (a hint that an output warehouse taking the good would clear them).
+   - Text pass, 2026-11-10: Mod Option, idle, INCOMING and ship texts reworded (`BPL_FDText`); new idle reason "does not stock any requested goods" (`idle.noTakes`) when nothing asked for is in the inputs and no input warehouse whitelists any of it.
 7. Faster rescans: update the blocked-cell map incrementally when a building is placed (its footprint added at once) instead of rebuilding the whole map over ~20 s; a ship that departs meanwhile sails a course planned before the building.
 8. Release: version bump, Technical description, README (to add there: with specific input warehouses set, provisions stay off a ship as long as no input warehouse whitelists canned food).
 
