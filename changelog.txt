@@ -1,4 +1,45 @@
 ========================
+2026-11-11 v1.0
+
+Features
+- Freight Docks now support many-to-many deliveries according to a network structure, rather than one-to-one pairings.
+- A dispatcher system assigns delivery jobs between Freight Docks on the same network, prioritizing larger deliveries and shorter trips, with weighting to ensure that no requester is neglected.
+- Freight Docks can join networks as providers, requesters, or both. Deliveries are scheduled from providers to requesters.
+- Freight Docks can join up to 3 networks.
+- A single save file can have up to 31 networks.
+- 1.x save files are converted to the network system on load. A save file with the 2.0 format cannot be converted to the 1.x format.
+- Various displays of network connectivity.
+- A minimap showing Freight Docks on each network.
+- A new GUI panel to control Freight Docks network membership, and show which goods are requested on each network.
+- Jobs can now survive a save-and-load cycle.
+- Settings can be copied and pasted between Freight Docks. This copies network membership.
+- Freight Dock's GUI panel shows: 
+- - thorough diagnosis of why deliveries are not being made.
+- - goods available to ship.
+- - manifest for assigned job.
+- - total requests at target of assigned job.
+- A Freight Dock can be paused, preventing the assignment of future jobs until unpaused.
+- Freight Docks and networks can be renamed.
+- New setting, "Minimum load". Keeps ships from being assigned deliveries which would fill too little of their hold. Deliveries still assigned to requesters which have waited long enough.
+- Selecting a dock draws arcs connecting it to docks it trades with, color-coded by network.
+- Requesters and providers are color-coded throughout the interface, red for providers and blue for requesters.
+
+Changes
+- The F5 pairing key has been removed.
+- Deliveries are only assigned to providers which have input warehouses linked.
+- A Freight Dock which is both a provider and a requester does not deliver goods which its output warehouses request.
+- Several Freight Docks can be linked to the same input or output warehouses without double-counting.
+- "Depart after" setting can now be set to "Never".
+- "Deliver now" causes the ship to depart immediately rather than waiting for the final hauler trip to complete.
+
+Optimizations
+- Route planning is spread across many frames to reduce hitches.
+- Route planning reacts faster to placement of buildings.
+
+Bugfixes
+- Goods can be dropped from job manifests if they are unavailable or unreachable.
+
+========================
 2026-11-03 v1.1
 
 Bugfixes
