@@ -79,6 +79,9 @@ var TitleTip: WBP_FDTip
 // the icon buttons: the network GUI (route, NETWORKS line) and the map (spyglass, header), with their tooltips
 var EditTex: soft<Texture2D> = /Game/Assets/Icons/icons8-route-96.icons8-route-96
 var MapTex: soft<Texture2D> = /Game/Assets/Icons/icons8-spyglass-90.icons8-spyglass-90
+var PencilTex: soft<Texture2D> = /Game/Assets/Icons/icons8-edit-128.icons8-edit-128
+// this dock's requests as last shown (ShowRequests)
+var OwnSig: string = "-"
 var EditTip: WBP_FDTip
 var MapTip: WBP_FDTip
 // Ctrl+C / Ctrl+V / Ctrl+Z on a freight dock (CopyKeys): the copied value (while HasCopy), and the last paste's dock
@@ -129,7 +132,11 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 // the dock's name (a click opens the rename popup over it), centred; the map button over its right end
                 widget TitleRow: Overlay {
                     widget TitleBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Center, VerticalAlignment: EVerticalAlignment.VAlign_Center) {
-                        widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                        // the game's pencil, as before its own renameable names
+                        widget TitleCell: HorizontalBox {
+                            widget TitlePencil: Image slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 0, Top: 0, Right: 5, Bottom: 0))
+                            widget Title: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center)
+                        }
                     }
                     widget MapRound: Arco_Button_CommonRound slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Right, VerticalAlignment: EVerticalAlignment.VAlign_Center)
                 }
@@ -166,6 +173,9 @@ widget Width: SizeBox(WidthOverride: 500.0) {
                 widget BodyCol: VerticalBox {
                 // what this dock's output warehouses want and what comes (WBP_FDIncomingRow); only for a dock that requests
                 widget IncomingBox: VerticalBox {
+                    // what its output warehouses ask for, unmet amounts under the icons (ShowRequests)
+                    widget OwnHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
+                    widget OwnBox: VerticalBox slot(Padding: Margin(Left: 8, Top: 2, Right: 0, Bottom: 6))
                     widget IncomingHead: TextBlock(Text: "", ColorAndOpacity: "#e8c872ff")
                     widget IncomingRowsBox: VerticalBox slot(Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 0))
                     // why there are no rows (no output warehouses, no requests, all met)
@@ -210,6 +220,9 @@ on Construct {
     PauseBtn.SetToolTip(PauseTip)
     TitleBtn.SetToolTip(TitleTip)
     PauseIcon.SetDesiredSizeOverride(Vector2D(X: 24.0, Y: 24.0))
+    TitlePencil.SetBrushFromTexture(PencilTex.load(), false)
+    TitlePencil.SetDesiredSizeOverride(Vector2D(X: 32.0, Y: 32.0))
+    TitlePencil.SetColorAndOpacity(LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0))
     EditTip = create_widget(WBP_FDTip)
     MapTip = create_widget(WBP_FDTip)
     ShipTip = create_widget(WBP_FDTip)
@@ -249,7 +262,8 @@ fn Labels() {
     PauseIcon.SetColorAndOpacity(LinearColor(R: 0.91, G: 0.78, B: 0.45, A: 1.0))
     PauseTip.Setup(BPL_FDText.T(if paused { "freightdock.panel.resumeTip" } else { "freightdock.panel.pauseTip" }), SmallFont)
     TitleTip.Setup(BPL_FDText.T("freightdock.panel.renameTip"), SmallFont)
-    DestHead.SetText(text(BPL_FDText.T("freightdock.panel.targetOutput")))
+    DestHead.SetText(text(BPL_FDText.T("freightdock.panel.targetRequests")))
+    OwnHead.SetText(text(BPL_FDText.T("freightdock.panel.ownRequests")))
     SrcHead.SetText(text(BPL_FDText.T("freightdock.panel.thisInput")))
     Deliver.SetLabelText(BPL_FDText.T("freightdock.panel.deliverNow"))
     EditTip.Setup(BPL_FDText.T(if Editing { "freightdock.panel.closeEdit" } else { "freightdock.panel.edit" }), SmallFont)
@@ -367,6 +381,9 @@ fn NetChanged() {
         MapLoad.NextDispatch = 0.0
     }
     NextRefresh = 0.0
+    // the arcs and pointers of what is hovered (HoverStep) are worked out again: a ticked or unticked checkbox
+    // changes who provides or requests
+    HiKind = -1
 }
 
 fn DeliverClicked() {
@@ -1223,6 +1240,7 @@ fn TakeFonts() {
     NetSummary.SetFont(BodyFont)
     ManifestHead.SetFont(HeadFont)
     DestHead.SetFont(HeadFont)
+    OwnHead.SetFont(HeadFont)
     SrcHead.SetFont(HeadFont)
     ShipText.SetFont(BodyFont)
     IncomingNote.SetFont(SmallFont)
@@ -1386,10 +1404,26 @@ fn Refresh(Dock: WorkDock) {
 
     let hasJob = BPL_FDNet.StateOf(MapLoad, id) != BPL_FDNet.StateIdle()
     let line = ShipLine(Dock, id, hasJob)
+    // the idle reasons after the first, one a line (the ship line's tooltip)
+    let idleMore = ""
     if !hasJob {
-        // no job: why the ship is idle (ShipLine then has only the hold, or nothing without a ship)
+        // no job: why the ship is idle (ShipLine then has only the hold, or nothing without a ship): the first
+        // reason, with how many more there are
         let why = MapLoad.IdleWhy.Find(id)
-        let idle = if !provides { BPL_FDText.T1("freightdock.ship.idleWhy", "why", BPL_FDText.T("freightdock.idle.notProviding")) } else if why.ReturnValue { BPL_FDText.T1("freightdock.ship.idleWhy", "why", why.Value) } else { BPL_FDText.T("freightdock.ship.idle") }
+        let idleAll: array<string> = []
+        if provides && why.ReturnValue {
+            idleAll = KismetStringLibrary.ParseIntoArray(why.Value, "\n", true)
+        }
+        let idleFirst = ""
+        if idleAll.Length() > 0 {
+            idleFirst = idleAll[0]
+            if idleAll.Length() > 1 {
+                idleFirst += " (+" + string(idleAll.Length() - 1) + ")"
+                idleAll.Remove(0)
+                idleMore = KismetStringLibrary.JoinStringArray(idleAll, "\n")
+            }
+        }
+        let idle = if !provides { BPL_FDText.T1("freightdock.ship.idleWhy", "why", BPL_FDText.T("freightdock.idle.notProviding")) } else if idleFirst != "" { BPL_FDText.T1("freightdock.ship.idleWhy", "why", idleFirst) } else { BPL_FDText.T("freightdock.ship.idle") }
         line = if line == "" { idle } else { idle + "\n" + line }
     }
     // a requesting dock without its own ship (and not away with it): nothing is unloaded here
@@ -1406,6 +1440,9 @@ fn Refresh(Dock: WorkDock) {
     let sailingNow = BPL_FDNet.IsSailing(MapLoad, id)
     if loadingSince.ReturnValue && !sailingNow {
         ShipTip.Setup(BPL_FDText.T1("freightdock.ship.loadingFor", "time", Clock(int(BPL_FDNet.ColonyTime() - loadingSince.Value))), SmallFont)
+        ShipText.SetToolTip(ShipTip)
+    } else if idleMore != "" {
+        ShipTip.Setup(idleMore, SmallFont)
         ShipText.SetToolTip(ShipTip)
     } else {
         ShipText.SetToolTip(none)
@@ -1454,19 +1491,91 @@ fn Refresh(Dock: WorkDock) {
         w.SetVisibility(hasTarget)
     }
     if target != none {
-        DestSig = ShowGoods(DestBox, destIds, DestSig)
+        // less this dock's own job: its goods are in the manifest above
+        DestSig = ShowRequests(DestBox, target, id, DestSig)
+    }
+    if BPL_FDNet.HasRole(Dock.activeTradePartnerId, BPL_FDNet.Request()) {
+        OwnSig = ShowRequests(OwnBox, Dock, -1, OwnSig)
     }
     SrcSig = ShowGoods(SrcBox, srcIds, SrcSig)
     BPL_FDNet.Took(MapLoad, "refresh.tail", tR)
 }
 
-// Goods a row of the target's output and this dock's input sections.
-pure fn GoodsPerRow() -> int {
-    return 8
+// One good of a goods section, added to Wrap: its icon with Under beneath it, Tip on hover; dimmed when Dim. Plain
+// icons, without the gold outline of the game's icon rows.
+fn GoodCell(Wrap: WrapBox, Good: name, Under: string, Tip: string, Dim: bool) {
+    let cell = construct(VerticalBox, self)
+    let img = construct(Image, self)
+    img.SetBrushFromTexture(ArcoGameInstance.GetResourceDefCopy(self, Good).Icon, false)
+    img.SetDesiredSizeOverride(Vector2D(X: 28.0, Y: 28.0))
+    let imgSlot = cell.AddChildToVerticalBox(img)
+    imgSlot.SetHorizontalAlignment(EHorizontalAlignment.HAlign_Center)
+    let count = construct(TextBlock, self)
+    count.SetText(text(Under))
+    count.SetFont(SmallFont)
+    count.SetColorAndOpacity(SlateColor(SpecifiedColor: LinearColor(R: 0.72, G: 0.65, B: 0.5, A: 1.0)))
+    let countSlot = cell.AddChildToVerticalBox(count)
+    countSlot.SetHorizontalAlignment(EHorizontalAlignment.HAlign_Center)
+    cell.SetRenderOpacity(if Dim { 0.4 } else { 1.0 })
+    // the whole cell answers the cursor, for the tooltip
+    cell.SetVisibility(ESlateVisibility.Visible)
+    let hint = create_widget(WBP_FDTip)
+    hint.Setup(Tip, SmallFont)
+    cell.SetToolTip(hint)
+    let cellSlot = Wrap.AddChildToWrapBox(cell)
+    cellSlot.SetPadding(Margin(Left: 0, Top: 1, Right: 10, Bottom: 1))
+}
+
+// The requests of dock R's output warehouses (BPL_FDNet.RequestLevels, less provider ExceptJob's job), largest
+// request first: per good its icon with the unmet amount under it, dimmed when nothing is unmet; the tooltip names
+// the good and gives "have/asked" (unmet = asked - have). "None" without any request. Redrawn only when it differs
+// from Shown (the last shown); returns what is shown now.
+fn ShowRequests(Box: VerticalBox, R: WorkDock, ExceptJob: int, Shown: string) -> string {
+    let levels = BPL_FDNet.RequestLevels(MapLoad, R, ExceptJob)
+    let goods: array<name> = []
+    let amounts: array<int> = []
+    for res, n in levels.Asked {
+        let at = 0
+        while at < amounts.Length() {
+            if amounts[at] < n {
+                break
+            }
+            at += 1
+        }
+        goods.Insert(res, at)
+        amounts.Insert(n, at)
+    }
+    let sig = "r"
+    let k = 0
+    while k < goods.Length() {
+        let open0 = levels.Unmet.Find(goods[k])
+        sig += string(goods[k]) + ":" + string(amounts[k]) + ":" + string(if open0.ReturnValue { open0.Value } else { 0 }) + ","
+        k += 1
+    }
+    if sig == Shown {
+        return Shown
+    }
+    Box.ClearChildren()
+    if goods.Length() == 0 {
+        Row(Box, BPL_FDText.T("freightdock.panel.none"), Vector(X: 0.0, Y: 0.0, Z: 0.0), false)
+        return sig
+    }
+    let wrap = construct(WrapBox, self)
+    Box.AddChildToVerticalBox(wrap)
+    let i = 0
+    while i < goods.Length() {
+        let good = goods[i]
+        let asked = amounts[i]
+        let u = levels.Unmet.Find(good)
+        let unmet = if u.ReturnValue { u.Value } else { 0 }
+        GoodCell(wrap, good, string(unmet), BPL_FDNet.GoodWord(MapLoad, good) + " " + string(asked - unmet) + "/" + string(asked), unmet <= 0)
+        i += 1
+    }
+    return sig
 }
 
 // The free stock (count less what haulers have reserved) of the warehouses Ids, summed per good, largest first, as
-// rows of the game's icon cells (GoodsPerRow a row); "None" without any. Redrawn only when it differs from Shown (the
+// icon cells with the amount beneath (GoodCell); "None" without any. Redrawn only when it differs from Shown (the
 // last shown); returns what is shown now.
 fn ShowGoods(Box: VerticalBox, Ids: array<int>, Shown: string) -> string {
     let totals: map<name, int> = {}
@@ -1513,18 +1622,11 @@ fn ShowGoods(Box: VerticalBox, Ids: array<int>, Shown: string) -> string {
         Row(Box, BPL_FDText.T("freightdock.panel.none"), Vector(X: 0.0, Y: 0.0, Z: 0.0), false)
         return sig
     }
-    let counts: map<name, int> = {}
+    let wrap = construct(WrapBox, self)
+    Box.AddChildToVerticalBox(wrap)
     let i = 0
     while i < goods.Length() {
-        counts[goods[i]] = amounts[i]
-        let last = i == goods.Length() - 1
-        let full = counts.Length() >= GoodsPerRow()
-        if last || full {
-            let icons = create_widget(ResourceCollectionAsRowOfIcons)
-            Box.AddChildToVerticalBox(icons)
-            icons.SetData(ResourceCollection(counts: counts))
-            counts = {}
-        }
+        GoodCell(wrap, goods[i], string(amounts[i]), BPL_FDNet.GoodWord(MapLoad, goods[i]) + " " + string(amounts[i]), false)
         i += 1
     }
     return sig
@@ -1608,8 +1710,8 @@ fn ShipLine(Dock: WorkDock, Id: int, HasJob: bool) -> string {
     return s
 }
 
-// The dock's memberships in ascending network order ("1: provide   3: both", or "Not in a network"), and, while
-// editing, the network GUI's table.
+// The dock's memberships in ascending network order, one a line: the network's number and name in its colour, then
+// "provide" in red and / or "request" in blue (or "Not in a network"), and, while editing, the network GUI's table.
 fn FillNetworks(Dock: WorkDock) {
     let names: array<string> = ["", BPL_FDText.T("freightdock.role.provide"), BPL_FDText.T("freightdock.role.request"), BPL_FDText.T("freightdock.role.both")]
     let netNames = BPL_FDNet.NetNames(MapLoad)
@@ -1617,6 +1719,7 @@ fn FillNetworks(Dock: WorkDock) {
     let nets: array<int> = []
     let roles: array<int> = []
     let labels: array<string> = []
+    let heads: array<string> = []
     let key = ""
     let net = 1
     while net <= BPL_FDNet.MaxNet() {
@@ -1627,6 +1730,7 @@ fn FillNetworks(Dock: WorkDock) {
                 roles.Add(u.Roles[i])
                 let entry = BPL_FDText.T2("freightdock.panel.membership", "net", BPL_FDNet.NetLabel(net, netNames), "role", names[u.Roles[i]])
                 labels.Add(entry)
+                heads.Add(BPL_FDNet.NetLabel(net, netNames))
                 // the label's text, so a rename or a language change rebuilds the labels
                 key += entry + "|"
             }
@@ -1643,15 +1747,34 @@ fn FillNetworks(Dock: WorkDock) {
         NetEntryTips = []
         let k = 0
         while k < nets.Length() {
+            // the network in its colour (a long name wraps), then the role in the role's colour (red providing,
+            // blue requesting; both: the two words)
             let label = construct(TextBlock, self)
-            label.SetText(text(labels[k]))
+            label.SetText(text(heads[k]))
             label.SetColorAndOpacity(SlateColor(SpecifiedColor: BPL_FDNet.NetLinear(nets[k])))
             label.SetFont(BodyFont)
             label.SetAutoWrapText(true)
+            let entryLine = construct(HorizontalBox, self)
+            let labelSlot = entryLine.AddChildToHorizontalBox(label)
+            labelSlot.SetSize(SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+            labelSlot.SetVerticalAlignment(EVerticalAlignment.VAlign_Center)
+            let bit = 1
+            while bit <= 2 {
+                if (roles[k] & bit) != 0 {
+                    let word = construct(TextBlock, self)
+                    word.SetText(text(names[bit]))
+                    word.SetColorAndOpacity(SlateColor(SpecifiedColor: if bit == 1 { LinearColor(R: 0.807, G: 0.1, B: 0.074, A: 1.0) } else { LinearColor(R: 0.165, G: 0.631, B: 0.815, A: 1.0) }))
+                    word.SetFont(BodyFont)
+                    let wordSlot = entryLine.AddChildToHorizontalBox(word)
+                    wordSlot.SetPadding(Margin(Left: 6, Top: 0, Right: 0, Bottom: 0))
+                    wordSlot.SetVerticalAlignment(EVerticalAlignment.VAlign_Center)
+                }
+                bit += 1
+            }
             let box = construct(Border, self)
             box.SetBrushColor(LinearColor(R: 0.0, G: 0.0, B: 0.0, A: 0.0))
             box.SetPadding(Margin(Left: 0, Top: 0, Right: 8, Bottom: 0))
-            box.SetContent(label)
+            box.SetContent(entryLine)
             let tip = create_widget(WBP_FDMembersTip)
             box.SetToolTip(tip)
             NetEntries.AddChildToVerticalBox(box)

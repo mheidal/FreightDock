@@ -158,6 +158,89 @@ fn Committed(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: Work
     return out
 }
 
+// The request levels (minHold) of the dock's output warehouses, summed per good: how much it asks for in all, met
+// or not. The minimum load is measured against these (BPL_FDDispatch.Assign).
+fn AskedLevels(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock) -> map<name, int> {
+    let asked: map<name, int> = {}
+    if Dock == none {
+        return asked
+    }
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return asked
+    }
+    for wid in linker.m_destStockpileIds {
+        let b = BuildingById(MapLoad, wid)
+        if b != none {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            if rb != none {
+                for res, slot in rb.m_stockpile.Slots {
+                    if slot.minHold > 0 {
+                        let a = asked.Find(res)
+                        asked[res] = (if a.ReturnValue { a.Value } else { 0 }) + slot.minHold
+                    }
+                }
+            }
+        }
+    }
+    return asked
+}
+
+// What the dock's output warehouses ask for, per good with a request level (minHold) in any of them, "Keep empty"
+// ones included (their levels count too): Asked, the levels summed; Unmet, what of that is still open - each
+// warehouse's shortfall (its level less its stock and what haulers are bringing), less what is already the dock's
+// (Committed: waiting at the dock, or on jobs to it), leaving out provider ExceptJob's job while it has yet to
+// deliver (-1: none left out). For the dock GUI's request sections.
+fn RequestLevels(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Dock: WorkDock, ExceptJob: int, out Asked: map<name, int>, out Unmet: map<name, int>) {
+    let linker = cast(Dock.GetOwner().GetComponentByClass(StockpileLinker), StockpileLinker)
+    if linker == none {
+        return
+    }
+    for wid in linker.m_destStockpileIds {
+        let b = BuildingById(MapLoad, wid)
+        if b != none {
+            let rb = cast(b.GetComponentByClass(ResourceBuilding), ResourceBuilding)
+            if rb != none {
+                let inbound = rb.CalcStorageTab().inbound.counts
+                for res, slot in rb.m_stockpile.Slots {
+                    if slot.minHold > 0 {
+                        let a = Asked.Find(res)
+                        Asked[res] = (if a.ReturnValue { a.Value } else { 0 }) + slot.minHold
+                        let coming = inbound.Find(res)
+                        let short = KismetMathLibrary.Max(slot.minHold - slot.count - (if coming.ReturnValue { coming.Value } else { 0 }), 0)
+                        let u = Unmet.Find(res)
+                        Unmet[res] = (if u.ReturnValue { u.Value } else { 0 }) + short
+                    }
+                }
+            }
+        }
+    }
+    let mine = Committed(MapLoad, Dock)
+    if ExceptJob >= 0 {
+        let to = MapLoad.JobTo.Find(ExceptJob)
+        if to.ReturnValue {
+            if to.Value == DockId(Dock) && StateOf(MapLoad, ExceptJob) < StateDwell() {
+                for jres, units in Manifest(MapLoad, ExceptJob) {
+                    let m = mine.Find(jres)
+                    if m.ReturnValue {
+                        mine[jres] = m.Value - units
+                    }
+                }
+            }
+        }
+    }
+    let goods: array<name> = []
+    for good, n in Unmet {
+        goods.Add(good)
+    }
+    for good2 in goods {
+        let have = mine.Find(good2)
+        if have.ReturnValue {
+            Unmet[good2] = KismetMathLibrary.Max(Unmet[good2] - KismetMathLibrary.Max(have.Value, 0), 0)
+        }
+    }
+}
+
 // A warehouse's unmet requests per good: the game's logistics deficits, or for a "Keep empty" warehouse (which
 // reports none) KeepEmptyDeficits.
 fn WarehouseDeficits(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Warehouse: int) -> map<name, int> {

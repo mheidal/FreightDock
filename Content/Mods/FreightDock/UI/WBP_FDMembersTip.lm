@@ -1,28 +1,38 @@
 blueprint WBP_FDMembersTip : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDMembersTip
 
-// Tooltip of a network label in the dock GUI's NETWORKS line (WBP_FDPanel): the network's providers on one line in
-// red, its requesters on the next in blue (the pointer colours).
+// Tooltip of a network label in the dock GUI's NETWORKS line (WBP_FDPanel): the network's providers on one line,
+// its requesters on the next, each label in its role's colour (WBP_FDRoleLine). Also the tooltip of a network row's
+// provider and requester counts (WBP_FDNetRow), with one of the lines (SetupOne).
 
 widget Width: SizeBox(MaxDesiredWidth: 360.0) {
     widget Box: Border(BrushColor: "#0d1520f2", Padding: Margin(Left: 10, Top: 6, Right: 10, Bottom: 6)) {
         widget Col: VerticalBox {
-            widget Providers: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#e9594dff")
-            widget Requesters: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#71d0eaff") slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
+            widget Providers: WBP_FDRoleLine
+            widget Requesters: WBP_FDRoleLine slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
         }
     }
 }
 
 // "Providers: none", "Provider: A" or "Providers: A, B" (Singular / Plural: BPL_FDText keys with {names}).
-pure fn Line(Singular: name, Plural: name, Names: array<string>) -> string {
-    if Names.Length() == 0 {
-        return BPL_FDText.T1(Plural, "names", BPL_FDText.T("freightdock.members.none"))
-    }
-    return BPL_FDText.T1(if Names.Length() == 1 { Singular } else { Plural }, "names", KismetStringLibrary.JoinStringArray(Names, ", "))
+fn Fill(Row: WBP_FDRoleLine, Role: int, Singular: name, Plural: name, Listed: array<string>, Font: SlateFontInfo) {
+    let label = BPL_FDText.Lead(if Listed.Length() == 1 { Singular } else { Plural })
+    Row.Setup(Role, label, if Listed.Length() == 0 { BPL_FDText.T("freightdock.members.none") } else { KismetStringLibrary.JoinStringArray(Listed, ", ") }, Font)
 }
 
 fn Setup(ProviderNames: array<string>, RequesterNames: array<string>, Font: SlateFontInfo) {
-    Providers.SetText(text(Line("freightdock.members.provider", "freightdock.members.providers", ProviderNames)))
-    Requesters.SetText(text(Line("freightdock.members.requester", "freightdock.members.requesters", RequesterNames)))
-    Providers.SetFont(Font)
-    Requesters.SetFont(Font)
+    Fill(Providers, 1, "freightdock.members.provider", "freightdock.members.providers", ProviderNames, Font)
+    Fill(Requesters, 2, "freightdock.members.requester", "freightdock.members.requesters", RequesterNames, Font)
+    Providers.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    Requesters.SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+}
+
+// Only the providers' line (Role 1) or the requesters' (2).
+fn SetupOne(Role: int, Listed: array<string>, Font: SlateFontInfo) {
+    if Role == 1 {
+        Fill(Providers, 1, "freightdock.members.provider", "freightdock.members.providers", Listed, Font)
+    } else {
+        Fill(Requesters, 2, "freightdock.members.requester", "freightdock.members.requesters", Listed, Font)
+    }
+    Providers.SetVisibility(if Role == 1 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
+    Requesters.SetVisibility(if Role == 1 { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible })
 }

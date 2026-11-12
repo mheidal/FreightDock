@@ -13,8 +13,9 @@ widget Width: SizeBox(MaxDesiredWidth: 320.0) {
                 widget GoodName: LocTextBlock(ColorAndOpacity: "#e8c872ff") slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 7, Top: 0, Right: 0, Bottom: 0))
             }
             widget Amounts: TextBlock(Text: "", ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 0, Top: 3, Right: 0, Bottom: 0))
-            widget Askers: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
-            widget Suppliers: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
+            // "Requested by:" in the requesters' blue, "Provided by:" in the providers' red
+            widget Askers: WBP_FDRoleLine slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
+            widget Suppliers: WBP_FDRoleLine slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
             widget NoProvider: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#9c917cff") slot(Padding: Margin(Left: 0, Top: 2, Right: 0, Bottom: 0))
         }
     }
@@ -28,13 +29,11 @@ fn Setup(Res: name, Requested: int, Stocked: int, Provided: bool, RequestedBy: s
     Amounts.SetText(text(BPL_FDText.T2("freightdock.good.amounts", "req", string(Requested), "stock", string(Stocked))))
     NoProvider.SetText(text(BPL_FDText.T("freightdock.good.noProvider")))
     NoProvider.SetVisibility(if Provided { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible })
-    Askers.SetText(text(BPL_FDText.T1("freightdock.good.requestedBy", "names", RequestedBy)))
+    Askers.Setup(2, BPL_FDText.Lead("freightdock.good.requestedBy"), RequestedBy, Font)
     Askers.SetVisibility(if RequestedBy == "" { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible })
-    Suppliers.SetText(text(BPL_FDText.T1("freightdock.good.suppliedBy", "names", SuppliedBy)))
+    Suppliers.Setup(1, BPL_FDText.Lead("freightdock.good.suppliedBy"), SuppliedBy, Font)
     Suppliers.SetVisibility(if SuppliedBy == "" { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible })
     GoodName.SetFont(Font)
     Amounts.SetFont(Font)
-    Askers.SetFont(Font)
-    Suppliers.SetFont(Font)
     NoProvider.SetFont(Font)
 }

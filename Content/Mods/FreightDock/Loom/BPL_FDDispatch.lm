@@ -28,8 +28,9 @@ pure fn GoodValue(Units: int, Age: float) -> float {
     return float(Units) * (1.0 + Age / Tau())
 }
 
-// Whether a job of Units is big enough: at least Share of the smaller of the hold and what the requester wants of the
-// goods this provider has (WantTotal), or the oldest demand it would meet has waited MaxWait.
+// Whether a job of Units is big enough: at least Share of the smaller of the hold and the requester's full requests
+// for the goods this provider has (WantTotal: the request levels, met or not), or the oldest demand it would meet
+// has waited MaxWait.
 pure fn MeetsMinimum(Units: int, Share: float, Hold: int, WantTotal: int, OldestAge: float, MaxWait: float) -> bool {
     if Units <= 0 {
         return false
@@ -711,16 +712,22 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
     // lowers what is open, so a request not open now won't be later in this pass)
     let wKey: array<string> = []
     let wGood: array<name> = []
+    // each open request's full level (the requester's request for the good in all, met or not; at least what is
+    // open): what the minimum load is measured against
+    let wLevel: array<int> = []
     let wStart: map<int, int> = {}
     let wCount: map<int, int> = {}
     for wrid in pairRid {
         if !wStart.Contains(wrid) {
             wStart[wrid] = wKey.Length()
             let wn = 0
+            let levels = BPL_FDNet.AskedLevels(MapLoad, BPL_FDNet.DockIn(MapLoad, wrid))
             for wk, wopen in Want {
                 if wopen > 0 && KismetStringLibrary.StartsWith(wk, Prefix(wrid), ESearchCase.CaseSensitive) {
                     wKey.Add(wk)
                     wGood.Add(GoodOf(wk))
+                    let lv = levels.Find(GoodOf(wk))
+                    wLevel.Add(KismetMathLibrary.Max(if lv.ReturnValue { lv.Value } else { 0 }, wopen))
                     wn += 1
                 }
             }
@@ -780,9 +787,11 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
                         let fetchable = fromPool + (if pa.ReturnValue { pa.Value } else { 0 })
                         let fetched = KismetMathLibrary.Min(KismetMathLibrary.Min(open - fromAboard, fetchable), left)
                         left -= fetched
-                        // the minimum load is measured against the goods this provider has at all
+                        // the minimum load is measured against the full requests for the goods this provider
+                        // has at all, not against what of them is still unmet: a request part-filled doesn't
+                        // bring a small top-up trip
                         if fromAboard + fetchable > 0 {
-                            total += open
+                            total += wLevel[j]
                         }
                         let since = MapLoad.DemandSince.Find(key)
                         let age = if since.ReturnValue { now - since.Value } else { 0.0 }
@@ -834,6 +843,7 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
     let noOpen = BPL_FDText.T("freightdock.idle.noOpen")
     let covered = BPL_FDText.T("freightdock.idle.covered")
     let generic = BPL_FDText.T("freightdock.idle.noRequests")
+    let noInputs = BPL_FDText.T("freightdock.idle.noInputs")
     let qi = 0
     while qi < idle.Length() {
         if !done.Contains(qi) {
@@ -844,12 +854,26 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
             let mi = minIdle.Find(qid)
             if reason == noOpen || reason == covered {
                 MapLoad.IdleWhy[qid] = reason
-            } else if base != generic {
-                MapLoad.IdleWhy[qid] = base
-            } else if mi.ReturnValue {
-                MapLoad.IdleWhy[qid] = mi.Value
             } else {
-                MapLoad.IdleWhy[qid] = reason
+                // every reason, one a line, in the order they used to win: the dock GUI shows the first and
+                // keeps the rest for its tooltip
+                let all: array<string> = []
+                if base != generic {
+                    all.Add(base)
+                }
+                if mi.ReturnValue {
+                    all.AddUnique(mi.Value)
+                }
+                // with no input warehouses, what IdleReason says of the inputs adds nothing
+                let said = all.Length() > 0
+                if base != noInputs {
+                    if reason != generic || !said {
+                        for part in KismetStringLibrary.ParseIntoArray(reason, "\n", true) {
+                            all.AddUnique(part)
+                        }
+                    }
+                }
+                MapLoad.IdleWhy[qid] = KismetStringLibrary.JoinStringArray(all, "\n")
             }
         }
         qi += 1
@@ -860,7 +884,8 @@ fn Assign(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, Want: ref map
     BPL_FDNet.Took(MapLoad, "assign.explain", tA)
 }
 
-// Why provider P (Pid), on duty with a ship and input warehouses, got no job: the first that applies of no requests on
+// Why provider P (Pid), on duty with a ship and input warehouses, got no job; the reasons that hold good by good
+// (kept for its own outputs, held back, taken by other jobs) all come, one a line. The first that applies of no requests on
 // its networks; requests covered by other ships; its inputs empty; its inputs lacking the requested
 // goods; a requested good its own output warehouses want; a requested good held back after a stall (Barred); the
 // requested goods in its inputs taken by other docks' jobs this pass (InPool, shared input warehouses).
@@ -938,13 +963,15 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
     if !stocked {
         return BPL_FDText.T("freightdock.idle.inputsLack")
     }
+    // per good from here on: every reason that applies, one a line
+    let reasons: array<string> = []
     for good2 in open {
         let s2 = stock.Find(good2)
         if s2.ReturnValue {
             if s2.Value > 0 {
                 let w = own.Find(good2)
                 if w.ReturnValue && w.Value >= s2.Value {
-                    return BPL_FDText.T1("freightdock.idle.keptForOwn", "good", BPL_FDNet.GoodWord(MapLoad, good2))
+                    reasons.AddUnique(BPL_FDText.T1("freightdock.idle.keptForOwn", "good", BPL_FDNet.GoodWord(MapLoad, good2)))
                 }
             }
         }
@@ -954,7 +981,7 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
         if s3.ReturnValue {
             if s3.Value > 0 {
                 if Barred(MapLoad, Pid, good3, s3.Value) {
-                    return BPL_FDText.T1("freightdock.idle.heldBack", "good", BPL_FDNet.GoodWord(MapLoad, good3))
+                    reasons.AddUnique(BPL_FDText.T1("freightdock.idle.heldBack", "good", BPL_FDNet.GoodWord(MapLoad, good3)))
                 }
             }
         }
@@ -965,12 +992,29 @@ fn IdleReason(MapLoad: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C, P: WorkDo
             if s4.Value > 0 {
                 // its stock is promised to jobs of docks sharing the input warehouse, not yet reserved
                 if PoolFree(MapLoad, P, InPool, good4) <= 0 {
-                    return BPL_FDText.T("freightdock.idle.inputsTaken")
+                    reasons.AddUnique(BPL_FDText.T("freightdock.idle.inputsTaken"))
                 }
             }
         }
     }
-    return BPL_FDText.T("freightdock.idle.noRequests")
+    // requested goods its inputs take but hold none of, on one line
+    let lacking: array<string> = []
+    for good5 in open {
+        let s5 = stock.Find(good5)
+        let has5 = if s5.ReturnValue { s5.Value > 0 } else { false }
+        if !has5 {
+            if BPL_FDNet.SuppliesGood(MapLoad, P, good5) {
+                lacking.Add(BPL_FDNet.GoodWord(MapLoad, good5))
+            }
+        }
+    }
+    if lacking.Length() > 0 {
+        reasons.Add(BPL_FDText.T1("freightdock.idle.goodsOut", "goods", KismetStringLibrary.JoinStringArray(lacking, ", ")))
+    }
+    if reasons.Length() == 0 {
+        return BPL_FDText.T("freightdock.idle.noRequests")
+    }
+    return KismetStringLibrary.JoinStringArray(reasons, "\n")
 }
 
 // How long a request waits before the minimum load no longer holds it back: the depart-after time, or 10 minutes

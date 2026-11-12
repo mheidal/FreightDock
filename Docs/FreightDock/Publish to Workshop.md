@@ -18,13 +18,13 @@ mod whose `.uplugin` lacks `"EngineVersion": "5.8"` or later (reason written to 
 ## Releasing
 
 1. Bump `Version` in `FreightDock.uplugin`, and set `Version()` in `Loom/BPL_FDStore.lm` to the same (the colony records it).
-   Check the F4 cheat and the loading probe are unhooked: no `BPL_FDCheat.Tick` or `BPL_FDCheat.Probe` call in `Step` of `UI/WBP_FDPanel.lm` (`BPL_FDCheat` itself stays, unused).
+   Check the F4 cheat and the probes are unhooked: in `Step` of `UI/WBP_FDPanel.lm` the `BPL_FDCheat.Tick(Owner)` line is commented out and there is no `BPL_FDCheat.Probe` call (`BPL_FDCheat` itself stays, unused); `Probing()`, `Timing()` and `LoadProbing()` in `Loom/BPL_FDNet.lm` return false.
 2. In the editor: right-click `Content/Mods/FreightDock` > **Cook & Install** (or `WWBlueprintToolset.CookAndInstall`, see `Tools/FreightDock/README.md`). Close the game first: it holds the installed pak open, so the install fails. Test in game.
 3. Stage:
    `powershell -ExecutionPolicy Bypass -File Tools/FreightDock/stage_workshop.ps1`
    It warns if a mod asset was saved after the pak was cooked.
 4. Upload:
-   `powershell -ExecutionPolicy Bypass -File Tools/FreightDock/upload_workshop.ps1 -Account <steam login> -ChangeNote "1.0: first release"`
+   `powershell -ExecutionPolicy Bypass -File Tools/FreightDock/upload_workshop.ps1 -Account <steam login> -ChangeNote "2.0: freight networks"`
    SteamCMD asks for the password and Steam Guard code unless the login is cached.
    SteamCMD's default path is `C:\Program Files\steamcmd\steamcmd.exe`; pass `-SteamCmd <path>` otherwise.
 

@@ -1,0 +1,23 @@
+blueprint WBP_FDRoleLine : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDRoleLine
+
+// A line naming docks by their role, in the tooltips (WBP_FDNetTip, WBP_FDMembersTip): the label ("Requested by:",
+// "Providers:") in the role's colour - red providing, blue requesting, as the map's markers and the pointers - then
+// the names in the text colour, wrapping.
+
+widget Line: HorizontalBox {
+    widget LabelP: TextBlock(Text: "", ColorAndOpacity: "#e9594dff")
+    widget LabelR: TextBlock(Text: "", ColorAndOpacity: "#71d0eaff")
+    widget Names: TextBlock(Text: "", AutoWrapText: true, ColorAndOpacity: "#ddd3bcff") slot(Padding: Margin(Left: 5, Top: 0, Right: 0, Bottom: 0), Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+}
+
+// Role 1: providers (red), 2: requesters (blue).
+fn Setup(Role: int, Label: string, Listed: string, Font: SlateFontInfo) {
+    LabelP.SetText(text(Label))
+    LabelR.SetText(text(Label))
+    LabelP.SetVisibility(if Role == 1 { ESlateVisibility.SelfHitTestInvisible } else { ESlateVisibility.Collapsed })
+    LabelR.SetVisibility(if Role == 1 { ESlateVisibility.Collapsed } else { ESlateVisibility.SelfHitTestInvisible })
+    Names.SetText(text(Listed))
+    LabelP.SetFont(Font)
+    LabelR.SetFont(Font)
+    Names.SetFont(Font)
+}

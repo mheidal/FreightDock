@@ -151,13 +151,7 @@ For FreightDock (decided 2026-11-09; built in WBP_FDMapPanel):
 - **Over the terrain** (drawn for the view in the same image, so markers keep their size; redrawn twice a second and when the view or the hovered network changes): each member dock as a marker, red providing and blue requesting (both: two side by side), the selected dock outlined and drawn last, each at the middle of its footprint's cells, on the dock as drawn (its bounds reach further out over the water); each provider's planned course to its job's target in the network's colour, with a Routes checkbox to hide them; ships under way as dots.
 - **Names:** only the hovered dock's: a label beside the marker nearest the cursor (within 16 units). A widget, not canvas text: text drawn into the render target didn't show.
 - **Mapping:** world position / 50 (a cell's side; buildings stand at cell centres, 25 past a multiple of 50) less the terrain's origin. `GridMath.GetScale` gives 1 and `ToGridPosition`/`ToInt` give world units. Confirmed 2026-11-09 by water and land around each dock at 50, axes as drawn.
-- **Later idea (user 2026-11-09):** a stylised, subway-map view: islands as simple shapes, lines between the docks of each network (which islands they connect, not the routes taken).
-  - Decided 2026-11-11, for a release after this one:
-    - a line is a network: one line through all of its docks, joined by the shortest total length (membership, not provider-requester pairs or sailed routes);
-    - every network in the colony is shown, each one switchable on and off;
-    - docks stay at their true positions (snapped to a coarse grid), links drawn with 45-degree bends; no free rearranging.
-  - Open: a toggle on the existing map, or a new panel over a large part of the screen.
-  - Stages as analysed: 1 - flat terrain, station markers (interchange capsule), lines with parallel bands where networks share a link, all station names as widgets (text drawn into the render target doesn't show); 2 - ships as dots on their line, active jobs bolder, a legend; 3 - islands as clean outlines, shared trunks between islands.
+- **Later idea (user 2026-11-09):** a stylised, subway-map view of the networks. Decided 2026-11-11 for a release after 2.0; see `Subway map.md`.
 
 ## Dispatch: global jobs (decided 2026-11-05)
 
@@ -397,7 +391,14 @@ Everything is shown per dock, in its dock GUI; there is no colony-wide display. 
    - Half a second after the last add, the buildings are indexed again and `RecheckRoutes` queues only the routes that now cross something. `PlannedBlocked` moves with the cells added, so the next rescan doesn't replan every route. Modlog: "Buildings added to the map: N blocked cells, M route(s) planned again".
    - A rescan's new map gets the buildings added in the last 2 minutes again when it is swapped in (`ReaddBuildings`, `AddedBuildings`, `AddedAt`): its building list may predate them.
    - The full rescan stays at load, on F10 and every 20 s; demolitions and terrain changes wait for it.
-8. Release: version bump, Technical description, README (to add there: with specific input warehouses set, provisions stay off a ship as long as no input warehouse whitelists canned food).
+8. Release 2.0 (2026-11-11): version bumped and the "Network GUI closed" log line removed (user's commit 7c21d55); Technical description rewritten for networks; README notes given to the user.
+   - Last UI round, built 2026-11-11 (not yet confirmed in game):
+     - TARGET'S REQUESTS replaces the target's output stock, and THIS DOCK'S REQUESTS is new above INCOMING: per requested good its icon with the unmet amount under it, dimmed when met, tooltip "have/asked" (`WBP_FDPanel.ShowRequests`, `BPL_FDNet.RequestLevels`; unmet is each output warehouse's shortfall less what waits at the dock or is on jobs to it, the viewing provider's own job left out; "Keep empty" warehouses' levels count).
+     - The game's pencil (`icons8-edit-128`) before the dock's name in the dock GUI and before each network's ID in the network GUI.
+     - Idle reasons: `IdleWhy` holds every reason that applies, one a line; the ship line shows the first with "(+n)", the tooltip the others.
+     - Role colours: labels "Requested by:" / "Provided by:" / "Providers:" / "Requesters:" in blue / red with the names in the text colour (`WBP_FDRoleLine`, in `WBP_FDNetTip` and `WBP_FDMembersTip`); the NETWORKS line shows the network left and "provide" (red) and / or "request" (blue) right. "Supplied by" became "Provided by".
+     - Round 2: pencils 32 / 24 px; ticking a checkbox re-works the hover pointers (`NetChanged` resets `HiKind`); THIS DOCK'S INPUT uses the same plain icon cells (`GoodCell`); idle reason "not in stock: A, B" for requested goods the inputs take but hold none of.
+     - Minimum load is measured against the requester's full request levels (`BPL_FDNet.AskedLevels`), not what is unmet.
 
 ## Revisiting - ideation
 Supposing we go with 3-of-5b provide/request network IDs.

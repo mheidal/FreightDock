@@ -35,7 +35,8 @@ pure fn Strings() -> map<name, string> {
         "freightdock.panel.ship": "SHIP",
         "freightdock.panel.waitingToUnload": "AT DOCK",
         "freightdock.panel.manifest": "MANIFEST",
-        "freightdock.panel.targetOutput": "TARGET'S OUTPUT",
+        "freightdock.panel.targetRequests": "TARGET'S REQUESTS",
+        "freightdock.panel.ownRequests": "THIS DOCK'S REQUESTS",
         "freightdock.panel.thisInput": "THIS DOCK'S INPUT",
         "freightdock.panel.deliverNow": "Deliver now",
         "freightdock.panel.pauseTip": "Pause after this job",
@@ -78,6 +79,7 @@ pure fn Strings() -> map<name, string> {
         "freightdock.idle.inputsTaken": "stock already reserved",
         "freightdock.idle.inputsEmpty": "input warehouses empty",
         "freightdock.idle.inputsLack": "requested goods not in stock",
+        "freightdock.idle.goodsOut": "not in stock: {goods}",
         "freightdock.idle.noTakes": "does not stock any requested goods",
         "freightdock.idle.keptForOwn": "{good} kept for own outputs",
         "freightdock.idle.heldBack": "haulers couldn't fetch {good}, retrying later",
@@ -153,7 +155,7 @@ pure fn Strings() -> map<name, string> {
         "freightdock.net.label": "{net} {name}",
         "freightdock.net.full": "Dock can be in at most 3 networks",
         "freightdock.good.requestedBy": "Requested by: {names}",
-        "freightdock.good.suppliedBy": "Supplied by: {names}",
+        "freightdock.good.suppliedBy": "Provided by: {names}",
         "freightdock.members.provider": "Provider: {names}",
         "freightdock.members.providers": "Providers: {names}",
         "freightdock.members.requester": "Requester: {names}",
@@ -183,6 +185,11 @@ pure fn T(Key: name) -> string {
 // S with "{Slot}" replaced by Value.
 pure fn Fill(S: string, Slot: string, Value: string) -> string {
     return KismetStringLibrary.Replace(S, "{" + Slot + "}", Value, ESearchCase.CaseSensitive)
+}
+
+// The part of a "{names}" text before the names ("Requested by:"), for a label in its own colour (WBP_FDRoleLine).
+pure fn Lead(Key: name) -> string {
+    return KismetStringLibrary.TrimTrailing(Fill(T(Key), "names", ""))
 }
 
 // T(Key) with one placeholder filled.

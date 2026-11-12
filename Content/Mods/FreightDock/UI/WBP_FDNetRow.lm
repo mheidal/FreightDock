@@ -1,6 +1,7 @@
 blueprint WBP_FDNetRow : UserWidget at /Game/Mods/FreightDock/UI/WBP_FDNetRow
 
-// One row of the network table (WBP_FDNetPanel): the network's number and name (a click on it broadcasts RenameAsked,
+// One row of the network table (WBP_FDNetPanel): the network's number and name, with the game's pencil before it as
+// on its own renameable names (a click on it broadcasts RenameAsked,
 // for the rename popup, WBP_FDRename, to open over the cell), Provide and Request
 // checkboxes for the selected dock (both ticked: the role "both"), each with the network's number of providers /
 // requesters in parentheses (the tooltip names them), and the goods its requesters ask for, dimmed when no provider
@@ -18,8 +19,9 @@ var TickOff: soft<Texture2D> = /Game/Assets/Icons/icons8-tick-box-unchecked-96.i
 var GoodIcons: array<Image>
 var GoodTips: array<WBP_FDNetTip>
 var GoodNames: array<name>
-var ProvTip: WBP_FDTip
-var ReqTip: WBP_FDTip
+var ProvTip: WBP_FDMembersTip
+var ReqTip: WBP_FDMembersTip
+var PencilTex: soft<Texture2D> = /Game/Assets/Icons/icons8-edit-128.icons8-edit-128
 var LimitTip: WBP_FDTip
 var IdTip: WBP_FDTip
 // the network's own name ("" while unnamed)
@@ -30,7 +32,10 @@ widget Root: Overlay {
     widget Line: HorizontalBox slot(HorizontalAlignment: EHorizontalAlignment.HAlign_Fill, VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 0, Top: 4, Right: 0, Bottom: 4)) {
         widget IdBox: SizeBox(WidthOverride: 96.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
             widget IdBtn: Button(BackgroundColor: "#00000000", IsFocusable: false) {
-                widget NetId: TextBlock(Text: "1", AutoWrapText: true, ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center)
+                widget IdCell: HorizontalBox {
+                    widget Pencil: Image slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Padding: Margin(Left: 0, Top: 0, Right: 3, Bottom: 0))
+                    widget NetId: TextBlock(Text: "1", AutoWrapText: true, ColorAndOpacity: "#e8c872ff", Justification: ETextJustify.Center) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center, Size: SlateChildSize(SizeRule: ESlateSizeRule.Fill, Value: 1.0))
+                }
             }
         }
         widget ProvideBox: SizeBox(WidthOverride: 110.0) slot(VerticalAlignment: EVerticalAlignment.VAlign_Center) {
@@ -61,6 +66,8 @@ on Construct {
     let size = Vector2D(X: 22.0, Y: 22.0)
     ProvideTick.SetDesiredSizeOverride(size)
     RequestTick.SetDesiredSizeOverride(size)
+    Pencil.SetBrushFromTexture(PencilTex.load(), false)
+    Pencil.SetDesiredSizeOverride(Vector2D(X: 24.0, Y: 24.0))
 }
 
 on OnMouseEnter(MyGeometry: Geometry, MouseEvent: PointerEvent) {
@@ -134,14 +141,15 @@ fn Show(InNet: int, Role: int, Label: string, Name: string, Locked: bool, Provid
     Shade()
     NetId.SetText(text(Label))
     NetId.SetColorAndOpacity(SlateColor(SpecifiedColor: BPL_FDNet.NetLinear(InNet)))
+    Pencil.SetColorAndOpacity(BPL_FDNet.NetLinear(InNet))
     SetTick(ProvideTick, (Role & 1) != 0)
     SetTick(RequestTick, (Role & 2) != 0)
     ProvideCount.SetText(text("(" + string(ProviderNames.Length()) + ")"))
     RequestCount.SetText(text("(" + string(RequesterNames.Length()) + ")"))
     if ProvTip == none {
-        ProvTip = create_widget(WBP_FDTip)
+        ProvTip = create_widget(WBP_FDMembersTip)
         ProvideCount.SetToolTip(ProvTip)
-        ReqTip = create_widget(WBP_FDTip)
+        ReqTip = create_widget(WBP_FDMembersTip)
         RequestCount.SetToolTip(ReqTip)
     }
     if LimitTip == none {
@@ -153,9 +161,8 @@ fn Show(InNet: int, Role: int, Label: string, Name: string, Locked: bool, Provid
         c.SetIsEnabled(!Locked)
         c.SetToolTip(if Locked { LimitTip } else { none })
     }
-    let noNames = BPL_FDText.T("freightdock.members.none")
-    ProvTip.Setup(BPL_FDText.T1("freightdock.members.providers", "names", if ProviderNames.Length() == 0 { noNames } else { KismetStringLibrary.JoinStringArray(ProviderNames, ", ") }), Small)
-    ReqTip.Setup(BPL_FDText.T1("freightdock.members.requesters", "names", if RequesterNames.Length() == 0 { noNames } else { KismetStringLibrary.JoinStringArray(RequesterNames, ", ") }), Small)
+    ProvTip.SetupOne(1, ProviderNames, Small)
+    ReqTip.SetupOne(2, RequesterNames, Small)
 
     let i = 0
     while i < Goods.Length() {
