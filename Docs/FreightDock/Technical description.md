@@ -11,7 +11,7 @@ warehouses and deliver to one requester on a shared network. The provider's ship
 The player-facing description is the top-level `README.md`. This file covers how the mod works. Design reasoning and
 history are in [Design decisions.md](Design%20decisions.md) and [Many-to-many links.md](Many-to-many%20links.md).
 
-**Status:** version 2.0 (`Content/Mods/FreightDock/FreightDock.uplugin`, UE 5.8). Version 1.x paired docks one to
+**Status:** version 2.1 (`Content/Mods/FreightDock/FreightDock.uplugin`, UE 5.8), for Whiskerwood 0.7.211. Version 1.x paired docks one to
 one; a 1.x colony is converted on load (see Migration).
 
 ## Assets
@@ -287,7 +287,11 @@ end; it is fixed at departure.
 ### Dock GUI (`WBP_FDPanel`)
 
 Shown for every selected freight dock, to the left of the game's dock window, in the window's own frame, background
-and fonts. It hides the window's "Load resources onto ship" bar and supported-actions frames while shown. Content is
+and fonts. It hides the window's "Load resources onto ship" bar and supported-actions frames while shown, and, since
+game 0.7.211, the ship frame's departure checklist with Send to sea (`EmbarkationList`) and the Auto-depart and Repeat
+toggles (`autodepart_area`): a freight dock's ship never departs by the game's hand. The Harbormaster's dock list
+(game 0.7.211) leaves freight docks out: their category (`HarbormasterCategory`, key `freightDock`) and rows
+(`HarbormasterRow`) are collapsed, checked every 0.5 s (`HideInHarbor`). Content is
 refreshed every 0.5 s of real time.
 
 | Section | Shows |

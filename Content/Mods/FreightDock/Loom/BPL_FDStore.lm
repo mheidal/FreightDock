@@ -11,7 +11,7 @@ blueprint BPL_FDStore : BlueprintFunctionLibrary at /Game/Mods/FreightDock/Loom/
 
 // The version written to "ver" on load: keep it equal to Version in FreightDock.uplugin.
 pure fn Version() -> string {
-    return "2.0"
+    return "2.1"
 }
 
 // The longest value Set keeps (names; longer ones are cut).

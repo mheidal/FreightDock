@@ -54,6 +54,8 @@ var Moved: array<Widget>
 var TickLate: bool = false
 // frames left to sweep a dock window found before it was laid out (FindWindow)
 var SweepSoon: int = 0
+// the next check of the harbormaster's dock list (HideInHarbor), real time
+var NextHarbor: float = 0.0
 // the rename popup (WBP_FDRename, made the first time), and what it renames: a network (RenameNet), else the dock
 // Renaming
 var Rename: WBP_FDRename
@@ -762,6 +764,7 @@ fn Step(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
         ModAPI.GetModAPI().LogMessage(Owner.Stamp().Result + "Network storage: " + string(made) + " 1.x pair(s) converted; colony data from version " + (if was == "" { "none" } else { was }), false)
     }
     ProfStep()
+    HideInHarbor(Owner)
     let tPart = BPL_FDNet.Now()
     let found = Owner.FindDockUnderCursor()
     let dock = found.Dock
@@ -1053,8 +1056,12 @@ fn FindWindow() {
         LowerWait = 2
     }
     Keep(Window.ShipPreparationWidget)
-    Keep(Window.EmbarkationPanel)
-    Unstretch()
+    // since game 0.7.211 the ship frame holds the departure checklist with Upon Departure and Send to sea
+    // (EmbarkationList) and the auto-depart toggles (autodepart_area) below the ship and its hold; a freight dock's
+    // ship never departs by the game's hand, so those two go and the ship and hold stay
+    Keep(Window.EmbarkationList)
+    Keep(Window.autodepart_area)
+    Unstretch(Window.EmbarkationList)
     Keep(Window.supportedActions)
     Keep(Window.supportedActions_1)
     Keep(Window.SupportedNauticalActionsHint_Arco)
@@ -1065,12 +1072,50 @@ fn FindWindow() {
     Sweep()
 }
 
+// The harbormaster's dock list (since game 0.7.211): freight docks take no orders from it, so their category
+// (HarbormasterCategory, per building kind) and their rows (HarbormasterRow, per dock) are collapsed. Checked every
+// 0.5 s of real time.
+fn HideInHarbor(Owner: /Game/Mods/FreightDock/BP_MapLoad.BP_MapLoad_C) {
+    let now = GameplayStatics.GetRealTimeSeconds()
+    if now < NextHarbor {
+        return
+    }
+    NextHarbor = now + 0.5
+    for c in WidgetBlueprintLibrary.GetAllWidgetsOfClass(HarbormasterCategory, false).FoundWidgets {
+        let cat = cast(c, HarbormasterCategory)
+        if cat != none {
+            let key = string(cat.`Dock Prefab Key`)
+            let mine = key == string(BPL_FDSetup.FreightRow())
+            if mine {
+                if cat.GetVisibility() != ESlateVisibility.Collapsed {
+                    cat.SetVisibility(ESlateVisibility.Collapsed)
+                }
+            }
+        }
+    }
+    for r in WidgetBlueprintLibrary.GetAllWidgetsOfClass(HarbormasterRow, false).FoundWidgets {
+        let row = cast(r, HarbormasterRow)
+        if row != none {
+            let d = BPL_FDNet.DockById(Owner, row.`Dock Id`)
+            let mine = false
+            if d != none {
+                mine = Owner.IsFreightDock(d).Result
+            }
+            if mine {
+                if row.GetVisibility() != ESlateVisibility.Collapsed {
+                    row.SetVisibility(ESlateVisibility.Collapsed)
+                }
+            }
+        }
+    }
+}
+
 // The departure checklist's frames keep their height with Size Boxes that have a minimum height (one beside the
 // ship frame's content, one around the ship frame, which sits at its bottom); without the checklist they leave a
 // gap. Clears every such minimum from the checklist up to the window's tabs, stepping out of nested widgets
 // (root -> WidgetTree -> UserWidget), remembering each for Restore.
-fn Unstretch() {
-    let w: Widget = Window.EmbarkationDetails
+fn Unstretch(From: Widget) {
+    let w: Widget = From
     let depth = 0
     while w != none && w != Window.Tabs_Parent && depth < 20 {
         let p: Widget = w.GetParent()
