@@ -89,7 +89,7 @@ This mod was ideated and refined by feedback from myself, but its code was writt
 This repository is a fork of [Buckminsterfullerene's Whiskerwood Project](https://github.com/Whiskerwood-Modding/Whiskerwood-Project), the Whiskerwood modkit. Many thanks for developing this handy tool! It uses the MIT License.
 
 ## Credits
-Much of this mod is written in the Unreal Engine scripting language Loom, created by pierrekin.
+Much of this mod is written in the Unreal Engine scripting language [Loom](https://loom.pierrekin.me/), created by pierrekin.
 
 The design, philosophy, and mechanics of the many-to-many delivery system were inspired by the Factorio mods [Logistic Train Network by Optera](https://mods.factorio.com/mod/LogisticTrainNetwork) and [Project Cybersyn by lesbian_mami](https://mods.factorio.com/mod/cybersyn); many thanks to those excellent projects.
 
